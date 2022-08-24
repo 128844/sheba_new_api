@@ -155,7 +155,7 @@ class PaymentService
     {
         if (isset($mtb_information->mtb_account_status)) {
             $mtb_status = $mtb_information;
-            if (json_decode($mtb_status->mtb_account_status)->Status != '19') {
+
                 /** @var MtbServerClient $client */
                 $client = App::make(MtbServerClient::class);
                 $response = $client->get(QRPaymentStatics::MTB_ACCOUNT_STATUS . $mtb_status->mtb_ticket_id, AuthTypes::BARER_TOKEN);
@@ -163,7 +163,7 @@ class PaymentService
                 if (json_decode($mtb_status->mtb_account_status)->Status != $response["Status"]) {
                     $this->storeMtbAccountStatus($response);
                 }
-            }
+
             $mapped_status = (new MtbMappedAccountStatus())->setStatus($this->mtbStatus)->mapMtbAccountStatus();
             if (isset($this->partner->partnerMefinformation->mtb_account_status)) {
                 if (json_decode($mtb_status->mtb_account_status)->Status == '19') {
