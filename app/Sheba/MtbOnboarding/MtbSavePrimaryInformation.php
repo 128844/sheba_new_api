@@ -126,14 +126,16 @@ class MtbSavePrimaryInformation
             ->where('verification_status', 'approved')->whereNotNull('porichy_data')->last();
         if (isset($nidInformation->porichy_data)) {
             $porichoyData = json_decode($nidInformation->porichy_data);
-        } else $porichoyData = null;
+        } else
+            throw new MtbServiceServerError("NID Information Is Not Approved  ");
+
         if ($this->partnerMefInformation->tradeLicenseExists == "হ্যা") $tradeLicenseExist = "Y";
         else $tradeLicenseExist = "N";
         return [
             'RequestData' => [
                 'retailerId' => strval($this->partner->id),
                 'orgCode' => MtbConstants::CHANNEL_ID,
-                'name' => $porichoyData ? $this->mutateName($porichoyData->porichoy_data->name_en) : $this->mutateName($this->partner->getFirstAdminResource()->profile->name),
+                'name' => $this->mutateName($porichoyData->porichoy_data->name_en),
                 'phoneNum' => $this->partner->getFirstAdminResource()->profile->mobile,
                 'nid' => $porichoyData ? $porichoyData->porichoy_data->nid_no : $this->partner->getFirstAdminResource()->profile->nid_no,
                 'dob' => date("Ymd", strtotime($this->partner->getFirstAdminResource()->profile->dob)),
