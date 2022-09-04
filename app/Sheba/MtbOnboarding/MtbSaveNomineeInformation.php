@@ -3,9 +3,11 @@
 use App\Models\Partner;
 use App\Sheba\DynamicForm\PartnerMefInformation;
 use App\Sheba\MTB\AuthTypes;
+use App\Sheba\MTB\Exceptions\MtbServiceServerError;
 use App\Sheba\MTB\MtbConstants;
 use App\Sheba\MTB\MtbServerClient;
 use App\Sheba\QRPayment\QRPaymentStatics;
+use Sheba\TPProxy\TPProxyServerError;
 
 class MtbSaveNomineeInformation
 {
@@ -60,10 +62,32 @@ class MtbSaveNomineeInformation
             'channelId' => MtbConstants::CHANNEL_ID
         ];
     }
+    private function checkIfBanglaInputExist($data)
+    {
+        $data = collect($data);
+        $flattened = $data->flatten()->toArray();
+        foreach ($flattened as $x => $flat) {
+            $isEnglish = $this->is_english($flat);
+            if (!$isEnglish) throw new MtbServiceServerError("Contains Bangla");
+        }
+    }
+    function is_english($str)
+    {
+        if (strlen($str) != strlen(utf8_decode($str))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
+    /**
+     * @throws TPProxyServerError
+     * @throws MtbServiceServerError
+     */
     public function storeNomineeInformation()
     {
         $data = $this->makeData();
+        $this->checkIfBanglaInputExist($data);
         return $this->client->post(QRPaymentStatics::MTB_SAVE_NOMINEE_INFORMATION, $data, AuthTypes::BARER_TOKEN);
     }
 

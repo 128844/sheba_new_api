@@ -214,7 +214,7 @@ class MtbSavePrimaryInformation
         $flattened = $data->flatten()->toArray();
         foreach ($flattened as $x => $flat) {
             $isEnglish = $this->is_english($flat);
-            if (!$isEnglish && $x != 32) throw new MtbServiceServerError("Contains Bangla");
+            if (!$isEnglish) throw new MtbServiceServerError("Contains Bangla");
         }
     }
 
