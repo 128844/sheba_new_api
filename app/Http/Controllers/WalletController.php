@@ -91,7 +91,7 @@ class WalletController extends Controller
 
         if (!$user) return api_response($request, null, 404, ['message' => 'User Not found.']);
 
-        $recharge_adapter = new RechargeAdapter($user, $request->amount);
+        $recharge_adapter = new RechargeAdapter($user, round($request->amount,2));
         $payment = $payment_manager->setMethodName($request->payment_method)->setPayable($recharge_adapter->getPayable())->init();
 
         return api_response($request, $payment, 200, ['link' => $payment['link'], 'payment' => $payment->getFormattedPayment()]);
