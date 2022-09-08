@@ -176,11 +176,15 @@ class AttendanceController extends Controller
         if($request->has('status')) {
             $business_members = $business_members->where('status', $request->status);
         }
+        $business_members = $business_members->get();
+        $total_business_members_count = $business_members->count();
+        if ($request->has('limit') && !$request->has('file')) $business_members = $business_members->splice($offset, $limit);
 
         $all_employee_attendance = [];
         $business_holiday = $business_holiday_repo->getAllByBusiness($business);
         $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business);
-        foreach ($business_members->get() as $business_member) {
+
+        foreach ($business_members as $business_member) {
             if ($request->has('start_date') && $request->has('end_date')) {
                 $start_date = $request->start_date;
                 $end_date = $request->end_date;
@@ -236,14 +240,11 @@ class AttendanceController extends Controller
         if ($request->has('sort_on_late')) $all_employee_attendance = $this->attendanceSortOnLate($all_employee_attendance, $request->sort_on_late);
         if ($request->has('sort_on_overtime')) $all_employee_attendance = $this->attendanceCustomSortOnOvertime($all_employee_attendance, $request->sort_on_overtime);
 
-        $total_members = $all_employee_attendance->count();
-        if ($request->has('limit')) $all_employee_attendance = $all_employee_attendance->splice($offset, $limit);
-
         if ($request->file == 'excel') {
             return $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($request->start_date)->setEndDate($request->end_date)->get();
         }
 
-        return api_response($request, $all_employee_attendance, 200, ['all_employee_attendance' => $all_employee_attendance, 'total_members' => $total_members]);
+        return api_response($request, $all_employee_attendance, 200, ['all_employee_attendance' => $all_employee_attendance, 'total_members' => $total_business_members_count]);
     }
 
     /**
