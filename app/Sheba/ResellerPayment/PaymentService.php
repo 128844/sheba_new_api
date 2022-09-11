@@ -467,7 +467,7 @@ class PaymentService
         if (intval($version_code) < 300600) {
             $allData = $pgwData;
         } else {
-            $qrData = $this->getQRGateways($completion);
+//            $qrData = $this->getQRGateways($completion);
 //            $allData = array_merge($pgwData, $qrData);
             $allData = $pgwData;
         }
