@@ -129,7 +129,7 @@ class PaymentService
             'banner' => PaymentMethodStatics::getMtbBannerURL(),
             'faq' => PaymentMethodStatics::detailsFAQ(),
             'status' => $this->status ?? null,
-            'disclaimer_message' => isset($mtb_status) ? $mtb_status['description']. $account_details->Description : '',
+            'disclaimer_message' => isset($mtb_status) ? $mtb_status['description'] . $account_details->Description : '',
             'how_to_use_link' => PaymentLinkStatics::how_to_use_webview(),
             'payment_service_info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
             'details' => [
@@ -467,9 +467,8 @@ class PaymentService
         if (intval($version_code) < 300600) {
             $allData = $pgwData;
         } else {
-//            $qrData = $this->getQRGateways($completion);
-//            $allData = array_merge($pgwData, $qrData);
-            $allData = $pgwData;
+            $qrData = $this->getQRGateways($completion);
+            $allData = array_merge($pgwData, $qrData);
         }
         return $banner ?
             array_merge(["payment_gateway_list" => $allData], ["list_banner" => MEFGeneralStatics::LIST_PAGE_BANNER]) : $allData;
