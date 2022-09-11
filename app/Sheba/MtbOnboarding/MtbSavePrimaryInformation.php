@@ -199,6 +199,25 @@ class MtbSavePrimaryInformation
         return $data;
     }
 
+    function is_english($str)
+    {
+        if (strlen($str) != strlen(utf8_decode($str))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private function checkIfBanglaInputExist($data)
+    {
+        $data = collect($data);
+        $flattened = $data->flatten()->toArray();
+        foreach ($flattened as $x => $flat) {
+            $isEnglish = $this->is_english($flat);
+            if (!$isEnglish) throw new MtbServiceServerError("অনুগ্রহ পূর্বক সব তথ্য ইংরেজিতে লিখুন");
+        }
+    }
+
     /**
      * @param $request
      * @return JsonResponse
@@ -209,6 +228,7 @@ class MtbSavePrimaryInformation
         if ($data != 100)
             return http_response($request, null, 403, ['message' => 'Please fill Up all the fields, Your form is ' . $data . " completed"]);
         $data = $this->makePrimaryInformation($request->reference, $request->otp);
+        $this->checkIfBanglaInputExist($data);
         $response = $this->client->post(QRPaymentStatics::MTB_SAVE_PRIMARY_INFORMATION, $data, AuthTypes::BARER_TOKEN);
         if (empty($response['Data']['TicketId'])) {
             if (isset($response['responseMessage']))
