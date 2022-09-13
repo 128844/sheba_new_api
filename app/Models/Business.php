@@ -2,6 +2,8 @@
 
 use App\Sheba\Business\Attendance\HalfDaySetting\HalfDayType;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
 use Sheba\Business\CoWorker\Statuses;
 use Sheba\Dal\Announcement\Announcement;
@@ -48,17 +50,17 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
         return $this->hasMany(BusinessOffice::class)->where('is_location', 1);
     }
 
-    public function announcements()
+    public function announcements(): HasMany
     {
         return $this->hasMany(Announcement::class);
     }
 
-    public function departments()
+    public function departments(): HasMany
     {
         return $this->hasMany(BusinessDepartment::class);
     }
 
-    public function members()
+    public function members(): BelongsToMany
     {
         return $this->belongsToMany(Member::class)->withTimestamps();
     }
