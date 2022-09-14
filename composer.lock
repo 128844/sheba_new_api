@@ -4013,7 +4013,7 @@
             "source": {
                 "type": "git",
                 "url": "https://bitbucket.org/startern/sheba_dal.git",
-                "reference": "2d94c0cd8bdbc36da4eb93d253127a2cb0ba62e9"
+                "reference": "88a711fd3431b162887d95ab86485626c66cbdfb"
             },
             "require": {
                 "php": ">=5.4"
@@ -4040,7 +4040,7 @@
                 }
             ],
             "description": "Data access layer package for Sheba.",
-            "time": "2022-07-25T04:47:50+00:00"
+            "time": "2022-09-14T12:46:02+00:00"
         },
         {
             "name": "sheba/elasticsearch",
@@ -4739,6 +4739,7 @@
             ],
             "description": "Symfony Debug Component",
             "homepage": "https://symfony.com",
+            "abandoned": "symfony/error-handler",
             "time": "2016-07-30T07:22:48+00:00"
         },
         {

@@ -82,17 +82,39 @@ class TrackingController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @param TrackingLocationRepository $tracking_location_repository
+     * @param  Request  $request
+     * @param  TrackingLocationRepository  $tracking_location_repository
+     * @param  ManagerSubordinateEmployeeList  $manager_subordinate_employee_list
      * @return JsonResponse
      */
-    public function getManagerSubordinateList(Request $request, TrackingLocationRepository $tracking_location_repository)
+    public function getManagerSubordinateList(
+        Request $request,
+        TrackingLocationRepository $tracking_location_repository,
+        ManagerSubordinateEmployeeList $manager_subordinate_employee_list
+    ): JsonResponse
     {
+        $business = $request->business;
         $business_member = $request->business_member;
+
         $managers = [];
-        (new ManagerSubordinateEmployeeList())->getManager($business_member->id, $managers, $business_member->id);
+        $manager_subordinate_employee_list->setBusiness($business)->getManager($business_member->id, $managers, $business_member->id);
         $managers_subordinate_ids = array_keys($managers);
-        $business_members = BusinessMember::whereIn('id', $managers_subordinate_ids);
+
+        $business_members = BusinessMember::with([
+            'member' => function ($q) {
+                $q->select('members.id', 'profile_id')->with([
+                    'profile' => function ($q) {
+                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic', 'dob', 'address', 'nationality', 'nid_no', 'tin_no');
+                    }
+                ]);
+            }, 'role' => function ($q) {
+                $q->select('business_roles.id', 'business_department_id', 'name')->with([
+                    'businessDepartment' => function ($q) {
+                        $q->select('business_departments.id', 'business_id', 'name');
+                    }
+                ]);
+            }
+        ])->whereIn('business_member.id', $managers_subordinate_ids);
 
         if ($request->has('department')) {
             $business_members = $business_members->whereHas('role', function ($q) use ($request) {
@@ -104,12 +126,15 @@ class TrackingController extends Controller
 
         $data = [];
         $business_member_ids = $business_members->pluck('id')->toArray();
-        $business_members_last_location = $tracking_location_repository->getBusinessMembersLastLocation($business_member_ids);
+        $business_members_last_location = $tracking_location_repository
+            ->getBusinessMembersLastLocationByBusinessForLastNDays($business_member_ids, $business->id, 7);
+
         foreach ($business_members->get() as $business_member) {
             if (!array_key_exists($business_member->id, $business_members_last_location)) continue;
             $tracking_location = $business_members_last_location[$business_member->id];
             $location = $tracking_location->location;
-            $profile = $business_member->profile();
+
+            $profile = $business_member->member->profile;
             /** @var BusinessRole $role */
             $role = $business_member->role;
             $data[] = [
@@ -133,8 +158,10 @@ class TrackingController extends Controller
                 'last_activity_raw' => $tracking_location->created_at
             ];
         }
+
         if ($request->has('activity') && $request->activity != "null") $data = $this->getEmployeeOfNoActivityForCertainHour($data, $request->activity);
         if ($request->has('search')) $data = $this->searchEmployee($data, $request);
+
         $data = collect($data)->values();
         return api_response($request, null, 200, ['employee_list' => $data]);
     }
