@@ -245,7 +245,8 @@ class AttendanceController extends Controller
             if ($request->business_member->member->profile->email == 'raz@sheba.xyz') {
                 $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($request->start_date)->setEndDate($request->end_date)->save();
                 $file_path = storage_path('exports') . '/Custom_attendance_report.xls';
-                dispatch(new SendMonthlyAttendanceReportEmail($file_path, $request->business_member, $start_date, $end_date));
+                //dispatch(new SendMonthlyAttendanceReportEmail($file_path, $request->business_member, $start_date, $end_date));
+                (new SendMonthlyAttendanceReportEmail($file_path, $request->business_member, $start_date, $end_date))->handle();
                 unlink($file_path);
                 return api_response($request, null, 200, ['message' => "Your report will be sent to your email. Please check a few moments later."]);
             } else {
