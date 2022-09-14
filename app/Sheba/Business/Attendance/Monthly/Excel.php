@@ -35,7 +35,7 @@ class Excel
         $file_name = 'Custom_attendance_report';
         $sheet_name = $this->startDate . ' - ' . $this->endDate;
 
-        MonthlyExcel::create($file_name, function ($excel) use ($sheet_name) {
+        return MonthlyExcel::create($file_name, function ($excel) use ($sheet_name) {
             $excel->sheet($sheet_name, function ($sheet) {
                 $sheet->fromArray($this->data, null, 'A1', true, false);
                 $sheet->prependRow($this->getHeaders());
@@ -48,7 +48,7 @@ class Excel
                 );
                 $sheet->setAutoSize(true);
             });
-        })->export('xlsx');
+        })->save();
     }
 
     private function makeData()

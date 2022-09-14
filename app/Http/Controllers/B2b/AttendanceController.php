@@ -1,6 +1,7 @@
 <?php namespace App\Http\Controllers\B2b;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Business\SendMonthlyAttendanceReportEmail;
 use App\Models\Business;
 use App\Models\BusinessMember;
 use App\Sheba\Business\Attendance\MonthlyStat;
@@ -183,15 +184,15 @@ class AttendanceController extends Controller
         $all_employee_attendance = [];
         $business_holiday = $business_holiday_repo->getAllByBusiness($business);
         $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business);
-
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $start_date = $request->start_date;
+            $end_date = $request->end_date;
+        } else {
+            $start_date = Carbon::now()->startOfMonth()->toDateString();
+            $end_date = Carbon::now()->endOfMonth()->toDateString();
+        }
         foreach ($business_members as $business_member) {
-            if ($request->has('start_date') && $request->has('end_date')) {
-                $start_date = $request->start_date;
-                $end_date = $request->end_date;
-            } else {
-                $start_date = Carbon::now()->startOfMonth()->toDateString();
-                $end_date = Carbon::now()->endOfMonth()->toDateString();
-            }
+
             $member = $business_member->member;
             $profile = $member->profile;
             $member_name = $profile->name;
@@ -241,7 +242,10 @@ class AttendanceController extends Controller
         if ($request->has('sort_on_overtime')) $all_employee_attendance = $this->attendanceCustomSortOnOvertime($all_employee_attendance, $request->sort_on_overtime);
 
         if ($request->file == 'excel') {
-            return $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($request->start_date)->setEndDate($request->end_date)->get();
+            $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($request->start_date)->setEndDate($request->end_date)->get();
+            $file_path = storage_path('exports').'/Custom_attendance_report.xls';
+            (new SendMonthlyAttendanceReportEmail($file_path, $request->business_member, $start_date, $end_date))->handle();
+            unlink($file_path);
         }
 
         return api_response($request, $all_employee_attendance, 200, ['all_employee_attendance' => $all_employee_attendance, 'total_members' => $total_business_members_count]);
