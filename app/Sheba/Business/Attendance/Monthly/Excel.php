@@ -31,6 +31,16 @@ class Excel
 
     public function get()
     {
+        $this->makeReport()->download('xlsx');
+    }
+
+    public function save()
+    {
+        $this->makeReport()->save();
+    }
+
+    private function makeReport()
+    {
         $this->makeData();
         $file_name = 'Custom_attendance_report';
         $sheet_name = $this->startDate . ' - ' . $this->endDate;
@@ -48,7 +58,7 @@ class Excel
                 );
                 $sheet->setAutoSize(true);
             });
-        })->save();
+        });
     }
 
     private function makeData()
