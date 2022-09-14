@@ -34,7 +34,7 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
                 $m->from('noreply@sheba-business.com', 'Sheba Platform Limited');
                 //$m->to($profile->email)->subject($subject);
                 $m->to('asadrabbi@gmail.com')->subject($subject);
-                $m->attach($this->attachment);
+                //$m->attach($this->attachment);
             });
         }
     }
