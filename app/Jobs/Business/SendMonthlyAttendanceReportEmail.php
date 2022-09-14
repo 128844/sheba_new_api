@@ -28,13 +28,17 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
     public function handle()
     {
         if ($this->attempts() <= 1) {
-            $subject = 'Monthly Attendance Report from '.$this->startDate.' to '.$this->endDate;
+            $subject = 'Monthly Attendance Report from ' . $this->startDate . ' to ' . $this->endDate;
             $profile = $this->businessMember->member->profile;
-            BusinessMail::send(['Please check the attachment.'], [], function ($m) use ($subject, $profile) {
-                $m->from('noreply@sheba-business.com', 'Sheba Platform Limited');
+            BusinessMail::send(['emails.custom-attendance-report',], [
+                'employee_name' => $profile->name,
+                'start_date' => $this->startDate,
+                'end_date' => $this->endDate
+            ], function ($m) use ($subject, $profile) {
+                $m->from('b2b@sheba.xyz', 'sBusiness.xyz');
                 //$m->to($profile->email)->subject($subject);
                 $m->to('asadrabbi@gmail.com')->subject($subject);
-                //$m->attach($this->attachment);
+                $m->attach($this->attachment);
             });
         }
     }
