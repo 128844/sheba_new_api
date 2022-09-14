@@ -30,7 +30,7 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
         if ($this->attempts() <= 1) {
             $subject = 'Monthly Attendance Report from ' . $this->startDate . ' to ' . $this->endDate;
             $profile = $this->businessMember->member->profile;
-            BusinessMail::send(['emails.custom-attendance-report',], [
+            BusinessMail::send('emails.custom-attendance-report', [
                 'employee_name' => $profile->name,
                 'start_date' => $this->startDate,
                 'end_date' => $this->endDate
