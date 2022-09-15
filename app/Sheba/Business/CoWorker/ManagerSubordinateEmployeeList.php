@@ -92,7 +92,9 @@ class ManagerSubordinateEmployeeList
         $this->business = $business;
         $this->businessMembers = $this->businessMemberRepository
             ->where('business_id', $business->id)
-            ->where('status', 'active')->get();
+            ->where('status', 'active')
+            ->select(["id", "business_id", "member_id", "employee_id", "manager_id", "status", "deleted_at"])->get();
+
         return $this;
     }
 
