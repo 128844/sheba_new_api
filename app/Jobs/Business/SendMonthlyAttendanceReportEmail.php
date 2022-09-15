@@ -36,8 +36,7 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
                 'end_date' => $this->endDate
             ], function ($m) use ($subject, $profile) {
                 $m->from('b2b@sheba.xyz', 'sBusiness.xyz');
-                //$m->to($profile->email)->subject($subject);
-                $m->to('asadrabbi@gmail.com')->subject($subject);
+                $m->to($profile->email)->subject($subject);
                 $m->attach($this->attachment);
             });
         }
