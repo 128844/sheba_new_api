@@ -1,7 +1,7 @@
 <?php namespace App\Jobs\Business;
 
-use App\Models\BusinessMember;
 use App\Sheba\Business\BusinessEmailQueue;
+use Illuminate\Http\Request;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Sheba\Business\Attendance\Monthly\Excel;
@@ -26,7 +26,7 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
     {
         if ($this->attempts() > 2) return;
 
-        $request = $this->request;
+        $request = new Request($this->request);
         list($all_employee_attendance, , $start_date, $end_date) = $calculator->calculate($this->business, $request);
 
         $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($start_date)->setEndDate($end_date)->save();

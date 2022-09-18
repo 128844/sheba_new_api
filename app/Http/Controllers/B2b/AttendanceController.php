@@ -153,7 +153,7 @@ class AttendanceController extends Controller
         $this->validate($request, ['file' => 'string|in:excel']);
 
         if ($request->file == 'excel') {
-            dispatch(new SendMonthlyAttendanceReportEmail($business, $request));
+            dispatch(new SendMonthlyAttendanceReportEmail($business, $request->all()));
             return api_response($request, null, 200, [
                 'message' => "Your report will be sent to your email. Please check a few moments later."
             ]);

@@ -39,6 +39,7 @@ class MonthlyAttendanceCalculator
     {
         ini_set('memory_limit', '6096M');
         ini_set('max_execution_time', 480);
+
         list($offset, $limit) = calculatePagination($request);
 
         /** @var Business $business */
