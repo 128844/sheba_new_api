@@ -39,6 +39,8 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
                 $m->to($profile->email)->subject($subject);
                 $m->attach($this->attachment);
             });
+
+            unlink($this->attachment);
         }
     }
 
