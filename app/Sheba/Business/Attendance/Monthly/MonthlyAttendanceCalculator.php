@@ -83,11 +83,12 @@ class MonthlyAttendanceCalculator
             $department_id = $member_department ? $member_department->id : 'N/S';
             $business_member_joining_date = $business_member->join_date;
             $joining_prorated = null;
+            $member_start_date = Carbon::parse($start_date);
             if ($this->checkJoiningDate($business_member_joining_date, $start_date, $end_date)) {
                 $joining_prorated = 1;
-                $start_date = $business_member_joining_date;
+                $member_start_date = $business_member_joining_date;
             }
-            $time_frame = $this->timeFrame->forDateRange($start_date, $end_date);
+            $time_frame = $this->timeFrame->forDateRange($member_start_date, $end_date);
             $business_member_leave = $business_member->leaves()->accepted()->startDateBetween($time_frame)->endDateBetween($time_frame)->get();
             $attendances = $this->attendanceRepo->getAllAttendanceByBusinessMemberFilteredWithYearMonth($business_member, $time_frame);
             $employee_attendance = (new MonthlyStat($time_frame, $business, $business_holiday, $weekend_settings, $business_member_leave, false))->transform($attendances);
