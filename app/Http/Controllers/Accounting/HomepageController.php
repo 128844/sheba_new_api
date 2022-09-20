@@ -44,7 +44,7 @@ class HomepageController extends Controller
             return api_response($request, null, 400, ['message' => 'End date can not smaller than start date']);
         }
 
-        return Cache::store('redis')->remember($cache_key, 5, function () use ($request, $start_date, $end_date) {
+        return Cache::store('redis')->remember($cache_key, 10, function () use ($request, $start_date, $end_date) {
             $response = $this->homepageRepo->getIncomeExpenseBalance($request->partner->id, $start_date, $end_date);
             return api_response($request, $response, 200, ['data' => $response]);
         });
@@ -253,7 +253,7 @@ class HomepageController extends Controller
             "month"          => banglaMonth($month),
             "api_time"       => Carbon::now()->toDateTimeString()
         ];
-        Cache::store('redis')->put($cache_key, $data, Carbon::now()->addMinutes(5));
+        Cache::store('redis')->put($cache_key, $data, Carbon::now()->addMinutes(10));
 
         return api_response($request, $data, 200, ['data' => $data]);
     }

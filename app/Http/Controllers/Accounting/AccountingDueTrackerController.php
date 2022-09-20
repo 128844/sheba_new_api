@@ -107,7 +107,7 @@ class AccountingDueTrackerController extends Controller
     public function dueListBalance(Request $request): JsonResponse
     {
         $cache_key = "PartnerDueListBalance::partner:".$request->partner->id;
-        return Cache::store('redis')->remember($cache_key, 5, function () use ($request) {
+        return Cache::store('redis')->remember($cache_key, 10, function () use ($request) {
             $data = $this->dueTrackerRepo->setPartner($request->partner)->getDuelistBalance($request);
             return api_response($request, null, 200, ['data' => $data]);
         });
