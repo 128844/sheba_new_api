@@ -93,9 +93,10 @@ class QueueConnectionManager
             "topup_partner_chunk_7"  => [ "from" => 1200001, "to" => 1250000 ],
             "topup_partner_chunk_8"  => [ "from" => 1250001, "to" => 1300000 ],
             "topup_partner_chunk_9"  => [ "from" => 1300001, "to" => 1360050 ],
-            "topup_partner_chunk_10" => [ "from" => 1360051, "to" => 1600000 ],
-            "topup_partner_chunk_11" => [ "from" => 1600001, "to" => 2200000 ],
-            "topup_partner_chunk_12" => [ "from" => 2200001, "to" => 2400000 ],
+            "topup_partner_chunk_10" => [ "from" => 1360051, "to" => 1400000 ],
+            "topup_partner_chunk_11" => [ "from" => 1400001, "to" => 1450000 ],
+            "topup_partner_chunk_12" => [ "from" => 1450001, "to" => 2400000 ],
+
             "topup_partner_default" => null,
 
             /**
