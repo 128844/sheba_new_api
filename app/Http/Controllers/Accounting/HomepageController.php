@@ -36,17 +36,19 @@ class HomepageController extends Controller
      */
     public function getIncomeExpenseBalance(Request $request): JsonResponse
     {
-        $startDate = $this->convertStartDate($request->start_date);
-        $endDate = $this->convertEndDate($request->end_date);
+        $start_date = $this->convertStartDate($request->start_date);
+        $end_date = $this->convertEndDate($request->end_date);
+        $cache_key = "PartnerIncomeExpenseBalance::partner:".$request->partner->id."_".$start_date."_".$end_date;
 
-        if ($endDate < $startDate) {
+        if ($end_date < $start_date) {
             return api_response($request, null, 400, ['message' => 'End date can not smaller than start date']);
         }
-        $response = $this->homepageRepo->getIncomeExpenseBalance($request->partner->id, $startDate, $endDate);
-        return api_response($request, $response, 200, ['data' => $response]);
 
+        return Cache::store('redis')->remember($cache_key, 5, function () use ($request, $start_date, $end_date) {
+            $response = $this->homepageRepo->getIncomeExpenseBalance($request->partner->id, $start_date, $end_date);
+            return api_response($request, $response, 200, ['data' => $response]);
+        });
     }
-
 
     /**
      * @throws AccountingEntryServerError
