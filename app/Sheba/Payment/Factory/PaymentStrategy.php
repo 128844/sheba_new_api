@@ -3,6 +3,7 @@
 use App\Models\Customer;
 use App\Models\Partner;
 use App\Models\Payable;
+use App\Sheba\Payment\Methods\AamarPay\AamarPay;
 use App\Sheba\Payment\Methods\Nagad\NagadBuilder;
 use App\Sheba\QRPayment\Methods\MTB\MtbQr;
 use Illuminate\Foundation\Application;
@@ -44,6 +45,7 @@ class PaymentStrategy
     const MTB            = 'mtb';
     const SHURJOPAY = 'shurjopay';
     const UPAY           = 'upay';
+    const AAMARPAY = 'aamarpay';
 
     public static function getDefaultOnlineMethod()
     {
@@ -89,6 +91,8 @@ class PaymentStrategy
                 return app(ShurjoPay::class);
             case self::UPAY:
                 return UpayBuilder::get($payable);
+            case self::AAMARPAY:
+                return app(AamarPay::class);
         }
     }
 

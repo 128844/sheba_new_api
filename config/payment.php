@@ -104,5 +104,11 @@ return [
             ]
         ],
         'base_url'     => env('UPAY_BASE_URL', 'https://uat-pg.upay.systems')
-    ]
+    ],
+    'aamarpay' => [
+        'base_url' => env('AAMARPAY_BASE_URL'),
+        'success_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/success',
+        'fail_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/fail',
+        'cancel_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/cancel',
+    ],
 ];
