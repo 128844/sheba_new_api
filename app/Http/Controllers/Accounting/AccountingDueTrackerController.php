@@ -6,6 +6,7 @@ use App\Sheba\AccountingEntry\Repository\AccountingDueTrackerRepository;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Mpdf\MpdfException;
 use Sheba\AccountingEntry\Exceptions\AccountingEntryServerError;
 use Sheba\DueTracker\Exceptions\InvalidPartnerPosCustomer;
@@ -105,8 +106,11 @@ class AccountingDueTrackerController extends Controller
      */
     public function dueListBalance(Request $request): JsonResponse
     {
-        $data = $this->dueTrackerRepo->setPartner($request->partner)->getDuelistBalance($request);
-        return api_response($request, null, 200, ['data' => $data]);
+        $cache_key = "PartnerDueListBalance::partner:".$request->partner->id;
+        return Cache::store('redis')->remember($cache_key, 10, function () use ($request) {
+            $data = $this->dueTrackerRepo->setPartner($request->partner)->getDuelistBalance($request);
+            return api_response($request, null, 200, ['data' => $data]);
+        });
     }
 
     /**

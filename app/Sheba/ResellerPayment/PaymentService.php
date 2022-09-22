@@ -129,7 +129,7 @@ class PaymentService
             'banner' => PaymentMethodStatics::getMtbBannerURL(),
             'faq' => PaymentMethodStatics::detailsFAQ(),
             'status' => $this->status ?? null,
-            'disclaimer_message' => isset($mtb_status) ? $mtb_status['description']. $account_details->Description : '',
+            'disclaimer_message' => isset($mtb_status) ? $mtb_status['description'] . $account_details->Description : '',
             'how_to_use_link' => PaymentLinkStatics::how_to_use_webview(),
             'payment_service_info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
             'details' => [
@@ -155,7 +155,7 @@ class PaymentService
     {
         if (isset($mtb_information->mtb_account_status)) {
             $mtb_status = $mtb_information;
-
+            if (json_decode($mtb_status->mtb_account_status)->Status != '19') {
                 /** @var MtbServerClient $client */
                 $client = App::make(MtbServerClient::class);
                 $response = $client->get(QRPaymentStatics::MTB_ACCOUNT_STATUS . $mtb_status->mtb_ticket_id, AuthTypes::BARER_TOKEN);
@@ -163,7 +163,7 @@ class PaymentService
                 if (json_decode($mtb_status->mtb_account_status)->Status != $response["Status"]) {
                     $this->storeMtbAccountStatus($response);
                 }
-
+            }
             $mapped_status = (new MtbMappedAccountStatus())->setStatus($this->mtbStatus)->mapMtbAccountStatus();
             if (isset($this->partner->partnerMefinformation->mtb_account_status)) {
                 if (json_decode($mtb_status->mtb_account_status)->Status == '19') {
@@ -464,7 +464,6 @@ class PaymentService
             }
             $pgwData[] = $this->makePGWGatewayData($pgwStore, $completion, $header_message, $completionData, $status);
         }
-        //QR gateway off until app live
         if (intval($version_code) < 300600) {
             $allData = $pgwData;
         } else {

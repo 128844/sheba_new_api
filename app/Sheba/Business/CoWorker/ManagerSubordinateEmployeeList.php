@@ -1,10 +1,10 @@
 <?php namespace App\Sheba\Business\CoWorker;
 
+use App\Models\Business;
 use App\Models\BusinessDepartment;
 use App\Models\BusinessRole;
 use App\Models\Member;
 use App\Models\Profile;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Sheba\Business\CoWorker\Statuses;
 use Sheba\Repositories\Business\BusinessMemberRepository;
@@ -13,6 +13,9 @@ class ManagerSubordinateEmployeeList
 {
     /*** @var BusinessMemberRepository $businessMemberRepository */
     private $businessMemberRepository;
+    private $businessMembers;
+    /** @var Business $business */
+    private $business;
 
     public function __construct()
     {
@@ -54,11 +57,12 @@ class ManagerSubordinateEmployeeList
      * @param $business_member_id
      * @return Collection
      */
-    private function getCoWorkersUnderSpecificManager($business_member_id)
+    private function getCoWorkersUnderSpecificManager($business_member_id): Collection
     {
-        return $this->businessMemberRepository->where('manager_id', $business_member_id)
-            ->where('status', 'active')
-            ->get();
+        if ($this->business)
+            return $this->businessMembers->where('manager_id', $business_member_id)->where('status', 'active');
+
+        return $this->businessMemberRepository->where('manager_id', $business_member_id)->where('status', 'active')->get();
     }
 
     /**
@@ -67,7 +71,7 @@ class ManagerSubordinateEmployeeList
      * @param $is_employee_active
      * @return array
      */
-    private function filterEmployeeByDepartment($business_member, $managers_data, $is_employee_active)
+    private function filterEmployeeByDepartment($business_member, $managers_data, $is_employee_active): array
     {
         $filtered_unique_managers_data = $this->removeSpecificBusinessMemberIdFormUniqueManagersData($business_member, $managers_data);
 
@@ -80,10 +84,25 @@ class ManagerSubordinateEmployeeList
     }
 
     /**
+     * @param  Business  $business
+     * @return $this
+     */
+    public function setBusiness(Business $business): ManagerSubordinateEmployeeList
+    {
+        $this->business = $business;
+        $this->businessMembers = $this->businessMemberRepository
+            ->where('business_id', $business->id)
+            ->where('status', 'active')
+            ->select(["id", "business_id", "member_id", "employee_id", "manager_id", "status", "deleted_at"])->get();
+
+        return $this;
+    }
+
+    /**
      * @param $managers_data
      * @return array
      */
-    private function uniqueManagerData($managers_data)
+    private function uniqueManagerData($managers_data): array
     {
         $out = [];
         foreach ($managers_data as $row) {
@@ -97,14 +116,14 @@ class ManagerSubordinateEmployeeList
      * @param $unique_managers_data
      * @return array
      */
-    public function removeSpecificBusinessMemberIdFormUniqueManagersData($business_member, $unique_managers_data)
+    public function removeSpecificBusinessMemberIdFormUniqueManagersData($business_member, $unique_managers_data): array
     {
         return array_filter($unique_managers_data, function ($manager_data) use ($business_member) {
             return ($manager_data['id'] != $business_member->id);
         });
     }
 
-    private function formatSubordinateList($business_member)
+    private function formatSubordinateList($business_member): array
     {
         /** @var Member $member */
         $member = $business_member->member;

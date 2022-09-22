@@ -59,7 +59,6 @@ class QueueConnectionManager
         /**
          * New connection name needs to be listened from supervisor.
          */
-
         return [
             /**
              * Affiliates
@@ -67,35 +66,39 @@ class QueueConnectionManager
             "topup_affiliate_1" => [52585, 113908, 99291, 56464, 86463, 39662, 95829, 36443],
             "topup_affiliate_2" => [52807, 130546, 126724, 105278, 35922, 127249, 105929, 105998],
             "topup_affiliate_3" => [56317, 125090, 39755, 95948, 52376, 104288, 56830, 22355, 128162, 120697],
-            "topup_affiliate_4" => [108618, 123995, 123422, 35751, 83479, 102926, 119102, 97955,2635,112387,125756,123593],
+            "topup_affiliate_4" => [108618, 123995, 123422, 35751, 83479, 102926, 119102, 97955, 2635, 112387, 125756, 123593],
 
-            "topup_affiliate_chunk_1" => [ "from" =>      1, "to" =>  40000 ],
-            "topup_affiliate_chunk_2" => [ "from" =>  40001, "to" =>  80000 ],
-            "topup_affiliate_chunk_3" => [ "from" =>  80001, "to" => 120000 ],
-            "topup_affiliate_chunk_4" => [ "from" => 120001, "to" => 160000 ],
-            "topup_affiliate_chunk_5" => [ "from" => 160001, "to" => 200000 ],
-            "topup_affiliate_chunk_6" => [ "from" => 200001, "to" => 240000 ],
+            "topup_affiliate_chunk_1" => ["from" => 1, "to" => 40000],
+            "topup_affiliate_chunk_2" => ["from" => 40001, "to" => 80000],
+            "topup_affiliate_chunk_3" => ["from" => 80001, "to" => 120000],
+            "topup_affiliate_chunk_4" => ["from" => 120001, "to" => 160000],
+            "topup_affiliate_chunk_5" => ["from" => 160001, "to" => 200000],
+            "topup_affiliate_chunk_6" => ["from" => 200001, "to" => 240000],
 
             "topup_affiliate_default" => null,
 
             /**
              * Partners
              */
-            "topup_partner_1" => [470194, 123497, 370604],
-            "topup_partner_2" => [291149, 521301, 89642],
+            "topup_partner_1" => [470194, 123497, 370604, 1070207],
+            "topup_partner_2" => [291149, 521301, 89642, 451283],
 
-            "topup_partner_chunk_1"  => [ "from" =>       1, "to" =>  200000 ],
-            "topup_partner_chunk_2"  => [ "from" =>  200001, "to" =>  400000 ],
-            "topup_partner_chunk_3"  => [ "from" =>  400001, "to" =>  600000 ],
-            "topup_partner_chunk_4"  => [ "from" =>  600001, "to" =>  800000 ],
-            "topup_partner_chunk_5"  => [ "from" =>  800001, "to" => 1100000 ],
-            "topup_partner_chunk_6"  => [ "from" => 1100001, "to" => 1200000 ],
-            "topup_partner_chunk_7"  => [ "from" => 1200001, "to" => 1250000 ],
-            "topup_partner_chunk_8"  => [ "from" => 1250001, "to" => 1300000 ],
-            "topup_partner_chunk_9"  => [ "from" => 1300001, "to" => 1360050 ],
-            "topup_partner_chunk_10" => [ "from" => 1360051, "to" => 1600000 ],
-            "topup_partner_chunk_11" => [ "from" => 1600001, "to" => 2200000 ],
-            "topup_partner_chunk_12" => [ "from" => 2200001, "to" => 2400000 ],
+            "topup_partner_chunk_1"  => ["from" => 1, "to" => 200000],
+            "topup_partner_chunk_2"  => ["from" => 200001, "to" => 400000],
+            "topup_partner_chunk_3"  => ["from" => 400001, "to" => 600000],
+            "topup_partner_chunk_4"  => ["from" => 600001, "to" => 800000],
+            "topup_partner_chunk_5"  => ["from" => 800001, "to" => 1000000],
+            "topup_partner_chunk_6"  => ["from" => 1000001, "to" => 1100000],
+            "topup_partner_chunk_7"  => ["from" => 1100001, "to" => 1200000],
+            "topup_partner_chunk_8"  => ["from" => 1200001, "to" => 1225000],
+            "topup_partner_chunk_9"  => ["from" => 1225001, "to" => 1250000],
+            "topup_partner_chunk_10" => ["from" => 1250001, "to" => 1300000],
+            "topup_partner_chunk_11" => ["from" => 1300001, "to" => 1330025],
+            "topup_partner_chunk_12" => ["from" => 1330026, "to" => 1360050],
+            "topup_partner_chunk_13" => ["from" => 1360051, "to" => 1400000],
+            "topup_partner_chunk_14" => ["from" => 1400001, "to" => 1450000],
+            "topup_partner_chunk_15" => ["from" => 1450001, "to" => 2400000],
+
             "topup_partner_default" => null,
 
             /**

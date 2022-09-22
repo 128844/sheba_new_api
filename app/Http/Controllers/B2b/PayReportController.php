@@ -33,9 +33,11 @@ class PayReportController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @param PayReportList $pay_report_list
-     * @param PaySlipExcel $pay_slip_excel
+     * @param $business
+     * @param $business_payslip_id
+     * @param  Request  $request
+     * @param  PayReportList  $pay_report_list
+     * @param  PaySlipExcel  $pay_slip_excel
      * @return JsonResponse
      */
     public function index( $business, $business_payslip_id ,Request $request, PayReportList $pay_report_list, PaySlipExcel $pay_slip_excel)
