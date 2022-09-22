@@ -5,6 +5,7 @@ namespace App\Sheba\Payment\Methods\AamarPay;
 use App\Models\Payable;
 use App\Models\Payment;
 use App\Sheba\Payment\Methods\AamarPay\Response\InitResponse;
+use App\Sheba\Payment\Methods\AamarPay\Response\ValidationResponse;
 use App\Sheba\Payment\Methods\AamarPay\Stores\AamarPayDynamicStore;
 use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
 use Sheba\Payment\Factory\PaymentStrategy;
@@ -65,7 +66,30 @@ class AamarPay extends PaymentMethod
 
     public function validate(Payment $payment): Payment
     {
-        // TODO: Implement validate() method.
+        $validation_response = new ValidationResponse();
+        $validation_response->setResponse(json_decode($payment->request_payload))->setPayment($payment);
+        $this->paymentLogRepo->setPayment($payment);
+        if ($validation_response->hasSuccess()) {
+            $success = $validation_response->getSuccess();
+            $this->paymentLogRepo->create([
+                'to' => Statuses::VALIDATED,
+                'from' => $payment->status,
+                'transaction_details' => $payment->transaction_details
+            ]);
+            $payment->status = Statuses::VALIDATED;
+            $payment->transaction_details = json_encode($success->details);
+        } else {
+            $error = $validation_response->getError();
+            $this->paymentLogRepo->create([
+                'to' => Statuses::VALIDATION_FAILED,
+                'from' => $payment->status,
+                'transaction_details' => $payment->transaction_details
+            ]);
+            $payment->status = Statuses::VALIDATION_FAILED;
+            $payment->transaction_details = json_encode($error->details);
+        }
+        $payment->update();
+        return $payment;
     }
 
     public function getMethodName()
@@ -119,5 +143,12 @@ class AamarPay extends PaymentMethod
     {
         $this->configuration = $configuration;
         return $this;
+    }
+
+    public function getCalculatedChargedAmount($transaction_details)
+    {
+        if (isset($transaction_details->pay_status) && $transaction_details->pay_status === "Successful") {
+            return $transaction_details->pg_service_charge_bdt;
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Route\Prefix\V2\Resource\ResourceRoute;
 use App\Http\Route\Prefix\V2\Partner\PartnerRoute;
+use Illuminate\Http\Request;
 
 class Route
 {
@@ -88,6 +89,11 @@ class Route
                     $api->post('fail', 'SslController@validatePayment');
                     $api->post('cancel', 'SslController@validatePayment');
                 });
+            });
+            $api->group(['prefix' => 'payments/aamarpay'], function ($api) {
+                $api->post('success', 'AamarpayController@validatePayment');
+                $api->post('fail', 'AamarpayController@validatePayment');
+                $api->post('cancel', 'AamarpayController@validatePayment');
             });
             $api->group(['prefix' => 'utility-orders'], function ($api) {
                 $api->group(['prefix' => '{utility_order}'], function ($api) {
