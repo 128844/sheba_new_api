@@ -122,7 +122,9 @@ class Cors2MiddleWare
             "https://payment.smanager.xyz",
             "https://testsecureacceptance.cybersource.com",
             "https://secureacceptance.cybersource.com",
-            "https://new-smanager-webstore.dev-sheba.xyz"
+            "https://new-smanager-webstore.dev-sheba.xyz",
+            "https://sandbox.aamarpay.com",
+            "https://secure.aamarpay.com",
         ];
         // ALLOW OPTIONS METHOD
         $headers['Access-Control-Allow-Credentials'] = 'true';
