@@ -1,10 +1,14 @@
 <?php namespace Sheba\TopUp;
 
+use App\Jobs\SendTopUpPushNotification;
+use App\Models\Affiliate;
+use App\Models\Partner;
 use App\Models\TopUpOrder;
 use Exception;
 use App\Models\TopUpVendor;
 use Sheba\Dal\TopupOrder\TopUpOrderRepository;
 use Sheba\ModificationFields;
+use Sheba\PushNotificationHandler;
 use Sheba\Reward\ActionRewardDispatcher;
 use Sheba\TopUp\Vendor\Response\TopUpErrorResponse;
 use Sheba\TopUp\Vendor\Response\TopUpResponse;
@@ -132,6 +136,7 @@ class TopUpRechargeManager extends TopUpManager
 
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->agent, $this->topUpOrder);
+            $this->sendPushNotification("অভিনন্দন", "অভিনন্দন, " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জটি সফলভাবে সম্পন্ন হয়েছে।");
         }
         $this->isSuccessful = true;
     }
@@ -159,6 +164,7 @@ class TopUpRechargeManager extends TopUpManager
     private function updateFailedTopOrder(TopUpErrorResponse $response)
     {
         $topup_order = $this->statusChanger->failed(FailDetails::buildFromErrorResponse($response));
+        $this->sendPushNotification("দুঃখিত", "দুঃখিত, কারিগরি ত্রুটির কারনে " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জ সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
         return $this->setAgentAndVendor($topup_order);
     }
 

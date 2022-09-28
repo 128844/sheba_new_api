@@ -141,7 +141,7 @@ class MerchantEnrollment
     {
         return [
             'required_documents' => MEFGeneralStatics::required_documents()[$this->key],
-            'terms_and_condition' => PaymentLinkStatics::paymentTermsAndConditionWebview()
+            'terms_and_condition' => PaymentLinkStatics::paymentTermsAndConditionWebview($this->key)
         ];
 //        $payment_method = $this->getPaymentMethod();
 //        return $payment_method->requiredDocuments();

@@ -11,6 +11,7 @@ use Sheba\Dal\MefForm\Model as MefForm;
 use Sheba\Dal\MefSections\Model as MefSection;
 use Sheba\MerchantEnrollment\MerchantEnrollmentFileHandler;
 use Sheba\MerchantEnrollment\Statics\PaymentMethodStatics;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DynamicForm
 {
@@ -48,7 +49,7 @@ class DynamicForm
         $categories = $this->sectionDetails();
         $finalCompletion = (new CompletionCalculation())->getFinalCompletion($categories);
 
-        return (new SectionListResponse())->setCategories($categories)
+        return (new SectionListResponse())->setCategories($categories)->setPartner($this->partner)
             ->setMessage(PaymentMethodStatics::dynamicCompletionPageMessage($this->formKey))
             ->setOverallCompletion($finalCompletion)->setCanApply($finalCompletion)->toArray();
     }
@@ -113,6 +114,7 @@ class DynamicForm
     {
         $fields = array();
         $form_builder = (new FormFieldBuilder())->setPartner($this->partner);
+
         foreach ($this->section->fields as $field)
             $fields[] = $form_builder->setField($field)->build()->toArray();
         return $fields;
@@ -169,50 +171,134 @@ class DynamicForm
         return $this;
     }
 
+    private function getDivision()
+    {
+        $divisionInformation = json_decode(file_get_contents(public_path() . "/mtbThana.json"));
+        $filtered_array = array();
+        foreach ($divisionInformation as $value) {
+            if (!in_array($value, $filtered_array)) {
+                $filtered_array[] = $value;
+            }
+        }
+        return $filtered_array;
+    }
+
+    private function getDistrict($division)
+    {
+        $thanaInformation = json_decode(file_get_contents(public_path() . "/mtbThana.json"));
+        $filtered_array = array();
+        foreach ($thanaInformation as $value) {
+            if (ucfirst(strtolower($value->division)) == $division) {
+                $filtered_array[] = $value;
+            }
+        }
+        return $filtered_array;
+    }
+
+    private function getThana($district)
+    {
+        $thanaInformation = json_decode(file_get_contents(public_path() . "/mtbThana.json"));
+        $filtered_array = array();
+        foreach ($thanaInformation as $value) {
+            if ($value->district == $district) {
+                $filtered_array[] = $value;
+            }
+        }
+        return $filtered_array;
+    }
+
     public function typeData($request)
     {
-        if ($this->type == "division") {
-            $division = Division::get();
-            $division = (new CollectionFormatter())->setData($division)->formatCollection();
-            $data = [
-                'division' => ['list' => $division]
-            ];
-            return $data['division'];
-        }
-        if ($this->type == "district") {
-            if ($request->division) {
-                $district = District::where('division_id', $request->division)->orderBy('name', 'ASC')->get();
+        if ($request->header('version-code') < 300602) {
+            if ($this->type == "division") {
+                $division = Division::get();
+                $division = (new CollectionFormatter())->setData($division)->formatCollection();
+                $data = [
+                    'division' => ['list' => $division]
+                ];
+                return $data['division'];
+            }
+            if ($this->type == "district") {
+                if ($request->division) {
+                    $district = District::where('division_id', $request->division)->orderBy('name', 'ASC')->get();
+                    $district = (new CollectionFormatter())->setData($district)->formatCollection();
+                    $data = [
+                        'district' => ['list' => $district]
+                    ];
+                    return $data['district'];
+                }
+                $district = District::get();
                 $district = (new CollectionFormatter())->setData($district)->formatCollection();
                 $data = [
                     'district' => ['list' => $district]
                 ];
                 return $data['district'];
             }
-            $district = District::get();
-            $district = (new CollectionFormatter())->setData($district)->formatCollection();
-            $data = [
-                'district' => ['list' => $district]
-            ];
-            return $data['district'];
-        }
-        if ($this->type == "thana") {
-            if ($request->district) {
-                $thana = Thana::where('district_id', $request->district)->orderBY('name', 'ASC')->get();
+            if ($this->type == "thana") {
+                if ($request->district) {
+                    $thana = Thana::where('district_id', $request->district)->orderBY('name', 'ASC')->get();
+                    $thana = (new CollectionFormatter())->setData($thana)->formatCollection();
+                    $data = [
+                        'thana' => ['list' => $thana]
+                    ];
+                    return $data['thana'];
+                }
+                $thana = Thana::get();
                 $thana = (new CollectionFormatter())->setData($thana)->formatCollection();
                 $data = [
                     'thana' => ['list' => $thana]
                 ];
                 return $data['thana'];
             }
-            $thana = Thana::get();
-            $thana = (new CollectionFormatter())->setData($thana)->formatCollection();
+            if ($this->type == "tradeLicenseExists") {
+                return config('trade_license');
+            }
+            if ($this->type == "nomineeRelation") {
+                return config('mtb_nominee_relation');
+            }
+        }
+        if ($this->type == "division") {
+            $division = $this->getDivision();
+            $division = (new CollectionFormatter())->setData($division)->formatCollectionUpdated();
+            $final = array();
+            foreach ($division as $current) {
+                if (!in_array($current, $final)) {
+                    $final[] = $current;
+                }
+            }
             $data = [
-                'thana' => ['list' => $thana]
+                'division' => ['list' => $final]
             ];
-            return $data['thana'];
+            return $data['division'];
+        }
+        if ($this->type == "district") {
+            $district = $this->getDistrict(ucfirst(strtolower($request->division)));
+            $district = (new CollectionFormatter())->setData($district)->formatCollectionDistrict();
+            $final = array();
+            foreach ($district as $current) {
+                if (!in_array($current, $final)) {
+                    $final[] = $current;
+                }
+            }
+
+            $data = [
+                'district' => ['list' => $final]
+            ];
+            return $data['district'];
+        }
+        if ($this->type == "thana") {
+            $district = $this->getThana($request->district);
+            $district = (new CollectionFormatter())->setData($district)->formatCollectionThana();
+            $data = [
+                'district' => ['list' => $district]
+            ];
+            return $data['district'];
         }
         if ($this->type == "tradeLicenseExists") {
             return config('trade_license');
+        }
+        if ($this->type == "nomineeRelation") {
+            return config('mtb_nominee_relation');
         }
     }
 

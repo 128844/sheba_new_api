@@ -146,3 +146,12 @@ if (!function_exists('strContainsAll')) {
         return true;
     }
 }
+
+
+if (!function_exists('removeRestrictedCharacters')) {
+
+    function removeRestrictedCharacters($string)
+    {
+        return str_replace(['/', '$', '#', ' ', '?', '%'], '', $string);
+    }
+}

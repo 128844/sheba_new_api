@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Sheba\WebstoreSetting\WebstoreSettingService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Sheba\FileManagers\CdnFileManager;
+use Sheba\FileManagers\FileManager;
+use Sheba\ModificationFields;
 
 
 class WebstoreSettingController extends Controller
 {
+
+    use ModificationFields, FileManager, CdnFileManager;
+
     public function __construct(WebstoreSettingService $webstoreSettingService)
     {
         $this->webstoreSettingService = $webstoreSettingService;
@@ -90,5 +96,45 @@ class WebstoreSettingController extends Controller
         $systemDefinedSettings = $this->webstoreSettingService->getSystemDefinedSettings($partner->id);
         return api_response($request, null, 200, ['message' => 'Successful', 'data' => $systemDefinedSettings]);
     }
+
+    public function getBannerList(Request $request)
+    {
+        $partner = $request->auth_user->getPartner();
+        $banners =   $this->webstoreSettingService->setPartner($partner->id)->setType($request->type)->getBannerList();
+        return http_response($request, null, 200, ['message' => 'Successful', 'banners' => $banners]);
+
+    }
+
+    public function getPageDetails(Request $request)
+    {
+        $partner = $request->auth_user->getPartner();
+        $pageDetails = $this->webstoreSettingService->setPartner($partner->id)->setType($request->type)->getPageDetails();
+        return http_response($request, null, 200, ['message' => 'Successful', 'page-settings' => $pageDetails]);
+    }
+
+    public function storePageSettings(Request $request)
+    {
+        $partner = $request->auth_user->getPartner();
+        $banner_image_link = null;
+        if ($request->file('image')) $banner_image_link = $this->createBannerForPageSettings($request->file('image'), removeRestrictedCharacters($request->banner_title));
+        $this->webstoreSettingService->setPartner($partner->id)->setType($request->type)->setBannerId($request->banner_id)->setTitle($request->title)->setDescription($request->description)->setIsPublished($request->is_published)->setBannerImageLink($banner_image_link)->storePageSettings();
+        return http_response($request, null, 200, ['message' => 'Successful']);
+    }
+    public function createBannerForPageSettings($file, $filename)
+    {
+        /** @var UploadedFile $avatar */
+        /** @var string $avatar_filename */
+        list($avatar, $avatar_filename) = $this->makeWebstoreBanner($file, $filename);
+        return $this->saveFileToCDN($avatar, getWebstoreBannerFolder(), $avatar_filename);
+    }
+
+    protected function makeWebstoreBanner($file, $name): array
+    {
+        $filename = $this->uniqueFileName($file, $name);
+        return [$file, $filename];
+    }
+
+
+
 
 }

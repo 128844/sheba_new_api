@@ -34,7 +34,8 @@ class QRPaymentController extends Controller
 
         return http_response($request, null, 200, ["qr" => [
             "qr_code" => $qr_payable->getQRString(),
-            "qr_id" => $qr_payable->qr_id
+            "qr_id" => $qr_payable->qr_id,
+            "mtb_account_number" => json_decode($partner->partnerMefInformation->mtb_account_status)->AccountNum
         ]]);
     }
 

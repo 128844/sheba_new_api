@@ -27,6 +27,7 @@ class TopUpLifecycleManager extends TopUpManager
             if ($this->topUpOrder->isAgentDebited()) $this->refund();
             $this->getVendor()->refill($this->topUpOrder->amount);
         });
+        $this->sendPushNotification("দুঃখিত", "দুঃখিত, কারিগরি ত্রুটির কারনে " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জ সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
     }
 
     /**
@@ -45,6 +46,7 @@ class TopUpLifecycleManager extends TopUpManager
 
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->topUpOrder->agent, $this->topUpOrder);
+            $this->sendPushNotification("অভিনন্দন", "অভিনন্দন, " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জটি সফলভাবে সম্পন্ন হয়েছে।");
         }
     }
 

@@ -14,7 +14,7 @@ use App\Sheba\ResellerPayment\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
 use Sheba\PushNotificationHandler;
-
+use Sheba\Dal\ProfileNIDSubmissionLog\Model as ProfileNIDSubmissionLog;
 
 class MtbSavePrimaryInformation
 {
@@ -122,15 +122,22 @@ class MtbSavePrimaryInformation
         $this->setPartnerMefInformation(json_decode($this->partner->partnerMefInformation->partner_information));
         $divisionDistrictThana = $this->separateDivisionDistrictThana($this->partnerMefInformation->presentDivision);
         $englishDivisionDistrict = $this->translateDivisionDistrictThana($divisionDistrictThana);
+        $nidInformation = ProfileNIDSubmissionLog::where('profile_id', $this->partner->getFirstAdminResource()->profile->id)
+            ->where('verification_status', 'approved')->whereNotNull('porichy_data')->last();
+        if (isset($nidInformation->porichy_data)) {
+            $porichoyData = json_decode($nidInformation->porichy_data);
+        } else
+            throw new MtbServiceServerError("NID Information Is Not Approved  ");
+
         if ($this->partnerMefInformation->tradeLicenseExists == "হ্যা") $tradeLicenseExist = "Y";
         else $tradeLicenseExist = "N";
         return [
             'RequestData' => [
                 'retailerId' => strval($this->partner->id),
                 'orgCode' => MtbConstants::CHANNEL_ID,
-                'name' => $this->mutateName($this->partner->getFirstAdminResource()->profile->name),
+                'name' => $this->mutateName($porichoyData->porichoy_data->name_en),
                 'phoneNum' => $this->partner->getFirstAdminResource()->profile->mobile,
-                'nid' => $this->partner->getFirstAdminResource()->profile->nid_no,
+                'nid' => $porichoyData ? $porichoyData->porichoy_data->nid_no : $this->partner->getFirstAdminResource()->profile->nid_no,
                 'dob' => date("Ymd", strtotime($this->partner->getFirstAdminResource()->profile->dob)),
                 'gender' => $this->partner->getFirstAdminResource()->profile->gender,
                 'fatherName' => $this->partnerMefInformation->fatherName,
@@ -192,6 +199,25 @@ class MtbSavePrimaryInformation
         return $data;
     }
 
+    function is_english($str)
+    {
+        if (strlen($str) != strlen(utf8_decode($str))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private function checkIfBanglaInputExist($data)
+    {
+        $data = collect($data);
+        $flattened = $data->flatten()->toArray();
+        foreach ($flattened as $x => $flat) {
+            $isEnglish = $this->is_english($flat);
+            if (!$isEnglish) throw new MtbServiceServerError("অনুগ্রহ পূর্বক সব তথ্য ইংরেজিতে লিখুন");
+        }
+    }
+
     /**
      * @param $request
      * @return JsonResponse
@@ -202,6 +228,7 @@ class MtbSavePrimaryInformation
         if ($data != 100)
             return http_response($request, null, 403, ['message' => 'Please fill Up all the fields, Your form is ' . $data . " completed"]);
         $data = $this->makePrimaryInformation($request->reference, $request->otp);
+        $this->checkIfBanglaInputExist($data);
         $response = $this->client->post(QRPaymentStatics::MTB_SAVE_PRIMARY_INFORMATION, $data, AuthTypes::BARER_TOKEN);
         if (empty($response['Data']['TicketId'])) {
             if (isset($response['responseMessage']))

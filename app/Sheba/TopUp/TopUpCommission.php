@@ -99,8 +99,10 @@ abstract class TopUpCommission
         }
 
         $this->topUpOrder->otf_id = $otf_details['otf_id'] ?? 0;
-        $this->topUpOrder->otf_agent_commission = $otf_details['agent_commisssion'] ?? 0;
-        $this->topUpOrder->otf_sheba_commission = $otf_details['sheba_commisssion'] ?? 0;
+        $this->topUpOrder->otf_agent_commission = $this->topUpOrder->otf_id ? $otf_details['agent_commisssion'] : 0;
+        $this->topUpOrder->otf_sheba_commission = $this->topUpOrder->otf_id ? $otf_details['sheba_commisssion'] : 0;
+        $this->topUpOrder->agent_commission = $this->topUpOrder->otf_agent_commission > 0 ? 0 : $this->topUpOrder->agent_commission;
+
         $this->topUpOrder->save();
 
         if ($this->topUpOrder->otf_agent_commission > 0) {
@@ -109,12 +111,13 @@ abstract class TopUpCommission
             $log_message = $this->getBasicTopUpLog();
         }
 
+        $commission_amount = $this->topUpOrder->otf_agent_commission > 0 ? $this->topUpOrder->otf_agent_commission : $this->topUpOrder->agent_commission;
+
         $transaction = (new TopUpTransaction())
-            ->setAmount($this->amount - $this->topUpOrder->agent_commission - $this->topUpOrder->otf_agent_commission)
+            ->setAmount($this->amount -  $commission_amount)
             ->setLog($log_message)
             ->setTopUpOrder($this->topUpOrder)
             ->setIsRobiTopUp($this->topUpOrder->isRobiWalletTopUp());
-
         $this->transaction = $this->agent->topUpTransaction($transaction);
     }
 

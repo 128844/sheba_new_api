@@ -89,6 +89,7 @@ class DataFormatValidator extends Validator
         $connection_type = TopUpExcel::TYPE_COLUMN_TITLE;
 
         $this->data->each(function ($value, $key) use ($excel_error, &$halt_top_up, &$total_recharge_amount, $mobile_field, $amount_field, $operator_field, $connection_type) {
+
             if (!$this->isMobileNumberValid($value->$mobile_field) && !$this->isAmountInteger($value->$amount_field)) {
                 $halt_top_up = true;
                 $excel_error = 'Mobile number Invalid, Amount Should be Integer';
@@ -98,6 +99,9 @@ class DataFormatValidator extends Validator
             } elseif (!$this->isAmountInteger($value->$amount_field)) {
                 $halt_top_up = true;
                 $excel_error = 'Amount Should be Integer';
+            } elseif ($value->$operator_field == 'GP' && $value->$amount_field < 20.0) {
+                $halt_top_up = true;
+                $excel_error = 'The amount have to be equal or more than 20.';
             } elseif ($this->isOtfNumberBlockedForBusiness() && $this->isAmountBlocked($value->$operator_field, $value->$connection_type,$value->$amount_field)) {
                 $halt_top_up = true;
                 $excel_error = 'The recharge amount is blocked due to OTF activation issue';

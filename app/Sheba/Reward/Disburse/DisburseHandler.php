@@ -1,14 +1,18 @@
 <?php namespace Sheba\Reward\Disburse;
 
+use App\Models\Affiliate;
+use App\Models\Partner;
 use App\Models\PartnerOrder;
 use App\Models\Job;
 use App\Models\Reward;
 use Sheba\AccountingEntry\Accounts\Accounts;
 use Sheba\AccountingEntry\Repository\JournalCreateRepository;
+use Sheba\PushNotificationHandler;
 use Sheba\Repositories\BonusRepository;
 use Sheba\Repositories\RewardLogRepository;
 use Sheba\Reward\Event;
 use Sheba\Reward\Rewardable;
+use Exception;
 
 class DisburseHandler
 {
@@ -76,6 +80,7 @@ class DisburseHandler
         } else {
             $this->disburseAsRegular($rewardable, $amount);
         }
+        $this->sendPushNotification($rewardable);
     }
 
     /**
@@ -162,5 +167,29 @@ class DisburseHandler
             ->setDetails("Cash reward")
             ->setReference($this->reward->id)
             ->store();
+    }
+
+    private function sendPushNotification(Rewardable $rewardable)
+    {
+        try {
+            if ($rewardable instanceof Partner) {
+                $topic = config('sheba.push_notification_topic_name.manager') . $rewardable->id;
+                $channel = config('sheba.push_notification_topic_name.manager');
+            } else if ($rewardable instanceof Affiliate) {
+                $topic = config('sheba.push_notification_topic_name.affiliate') . $rewardable->id;
+                $channel = config('sheba.push_notification_channel_name.affiliate');
+            } else return;
+
+            $notification_data = [
+                "title" => "অভিনন্দন",
+                "message" => "অভিনন্দন, আপনার প্রাপ্য ক্যাশব্যাকটি আপনার সেবা ক্রেডিট ব্যালেন্সে যোগ হয়ে গেছে।",
+                "event_type" => 'reward',
+                "sound" => "notification_sound",
+                "channel_id" => $channel
+            ];
+            (new PushNotificationHandler())->send($notification_data, $topic, $channel);
+        } catch (Exception $e){
+            logError($e);
+        }
     }
 }

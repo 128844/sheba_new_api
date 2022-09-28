@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Sheba\AccountingEntry\Exceptions\AccountingEntryServerError;
 use Sheba\AccountingEntry\Statics\AccountingStatics;
+use Illuminate\Support\Facades\Cache;
 
 class HomepageController extends Controller
 {
@@ -35,17 +36,19 @@ class HomepageController extends Controller
      */
     public function getIncomeExpenseBalance(Request $request): JsonResponse
     {
-        $startDate = $this->convertStartDate($request->start_date);
-        $endDate = $this->convertEndDate($request->end_date);
+        $start_date = $this->convertStartDate($request->start_date);
+        $end_date = $this->convertEndDate($request->end_date);
+        $cache_key = "PartnerIncomeExpenseBalance::partner:".$request->partner->id."_".$start_date."_".$end_date;
 
-        if ($endDate < $startDate) {
+        if ($end_date < $start_date) {
             return api_response($request, null, 400, ['message' => 'End date can not smaller than start date']);
         }
-        $response = $this->homepageRepo->getIncomeExpenseBalance($request->partner->id, $startDate, $endDate);
-        return api_response($request, $response, 200, ['data' => $response]);
 
+        return Cache::store('redis')->remember($cache_key, 10, function () use ($request, $start_date, $end_date) {
+            $response = $this->homepageRepo->getIncomeExpenseBalance($request->partner->id, $start_date, $end_date);
+            return api_response($request, $response, 200, ['data' => $response]);
+        });
     }
-
 
     /**
      * @throws AccountingEntryServerError
@@ -218,6 +221,13 @@ class HomepageController extends Controller
         if (!$request->partner->isMigrated(Modules::EXPENSE)) {
             return api_response($request, null, 200, ['data' => null]);
         }
+
+        $cache_key = "PartnerHomeStat::partner:".$request->partner->id;
+        $data_from_cache = Cache::store('redis')->get($cache_key);
+        if ($data_from_cache) {
+            return api_response($request, $data_from_cache, 200, ['data' => $data_from_cache]);
+        }
+
         $dateTime = Carbon::now();
         $today = $dateTime->format('Y-m-d');
         $month = $dateTime->month;
@@ -235,14 +245,16 @@ class HomepageController extends Controller
 
         $dueTrackerBalance = $this->homepageRepo->getDueCollectionBalance($request->partner->id, $this->convertStartDate(), $this->convertEndDate());
         $data = [
-            "daily_income" => $dailyIncome['total_income_balance'],
+            "daily_income"   => $dailyIncome['total_income_balance'],
             "monthly_income" => $monthlyIncome['total_income_balance'],
-            "receivable" => $dueTrackerBalance['account_payable'],
-            "payable"    => $dueTrackerBalance['account_receivable'],
-            "date" => en2bnNumber($dateTime->day),
-            "month" => banglaMonth($month),
-            "api_time" => Carbon::now()->toDateTimeString()
+            "receivable"     => $dueTrackerBalance['account_payable'],
+            "payable"        => $dueTrackerBalance['account_receivable'],
+            "date"           => en2bnNumber($dateTime->day),
+            "month"          => banglaMonth($month),
+            "api_time"       => Carbon::now()->toDateTimeString()
         ];
+        Cache::store('redis')->put($cache_key, $data, Carbon::now()->addMinutes(10));
+
         return api_response($request, $data, 200, ['data' => $data]);
     }
 }

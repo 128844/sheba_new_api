@@ -124,9 +124,9 @@ class ReportsController extends Controller
 
     public function getAccountingReportsList(Request $request): JsonResponse
     {
-        $response = $this->accountingReportRepository->getAccountingReportsList();
+        $version_code = $request->header('version-code');
+        $response = $this->accountingReportRepository->getAccountingReportsList($version_code);
         return api_response($request, $response, 200, ['data' => $response]);
-
     }
 
     public function getTransactionList(Request $request): JsonResponse

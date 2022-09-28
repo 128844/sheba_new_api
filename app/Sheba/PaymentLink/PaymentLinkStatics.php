@@ -41,7 +41,7 @@ class  PaymentLinkStatics
 
     public static function get_transaction_message(): string
     {
-        $tax        = en2bnNumber(self::get_payment_link_tax());
+        $tax = en2bnNumber(self::get_payment_link_tax());
         $commission = en2bnNumber(self::get_payment_link_commission());
         return "ট্রানজেকশন চার্জ (৳$tax + $commission%)";
     }
@@ -64,11 +64,11 @@ class  PaymentLinkStatics
     public static function customPaymentLinkData(): array
     {
         return [
-            "step"                           => self::get_step_margin(),
-            "minimum_percentage"             => self::get_minimum_percentage(),
-            "maximum_percentage"             => self::get_maximum_percentage(),
-            "transaction_message"            => self::get_transaction_message(),
-            "payment_link_tax"               => self::get_payment_link_tax(),
+            "step" => self::get_step_margin(),
+            "minimum_percentage" => self::get_minimum_percentage(),
+            "maximum_percentage" => self::get_maximum_percentage(),
+            "transaction_message" => self::get_transaction_message(),
+            "payment_link_tax" => self::get_payment_link_tax(),
             "payment_link_charge_percentage" => self::get_payment_link_commission()
         ];
     }
@@ -76,15 +76,16 @@ class  PaymentLinkStatics
     public static function customPaymentServiceData(): array
     {
         return [
-            "step"                           => self::get_step_margin(),
-            "minimum_percentage"             => self::get_minimum_percentage(),
-            "maximum_percentage"             => self::get_maximum_percentage(),
-            "terms_and_condition"            => self::faq_webview()
+            "step" => self::get_step_margin(),
+            "minimum_percentage" => self::get_minimum_percentage(),
+            "maximum_percentage" => self::get_maximum_percentage(),
+            "terms_and_condition" => self::faq_webview()
         ];
     }
 
-    public static function paymentTermsAndConditionWebview(): string
+    public static function paymentTermsAndConditionWebview($key = null): string
     {
+        if ($key=='mtb')  return "https://www.smanager.xyz/terms-condition-mtb/";
         return config('sheba.partners_base_url') . "/" . "payment-solution-terms-condition";
     }
 

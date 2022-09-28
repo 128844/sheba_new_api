@@ -8,6 +8,7 @@ class CompletionCalculation
 {
     const HEADER = "header";
     const SPOUSE_NAME = "spouseName";
+    const TIN_NO = "tin_no";
 
     /*** @var MefFields */
     private $fields;
@@ -29,7 +30,7 @@ class CompletionCalculation
         $total = 0;
         $filled = 0;
         foreach ($this->fields as $field) {
-            if ($field['input_type'] !== self::HEADER && $field['id'] !== self::SPOUSE_NAME) {
+            if ($field['input_type'] !== self::HEADER && $field['id'] !== self::SPOUSE_NAME && $field['id'] !== self::TIN_NO) {
                 $total++;
 
                 if (!empty($field["data"])) $filled++;

@@ -17,6 +17,13 @@ class WebstoreSettingService
     private $instagram;
     private $youtube;
     private $email;
+    private $type;
+    private $title;
+    private $bannerId;
+    private $description;
+    private $bannerImageLink;
+    private $isPublished;
+
 
     public function __construct(WebstoreSettingServerClient $client)
     {
@@ -68,6 +75,42 @@ class WebstoreSettingService
     public function setEmail($email)
     {
         $this->email = $email;
+        return $this;
+    }
+
+    public function setType($type)
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    public function setBannerId($bannerId)
+    {
+        $this->bannerId = $bannerId;
+        return $this;
+    }
+
+    public function setTitle($title)
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    public function setDescription($description)
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    public function setBannerImageLink($bannerImageLink)
+    {
+        $this->bannerImageLink = $bannerImageLink;
+        return $this;
+    }
+
+    public function setIsPublished($isPublished)
+    {
+        $this->isPublished = $isPublished;
         return $this;
     }
 
@@ -155,5 +198,32 @@ class WebstoreSettingService
     {
         $data = $this->makeStoreData();
         return $this->client->post('api/v1/partners/' . $this->partner . '/theme-settings/sync', $data);
+    }
+
+    public function getBannerList()
+    {
+        return $this->client->get('api/v1/partners/' . $this->partner . '/banners/'.$this->type);
+    }
+
+    public function getPageDetails()
+    {
+        return $this->client->get('api/v1/partners/' . $this->partner . '/page-settings/'.$this->type);
+    }
+
+    public function storePageSettings()
+    {
+        $data = $this->createPageSettingsData();
+        return $this->client->put('api/v1/partners/' . $this->partner . '/page-settings/'.$this->type, $data);
+    }
+
+    private function createPageSettingsData()
+    {
+        return [
+            "banner_id" => $this->bannerId ?? null,
+            "title" => $this->title ?? null,
+            "description"  =>  $this->description ?? null,
+            "banner_image_link" => $this->bannerImageLink ?? null,
+            "is_published" => $this->isPublished ?? 1,
+        ];
     }
 }

@@ -101,7 +101,11 @@ class MonthlyStat
             'left_early_note' => 0,
             'total_hours' => 0,
             'overtime_in_minutes' => 0,
-            'overtime' => 0
+            'overtime' => 0,
+            'remote_checkin' => 0,
+            'office_checkin' => 0,
+            'remote_checkout' => 0,
+            'office_checkout' => 0
         ];
 
         $daily_breakdown = [];
@@ -144,12 +148,17 @@ class MonthlyStat
                 $overtime_in_minutes = (int)$attendance->overtime_in_minutes;
                 $attendance_checkin_action = $attendance->checkinAction();
                 $attendance_checkout_action = $attendance->checkoutAction();
+                $is_in_wifi = $attendance_checkin_action->is_in_wifi;
+                $is_geo = $attendance_checkin_action->is_geo_location;
+                $business_office = $is_in_wifi || $is_geo ? $this->businessOfficeRepo->findWithTrashed($attendance_checkin_action->business_office_id) : null;
+
+                $checkout_is_in_wifi = $attendance_checkout_action ? $attendance_checkout_action->is_in_wifi : null;
+                $checkout_is_geo = $attendance_checkout_action ? $attendance_checkout_action->is_geo_location : null;
+                $checkout_business_office = $checkout_is_in_wifi || $checkout_is_geo ? $this->businessOfficeRepo->findWithTrashed($attendance_checkout_action->business_office_id) : null;
 
                 if ($this->forOneEmployee) {
-                    $is_in_wifi = $attendance_checkin_action->is_in_wifi;
-                    $is_geo = $attendance_checkin_action->is_geo_location;
-                    $business_office = $is_in_wifi || $is_geo ? $this->businessOfficeRepo->findWithTrashed($attendance_checkin_action->business_office_id) : null;
                     $business_office_name = $business_office ? $business_office->name : null;
+                    $checkout_business_office_name = $checkout_business_office ? $checkout_business_office->name : null;
                     $breakdown_data['show_attendance'] = 1;
                     $breakdown_data['attendance'] = [
                         'id' => $attendance->id,
@@ -170,14 +179,14 @@ class MonthlyStat
                             'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) ? null : $attendance_checkout_action->status,
                             'time' => Carbon::parse($attendance->checkout_time)->format('h:i a'),
                             'is_remote' => $attendance_checkout_action->is_remote ?: 0,
-                            'is_geo' => $is_geo,
-                            'is_in_wifi' => $is_in_wifi,
+                            'is_geo' => $checkout_is_geo,
+                            'is_in_wifi' => $checkout_is_in_wifi,
                             'remote_mode' => $attendance_checkout_action->remote_mode ?: null,
                             'address' => $attendance_checkout_action->is_remote ?
                                 $attendance_checkout_action->location ?
                                     json_decode($attendance_checkout_action->location)->address ?: json_decode($attendance_checkout_action->location)->lat . ', ' . json_decode($attendance_checkout_action->location)->lng
                                     : null
-                                : $business_office_name,
+                                : $checkout_business_office_name,
                         ] : null,
                         'late_note' => (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasLateCheckin()) ? $attendance->checkinAction()->note : null,
                         'left_early_note' => (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasEarlyCheckout()) ? $attendance->checkoutAction()->note : null,
@@ -202,6 +211,10 @@ class MonthlyStat
                 $statistics['left_early_note'] = (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasEarlyCheckout()) ? $attendance->checkoutAction()->note : null;
                 $statistics['total_hours'] += $attendance->staying_time_in_minutes;
                 $statistics['overtime_in_minutes'] += $overtime_in_minutes ?: 0;
+                if ($attendance_checkin_action->is_remote) $statistics['remote_checkin'] = $statistics['remote_checkin'] + 1;
+                if ($business_office) $statistics['office_checkin'] = $statistics['office_checkin'] + 1;
+                if ($attendance_checkout_action && $attendance_checkout_action->is_remote) $statistics['remote_checkout'] = $statistics['remote_checkout'] + 1;
+                if ($checkout_business_office) $statistics['office_checkout'] = $statistics['office_checkout'] + 1;
             }
 
             if ($this->isAbsent($attendance, ($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)), $date)) {

@@ -144,11 +144,8 @@ class TopUpController extends Controller
             ->setVendorId($request->vendor_id)
             ->setLat($request->lat ?: null)
             ->setLong($request->long ?: null)
-            ->setUserAgent($userAgentInformation->getUserAgent());
-
-        if ($agent instanceof Business && $request->has('is_otf_allow') && !($request->is_otf_allow)) {
-            $top_up_request->setIsOtfAllow(!$request->is_otf_allow);
-        }
+            ->setUserAgent($userAgentInformation->getUserAgent())
+            ->setIsOtfAllow(!$request->is_otf_allow);
 
         if ($top_up_request->hasError()) {
             return api_response($request, null, $top_up_request->getErrorCode(), ['message' => $top_up_request->getErrorMessage()]);

@@ -13,6 +13,7 @@ class MtbConstants
     const NOMINEE_NID_FRONT = 5;
     const NOMINEE_NID_BACK = 12;
     const CUSTOMER_SIGNATURE = 6;
+    const DECLARATION_LETTER = 13;
     const CHANNEL_ID = "Sheba_XYZ";
     const COUNTRY= "Bangladesh";
     const CONTACT_ADDRESS= "present";

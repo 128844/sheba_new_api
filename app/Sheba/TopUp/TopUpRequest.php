@@ -211,6 +211,12 @@ class TopUpRequest
             return 1;
         }
 
+        if ($this->isLessThanOverwrittenMinimumAmountOfVendors()) {
+            $this->errorCode = 412;
+            $this->errorMessage = "The amount have to be equal or more than 20.";
+            return 1;
+        }
+
         return 0;
     }
 
@@ -318,5 +324,20 @@ class TopUpRequest
     public function getLong()
     {
         return $this->long;
+    }
+
+    private function isLessThanOverwrittenMinimumAmountOfVendors(): bool
+    {
+        return in_array($this->vendor->getModel()->id, $this->overwrittenMinimumAmountVendors()) && $this->amount < 20.0 && !$this->otfAmountCheck->isAmountInOtf();
+    }
+
+    private function overwrittenMinimumAmountVendors()
+    {
+        return [
+            VendorFactory::GP,
+            VendorFactory::SKITTO,
+            VendorFactory::ROBI,
+            VendorFactory::AIRTEL
+        ];
     }
 }

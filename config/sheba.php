@@ -33,16 +33,19 @@ return [
         'manager' => env('MANAGER_TOPIC_NAME', 'manager_'),
         'manager_new' => env('MANAGER_TOPIC_NAME_NEW', 'manager_new_'),
         'employee' => env('EMPLOYEE_TOPIC_NAME', 'employee_'),
+        'affiliate' => env('AFFILIATE_TOPIC_NAME', 'affiliate_')
     ],
     'push_notification_channel_name' => [
         'customer' => 'customer_channel',
         'manager' => 'manager_channel',
         'resource' => 'resource_channel',
-        'employee' => 'employee_channel'
+        'employee' => 'employee_channel',
+        'affiliate' => 'affiliate_channel'
     ],
     'push_notification_sound' => [
         'customer' => 'default',
         'manager' => 'notification_sound',
+        'affiliate' => 'default',
         'employee' => 'notification_sound.aiff'
     ],
     'partner_packages' => [

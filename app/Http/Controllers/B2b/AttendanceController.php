@@ -1,6 +1,7 @@
 <?php namespace App\Http\Controllers\B2b;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Business\SendMonthlyAttendanceReportEmail;
 use App\Models\Business;
 use App\Models\BusinessMember;
 use App\Sheba\Business\Attendance\Filter;
@@ -29,6 +30,7 @@ use Sheba\Business\Attendance\Daily\DailyExcel;
 use Sheba\Business\Attendance\Detail\DetailsExcel as DetailsExcel;
 use Sheba\Business\Attendance\HalfDaySetting\Updater as HalfDaySettingUpdater;
 use Sheba\Business\Attendance\Monthly\Excel;
+use Sheba\Business\Attendance\Monthly\MonthlyAttendanceCalculator;
 use Sheba\Business\Attendance\Setting\ActionType;
 use Sheba\Business\Attendance\Setting\AttendanceSettingTransformer;
 use Sheba\Business\Attendance\Setting\Creator as SettingCreator;
@@ -153,60 +155,29 @@ class AttendanceController extends Controller
         return api_response($request, null, 200, ['attendances' => $attendances, 'total' => $count]);
     }
 
-
     /**
      * @param $business
      * @param Request $request
-     * @param BusinessWeekendSettingsRepo $business_weekend_settings_repo
-     * @param Excel $monthly_excel
-     * @param Filter $monthly_filer
-     * @return JsonResponse|void
+     * @param MonthlyAttendanceCalculator $calculator
+     * @return JsonResponse
      */
-    public function getMonthlyStats($business, Request $request, BusinessWeekendSettingsRepo $business_weekend_settings_repo,
-                                    Excel $monthly_excel, Filter $monthly_filer)
+    public function getMonthlyStats($business, Request $request, MonthlyAttendanceCalculator $calculator)
     {
-        ini_set('memory_limit', '6096M');
-        ini_set('max_execution_time', 480);
-
         $this->validate($request, ['file' => 'string|in:excel']);
-        list($offset, $limit) = calculatePagination($request);
-        /** @var Business $business */
-        $business = Business::where('id', (int)$business)->select('id', 'name', 'phone', 'email', 'type')->first();
-
-        $business_members = $business->getAllBusinessMemberExceptInvited();
-        if ($request->has('department')) $business_members = $this->coWorkerInfoFilter->filterByDepartment($business_members, $request);
-        if ($request->has('status')) $business_members = $this->coWorkerInfoFilter->filterByStatus($business_members, $request);
-
-        $business_holiday = $this->holidayRepository->getAllByBusiness($business);
-        $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business);
-
-        $attendance_monthly_list_transformer = new AttendanceMonthlyListTransformer();
-        $attendance_monthly_list_transformer->setStartDate($request->start_date)->setEndDate($request->end_date)
-            ->setBusinessHolidays($business_holiday)->setBusinessWeekendSettings($weekend_settings);
-
-        $manager = new Manager();
-        $manager->setSerializer(new ArraySerializer());
-        $employees = new Collection($business_members->get(), $attendance_monthly_list_transformer);
-        $attendance_monthly_lists = $manager->createData($employees)->toArray()['data'];
-
-        $all_employee_attendance = collect($attendance_monthly_lists);
-        $all_employee_attendance = $monthly_filer->filterInactiveCoWorkersWithData($all_employee_attendance);
-
-        if ($request->has('search')) $all_employee_attendance = $monthly_filer->searchWithEmployeeName($all_employee_attendance, $request);
-        if ($request->has('sort_on_absent')) $all_employee_attendance = $monthly_filer->attendanceSortOnAbsent($all_employee_attendance, $request->sort_on_absent);
-        if ($request->has('sort_on_present')) $all_employee_attendance = $monthly_filer->attendanceSortOnPresent($all_employee_attendance, $request->sort_on_present);
-        if ($request->has('sort_on_leave')) $all_employee_attendance = $monthly_filer->attendanceSortOnLeave($all_employee_attendance, $request->sort_on_leave);
-        if ($request->has('sort_on_late')) $all_employee_attendance = $monthly_filer->attendanceSortOnLate($all_employee_attendance, $request->sort_on_late);
-        if ($request->has('sort_on_overtime')) $all_employee_attendance = $monthly_filer->attendanceCustomSortOnOvertime($all_employee_attendance, $request->sort_on_overtime);
-
-        $total_members = $all_employee_attendance->count();
-        if ($request->has('limit')) $all_employee_attendance = $all_employee_attendance->splice($offset, $limit);
 
         if ($request->file == 'excel') {
-            return $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($request->start_date)->setEndDate($request->end_date)->get();
+            dispatch(new SendMonthlyAttendanceReportEmail($business, $request->all()));
+            return api_response($request, null, 200, [
+                'message' => "Your report will be sent to your email. Please check a few moments later."
+            ]);
         }
 
-        return api_response($request, $all_employee_attendance, 200, ['all_employee_attendance' => $all_employee_attendance, 'total_members' => $total_members]);
+        list($all_employee_attendance, $total_business_members_count, , ) = $calculator->calculate($business, $request);
+
+        return api_response($request, $all_employee_attendance, 200, [
+            'all_employee_attendance' => $all_employee_attendance,
+            'total_members' => $total_business_members_count
+        ]);
     }
 
     /**
@@ -1041,5 +1012,41 @@ class AttendanceController extends Controller
         if (!$business_member_joining_date) return false;
         if ($business_member_joining_date->format('d') == self::FIRST_DAY_OF_MONTH) return false;
         return $business_member_joining_date->format('Y-m-d') >= $start_date && $business_member_joining_date->format('Y-m-d') <= $end_date;
+    }
+
+    /**
+     * @param $attendances
+     * @param string $sort
+     * @return mixed
+     */
+    private function attendanceSortOnOvertime($attendances, $sort = 'asc')
+    {
+        $sort_by = ($sort === 'asc') ? 'sortBy' : 'sortByDesc';
+        return $attendances->$sort_by(function ($attendance, $key) {
+            return $attendance['overtime_in_minutes'];
+        });
+    }
+
+    /**
+     * @param $attendances
+     * @param string $sort
+     * @return mixed
+     */
+    private function attendanceCustomSortOnOvertime($attendances, $sort = 'asc')
+    {
+        $sort_by = ($sort === 'asc') ? 'sortBy' : 'sortByDesc';
+        return $attendances->$sort_by(function ($attendance, $key) {
+            return $attendance['attendance']['overtime_in_minutes'];
+        });
+    }
+
+    /**
+     * @param $month
+     * @param $year
+     * @return bool
+     */
+    private function isShowRunningMonthsAttendance($year, $month)
+    {
+        return (Carbon::now()->month == (int)$month && Carbon::now()->year == (int)$year);
     }
 }
