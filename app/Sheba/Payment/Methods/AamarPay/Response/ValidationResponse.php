@@ -7,13 +7,13 @@ use Sheba\Payment\Methods\Response\PaymentMethodSuccessResponse;
 
 class ValidationResponse extends \Sheba\Payment\Methods\Response\PaymentMethodResponse
 {
+    const SUCCESS_CODE=2;
 
     public function hasSuccess()
     {
         return $this->response
-            && $this->response->mer_txnid === $this->payment->transaction_id
             && $this->response->pg_txnid === $this->payment->gateway_transaction_id
-            && $this->response->pay_status === 'Successful';
+            && $this->response->status_code == self::SUCCESS_CODE;
     }
 
     public function getSuccess(): PaymentMethodSuccessResponse

@@ -66,8 +66,10 @@ class AamarPay extends PaymentMethod
 
     public function validate(Payment $payment): Payment
     {
+        $this->setConfiguration($this->getCredentials($payment->payable));
+        $response = $this->getPaymentStatusFromAamarpay($payment->transaction_id);
         $validation_response = new ValidationResponse();
-        $validation_response->setResponse(json_decode($payment->request_payload))->setPayment($payment);
+        $validation_response->setResponse($response)->setPayment($payment);
         $this->paymentLogRepo->setPayment($payment);
         if ($validation_response->hasSuccess()) {
             $success = $validation_response->getSuccess();
@@ -125,6 +127,13 @@ class AamarPay extends PaymentMethod
         return $this->tpClient->call($request);
     }
 
+    public function getPaymentStatusFromAamarpay($transactionId)
+    {
+        $request = (new TPRequest())->setUrl($this->baseUrl . "/api/v1/trxcheck/request.php?request_id={$transactionId}&store_id={$this->configuration->getStoreId()}&signature_key={$this->configuration->getSignatureKey()}&type=json")
+            ->setMethod(TPRequest::METHOD_GET);
+        return $this->tpClient->call($request);
+    }
+
     private function getReceiver(Payable $payable): HasWalletTransaction
     {
         $payment_link = $payable->getPaymentLink();
@@ -147,8 +156,8 @@ class AamarPay extends PaymentMethod
 
     public function getCalculatedChargedAmount($transaction_details)
     {
-        if (isset($transaction_details->pay_status) && $transaction_details->pay_status === "Successful") {
-            return $transaction_details->pg_service_charge_bdt;
+        if (isset($transaction_details->status_code) && $transaction_details->status_code == ValidationResponse::SUCCESS_CODE) {
+            return $transaction_details->processing_charge;
         }
     }
 }
