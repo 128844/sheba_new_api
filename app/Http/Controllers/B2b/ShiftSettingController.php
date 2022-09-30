@@ -75,8 +75,12 @@ class ShiftSettingController extends Controller
 
     public function delete($business, $id, Request $request)
     {
-        if (!$request->business) return api_response($request, null, 401);
-        if (!$request->business_member) return api_response($request, null, 401);
+        /** @var Business $business */
+        $business = $request->business;
+        if (!$business) return api_response($request, null, 401);
+        /** @var BusinessMember $business_member */
+        $business_member = $request->business_member;
+        if (!$business_member) return api_response($request, null, 401);
 
         $business_shift = $this->businessShiftRepository->find($id);
         if (!$business_shift) return api_response($request, null, 404);
@@ -88,8 +92,12 @@ class ShiftSettingController extends Controller
 
     public function details($business, $id, Request $request)
     {
-        if (!$request->business) return api_response($request, null, 401);
-        if (!$request->business_member) return api_response($request, null, 401);
+        /** @var Business $business */
+        $business = $request->business;
+        if (!$business) return api_response($request, null, 401);
+        /** @var BusinessMember $business_member */
+        $business_member = $request->business_member;
+        if (!$business_member) return api_response($request, null, 401);
 
         $business_shift = $this->businessShiftRepository->find($id);
         if (!$business_shift) return api_response($request, null, 404);
@@ -104,8 +112,12 @@ class ShiftSettingController extends Controller
 
     public function updateColor($business, $id, ShiftCreateOrUpdateRequest $request)
     {
-        if (!$request->business) return api_response($request, null, 401);
-        if (!$request->business_member) return api_response($request, null, 401);
+        /** @var Business $business */
+        $business = $request->business;
+        if (!$business) return api_response($request, null, 401);
+        /** @var BusinessMember $business_member */
+        $business_member = $request->business_member;
+        if (!$business_member) return api_response($request, null, 401);
 
         $business_shift = $this->businessShiftRepository->find($id);
         if (!$business_shift) return api_response($request, null, 404);
@@ -118,13 +130,17 @@ class ShiftSettingController extends Controller
 
     public function updateShift($business, $id, ShiftCreateOrUpdateRequest $request)
     {
-        if (!$request->business) return api_response($request, null, 401);
-        if (!$request->business_member) return api_response($request, null, 401);
+        /** @var Business $business */
+        $business = $request->business;
+        if (!$business) return api_response($request, null, 401);
+        /** @var BusinessMember $business_member */
+        $business_member = $request->business_member;
+        if (!$business_member) return api_response($request, null, 401);
 
         $business_shift = $this->businessShiftRepository->find($id);
         if (!$business_shift) return api_response($request, null, 404);
 
-        $this->setModifier($request->business_member->member);
+        $this->setModifier($business_member->member);
 
         $shift_update_request = $request->buildRequest()->setBusiness($business)->setShift($business_shift);
         $shift_update_request->validate();
@@ -140,8 +156,12 @@ class ShiftSettingController extends Controller
 
     public function getColor($business, Request $request)
     {
-        if (!$request->business) return api_response($request, null, 401);
-        if (!$request->business_member) return api_response($request, null, 401);
+        /** @var Business $business */
+        $business = $request->business;
+        if (!$business) return api_response($request, null, 401);
+        /** @var BusinessMember $business_member */
+        $business_member = $request->business_member;
+        if (!$business_member) return api_response($request, null, 401);
 
         return api_response($request, null, 200, ['colors' => config('b2b.SHIFT_COLORS')]);
     }

@@ -71,4 +71,11 @@ class ShiftCreateOrUpdateRequest extends ApiRequest
 
         return $request;
     }
+
+    public function all()
+    {
+        $this->merge(\Request::all());
+
+        return parent::all();
+    }
 }

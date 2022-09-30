@@ -47,7 +47,6 @@ class Requester
     public function setName($name)
     {
         $this->name = $name;
-        $this->checkUniqueName();
         return  $this;
     }
 
@@ -170,7 +169,7 @@ class Requester
     {
         $this->checkUniqueName();
         if ($this->hasNoError()) $this->checkShiftDuration();
-        if ($this->hasNoError()) $this->shiftConflictCheck();
+        if ($this->hasNoError() && $this->shift != null) $this->shiftConflictCheck();
     }
 
     public function checkUniqueName()
