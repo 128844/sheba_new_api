@@ -1,9 +1,11 @@
 <?php namespace Sheba\Business\ShiftSetting;
 
 use Carbon\Carbon;
+use Sheba\Business\ShiftCalendar\Updater as ShiftCalendarUpdater;
 use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\Dal\ShiftSettingLog\ShiftSettingLogRepository;
 use Sheba\ModificationFields;
+use Sheba\Business\ShiftSetting\ShiftAssign\Requester as ShiftCalendarRequest;
 
 class Updater
 {
@@ -11,15 +13,23 @@ class Updater
 
     /** @var Requester $shiftRequester */
     private $shiftRequester;
+
     /*** @var ShiftAssignmentRepository */
     private $shiftAssignmentRepo;
     /*** @var ShiftSettingLogRepository */
     private $shiftSettingLogsRepo;
+    /*** @var ShiftCalendarUpdater */
+    private $shiftCalendarUpdater;
 
-    public function __construct(ShiftSettingLogRepository $shift_setting_logs_repo)
+    public function __construct(
+        ShiftSettingLogRepository $setting_logs_repo,
+        ShiftAssignmentRepository $assignment_repo,
+        ShiftCalendarUpdater $calendar_updater
+    )
     {
-        $this->shiftAssignmentRepo = app(ShiftAssignmentRepository::class);
-        $this->shiftSettingLogsRepo = $shift_setting_logs_repo;
+        $this->shiftAssignmentRepo = $assignment_repo;
+        $this->shiftSettingLogsRepo = $setting_logs_repo;
+        $this->shiftCalendarUpdater = $calendar_updater;
     }
 
     public function setShiftRequester(Requester $shiftRequester)
@@ -30,7 +40,13 @@ class Updater
 
     public function updateColor()
     {
-        $this->shiftRequester->getShift()->update(['color' => $this->shiftRequester->getColor()]);
+        $this->shiftRequester->getShift()
+            ->update($this->withUpdateModificationField([
+                'color_code' => $this->shiftRequester->getColor()
+            ]));
+
+        $calendar_request = (new ShiftCalendarRequest())->setColorCode($this->shiftRequester->getColor());
+        $this->updateShiftCalendar($calendar_request);
     }
 
     public function update()
@@ -47,7 +63,7 @@ class Updater
             'checkout_grace_time'   => $existing_shift->checkout_grace_time,
             'is_halfday_enable' => $existing_shift->is_halfday_enable
         ];
-        $existing_shift->update([
+        $existing_shift->update($this->withUpdateModificationField([
             'name' => $this->shiftRequester->getName(),
             'title' => $this->shiftRequester->getTitle(),
             'start_time' => $this->shiftRequester->getStartTime(),
@@ -57,24 +73,46 @@ class Updater
             'checkin_grace_time' => $this->shiftRequester->getCheckinGraceTime(),
             'checkout_grace_time' => $this->shiftRequester->getCheckOutGraceTime(),
             'is_halfday_enable' => $this->shiftRequester->getIsHalfDayActivated(),
-        ]);
+        ]));
         $this->createShiftSettingsLogs($previous_data);
-        $this->updateShiftCalendar();
+        $this->updateShiftCalendar($this->convertShiftRequstToCalendarRequest());
     }
 
-    private function updateShiftCalendar()
+    public function softDelete()
     {
-        $shift_assignments = $this->shiftAssignmentRepo->where('shift_id', $this->shiftRequester->getShift()->id)->where('date', '>=', Carbon::now()->addDay())->get();
-        foreach ($shift_assignments as $shift)
-        {
-            $shift->update([
-                'shift_name' => $this->shiftRequester->getName(),
-                'shift_title' => $this->shiftRequester->getTitle(),
-                'start_time' => $this->shiftRequester->getStartTime(),
-                'end_time' => $this->shiftRequester->getEndTime(),
-                'is_half_day' => $this->shiftRequester->getIsHalfDayActivated()
-            ]);
+        $this->shiftRequester->getShift()->delete();
+
+        $calender_request = (new ShiftCalendarRequest())
+            ->setIsUnassignedActivated(1)
+            ->setIsGeneralActivated(0)
+            ->setIsShiftActivated(0);
+
+        $this->updateShiftCalendar($calender_request);
+    }
+
+    private function convertShiftRequstToCalendarRequest()
+    {
+        return (new ShiftCalendarRequest())
+            ->setShiftName($this->shiftRequester->getName())
+            ->setShiftTitle($this->shiftRequester->getTitle())
+            ->setStartTime($this->shiftRequester->getStartTime())
+            ->setEndTime($this->shiftRequester->getEndTime())
+            ->setIsHalfDayActivated($this->shiftRequester->getIsHalfDayActivated());
+    }
+
+    private function updateShiftCalendar(ShiftCalendarRequest $calendar_request)
+    {
+        foreach ($this->getAssignments() as $assignment) {
+            $this->shiftCalendarUpdater->update($assignment, $calendar_request);
         }
+    }
+
+    private function getAssignments()
+    {
+        return $this->shiftAssignmentRepo
+            ->where('shift_id', $this->shiftRequester->getShift()->id)
+            ->where('date', '>=', Carbon::now()->addDay())
+            ->get();
     }
 
     private function createShiftSettingsLogs($previous_data)

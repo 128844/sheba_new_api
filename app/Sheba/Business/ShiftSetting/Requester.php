@@ -81,7 +81,6 @@ class Requester
     public function setEndTime($end_time)
     {
         $this->endTime = $end_time.':59';
-        $this->checkShiftDuration();
         return $this;
     }
 
@@ -167,23 +166,11 @@ class Requester
         return $this->color;
     }
 
-    public function shiftConflictCheck()
+    public function validate()
     {
-        $shift_calendar = $this->shiftAssignmentRepository->where('shift_id', $this->shift->id)->groupBy('business_member_id')->get();
-        if (count($shift_calendar) < 1) return false;
-        $employee_count = 0;
-        foreach ($shift_calendar as $calendar)
-        {
-            $unique_Shifts = $this->shiftAssignmentRepository->where('business_member_id', $calendar->business_member_id)->where('date', Carbon::now()->addDay()->toDateString())->where('is_shift', 1)->groupBy('shift_id')->get();
-
-            foreach ($unique_Shifts as $shift)
-            {
-                if ($this->shift->id != $shift->shift_id && ($shift->start_time >= $this->startTime && $shift->start_time <= $this->endTime || $shift->end_time >= $this->startTime && $shift->end_time <= $this->endTime)) $employee_count++;
-            }
-        }
-
-        if ($employee_count < 1) return false;
-        $this->setError(400, $this->title.' edit unsuccessful as '.$employee_count.' employee(s) has conflicting shifts with the newly proposed shift timing.');
+        $this->checkUniqueName();
+        if ($this->hasNoError()) $this->checkShiftDuration();
+        if ($this->hasNoError()) $this->shiftConflictCheck();
     }
 
     public function checkUniqueName()
@@ -193,11 +180,28 @@ class Requester
         if ($existing_shift) $this->setError(400, 'This shift name is already exists.');
     }
 
-    public function checkShiftDuration()
+    private function checkShiftDuration()
     {
         $start_time = Carbon::parse($this->startTime);
         $end_time = $this->startTime > $this->endTime ? Carbon::parse($this->endTime)->addDay() : Carbon::parse($this->endTime);
         $diff = $start_time->diffInHours($end_time);
         if ($diff < 2 || $diff > 24) $this->setError(400, 'Shift duration cannot be less than 2hrs or more than 24hrs .');
+    }
+
+    public function shiftConflictCheck()
+    {
+        $shift_calendar = $this->shiftAssignmentRepository->where('shift_id', $this->shift->id)->groupBy('business_member_id')->get();
+        if (count($shift_calendar) < 1) return false;
+        $employee_count = 0;
+        foreach ($shift_calendar as $calendar) {
+            $unique_Shifts = $this->shiftAssignmentRepository->where('business_member_id', $calendar->business_member_id)->where('date', Carbon::now()->addDay()->toDateString())->where('is_shift', 1)->groupBy('shift_id')->get();
+
+            foreach ($unique_Shifts as $shift) {
+                if ($this->shift->id != $shift->shift_id && ($shift->start_time >= $this->startTime && $shift->start_time <= $this->endTime || $shift->end_time >= $this->startTime && $shift->end_time <= $this->endTime)) $employee_count++;
+            }
+        }
+
+        if ($employee_count < 1) return false;
+        $this->setError(400, $this->title.' edit unsuccessful as '.$employee_count.' employee(s) has conflicting shifts with the newly proposed shift timing.');
     }
 }

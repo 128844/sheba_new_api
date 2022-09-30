@@ -2,24 +2,23 @@
 
 
 use Sheba\Business\ShiftSetting\ShiftAssign\Requester;
+use Sheba\ModificationFields;
 
 class Updater
 {
-    /**
-     * @var Requester $shiftCalenderRequester
-     */
-    private $shiftCalenderRequester;
+    use ModificationFields;
 
-    public function setShiftCalenderRequester(Requester $shiftCalenderRequester)
+    public function update($shift, Requester $request)
     {
-        $this->shiftCalenderRequester = $shiftCalenderRequester;
-        return $this;
+        $data = [];
+
+        if ($request->getColorCode() != null) $data['color'] = $request->getColorCode();
+        if ($request->getShiftName() != null) $data['shift_name'] = $request->getShiftName();
+        if ($request->getShiftTitle() != null) $data['shift_title'] = $request->getShiftTitle();
+        if ($request->getStartTime() != null) $data['start_time'] = $request->getStartTime();
+        if ($request->getEndTime() != null) $data['end_time'] = $request->getEndTime();
+        if ($request->getIsHalfDayActivated() != null) $data['is_half_day'] = $request->getIsHalfDayActivated();
+
+        $shift->update($this->withUpdateModificationField($data));
     }
-
-    public function update($shift)
-    {
-        $shift->update(['color' => $this->shiftCalenderRequester->getColorCode()]);
-    }
-
-
 }

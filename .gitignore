@@ -15,3 +15,6 @@ resources/assets/ebl/*
 composer-auth.json
 .sentryclirc
 .env.testing
+.env.dev
+.env.prod
+.env.local
