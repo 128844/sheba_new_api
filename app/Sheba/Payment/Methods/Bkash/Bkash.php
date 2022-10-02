@@ -215,7 +215,8 @@ class Bkash extends PaymentMethod
 
     private function execute(Payment $payment)
     {
-        $token = Redis::get('BKASH_TOKEN');
+        // $token = Redis::get('BKASH_TOKEN');
+        $token = Redis::get("BKASH_TOKEN_$this->merchantNumber");
         $token = $token ? $token : $this->grantToken();
         $url = curl_init($this->url . '/checkout/payment/execute/' . $payment->gateway_transaction_id);
         $header = array(
