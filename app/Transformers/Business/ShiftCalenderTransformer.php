@@ -41,6 +41,7 @@ class ShiftCalenderTransformer
                 'is_shift' => $shift_calender->is_shift,
                 'shift_name' => $shift_calender->shift_name,
                 'shift_title' => $shift_calender->shift_title,
+                'shift_color' => $shift_calender->color_code,
                 'shift_start' => Carbon::parse($shift_calender->start_time)->format('h:i A'),
                 'shift_end' => Carbon::parse($shift_calender->end_time)->format('h:i A'),
             ];

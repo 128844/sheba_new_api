@@ -81,7 +81,12 @@ class ShiftAssignmentController extends Controller
         $shift_calender_employee_data = $shift_calender_employee_data->toArray();
         usort($shift_calender_employee_data, array($this,'employeeSortByPDisplayPriority'));
         $departments = $this->departmentRepo->getBusinessDepartmentByBusiness($business)->pluck('name', 'id')->toArray();
-        return api_response($request, null, 200, ['shift_calender_employee' => $shift_calender_employee_data, 'shift_calender_header' => $shift_calender_data['header'], 'departments' => $departments, 'total' => $total_data]);
+        return api_response($request, null, 200, [
+            'shift_calender_employee' => $shift_calender_employee_data,
+            'shift_calender_header' => $shift_calender_data['header'],
+            'departments' => $departments,
+            'total' => $total_data
+        ]);
     }
 
     public function assignShift($business, $calender_id, Request $request)
