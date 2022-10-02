@@ -49,7 +49,7 @@ class Bkash extends PaymentMethod
      */
     public function init(Payable $payable): Payment
     {
-        $this->setCredentials($payable->user,$payable->type);
+        $this->setCredentials($payable->user, $payable->type);
 
         $invoice = "SHEBA_BKASH_" . strtoupper($payable->readable_type) . '_' . $payable->type_id . '_' . randomString(10, 1, 1);
         $payment = new Payment();
@@ -93,7 +93,7 @@ class Bkash extends PaymentMethod
     private function setCredentials($user, $type)
     {
         /** @var BkashAuthBuilder $bkash_auth */
-        $bkash_auth = BkashAuthBuilder::getForUserAndType($user,$type);
+        $bkash_auth = BkashAuthBuilder::getForUserAndType($user, $type);
         $this->appKey = $bkash_auth->appKey;
         $this->appSecret = $bkash_auth->appSecret;
         $this->username = $bkash_auth->username;
@@ -104,7 +104,7 @@ class Bkash extends PaymentMethod
 
     private function create(Payment $payment)
     {
-        $token = Redis::get('BKASH_TOKEN');
+        $token = Redis::get("BKASH_TOKEN_$this->merchantNumber");
         $token = $token ? $token : $this->grantToken();
         $intent = 'sale';
         $create_pay_body = json_encode(array(
@@ -155,8 +155,11 @@ class Bkash extends PaymentMethod
         curl_close($url);
         $data = json_decode($result_data, true);
         $token = $data['id_token'];
-        Redis::set('BKASH_TOKEN', $token);
-        Redis::expire('BKASH_TOKEN', (int)$data['expires_in'] - 100);
+
+        $cache_key = "BKASH_TOKEN_$this->merchantNumber";
+        Redis::set($cache_key, $token);
+        Redis::expire($cache_key, (int)$data['expires_in'] - 100);
+
         return $token;
     }
 
