@@ -86,7 +86,7 @@ class CalendarLoader
             });
         }
 
-        if (!empty($business_member_ids)) {
+        if (!is_null($business_member_ids)) {
             $shift_calender->whereIn('business_member_id', $business_member_ids);
         }
 
