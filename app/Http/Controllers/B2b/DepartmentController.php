@@ -158,4 +158,18 @@ class DepartmentController extends Controller
             return str_contains(strtoupper($department->name), strtoupper($request->search));
         });
     }
+
+    public function getForFilter($business, Request $request)
+    {
+        $business = $request->business;
+        $departments = $this->departmentRepository
+            ->getBusinessDepartmentByBusiness($business)
+            ->pluck('name', 'id')
+            ->toArray();
+
+        return api_response($request, null, 200, [
+            'departments' => $departments,
+        ]);
+
+    }
 }

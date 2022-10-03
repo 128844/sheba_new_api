@@ -47,6 +47,7 @@ class BusinessRoute
                 $api->group(['prefix' => 'departments'], function ($api) {
                     $api->post('/', 'B2b\DepartmentController@store');
                     $api->get('/', 'B2b\DepartmentController@index');
+                    $api->get('/get-for-filter', 'B2b\DepartmentController@getForFilter');
                     $api->group(['prefix' => '{department}'], function ($api) {
                         $api->post('/', 'B2b\DepartmentController@update');
                         $api->delete('/', 'B2b\DepartmentController@destroy');

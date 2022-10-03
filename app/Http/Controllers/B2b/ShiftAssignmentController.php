@@ -9,6 +9,7 @@ use App\Transformers\CustomSerializer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use League\Fractal\Manager;
+use Sheba\Business\CoWorker\Statuses;
 use Sheba\Business\ShiftSetting\ShiftAssign\Requester;
 use Sheba\Business\ShiftSetting\ShiftAssign\Creator;
 use Sheba\Business\ShiftSetting\ShiftAssign\ShiftAssignToCalender;
@@ -30,14 +31,12 @@ class ShiftAssignmentController extends Controller
     private $shiftCalenderCreator;
     /*** @var ShiftRemover $shiftRemover */
     private $shiftRemover;
-    /*** @var DepartmentRepositoryInterface $departmentRepo */
-    private $departmentRepo;
     /*** @var ShiftAssignmentRepository $shiftAssignmentRepository */
     private $shiftAssignmentRepository;
     /*** @var ShiftAssignToCalender $shiftAssignToCalender */
     private $shiftAssignToCalender;
 
-    public function __construct(DepartmentRepositoryInterface $department_repository, ShiftAssignmentRepository $shift_assignment_repository, BusinessShiftRepository $business_shift_repository,
+    public function __construct(ShiftAssignmentRepository $shift_assignment_repository, BusinessShiftRepository $business_shift_repository,
                                 Requester $requester, Creator $creator, ShiftRemover $shift_remover, ShiftAssignToCalender $shift_assign_to_calender)
     {
         $this->shiftAssignmentRepository = $shift_assignment_repository;
@@ -45,7 +44,6 @@ class ShiftAssignmentController extends Controller
         $this->shiftCalenderRequester = $requester;
         $this->shiftCalenderCreator = $creator;
         $this->shiftRemover = $shift_remover;
-        $this->departmentRepo = $department_repository;
         $this->shiftAssignToCalender = $shift_assign_to_calender;
     }
 
@@ -58,34 +56,45 @@ class ShiftAssignmentController extends Controller
         $business_member = $request->business_member;
         if (!$business_member) return api_response($request, null, 401);
         list($offset, $limit) = calculatePagination($request);
+
         $start_date = $request->start_date ?: Carbon::now()->addDay()->toDateString();
         $end_date = $request->end_date ?: Carbon::now()->addDays(7)->toDateString();
-        $active_business_member = $business->getActiveBusinessMember();
+
+        $shift_calender = $shift_assignment_repository->builder()
+            ->with('businessMember.member.profile', 'businessMember.role.businessDepartment')
+            ->whereBetween('date', [$start_date, $end_date])
+            ->whereHas('businessMember', function ($q) use ($business) {
+                $q->where('status', Statuses::ACTIVE)->where('business_id', $business->id);
+            });
+
+        if ($request->has('shift_type')) $shift_calender = $shift_calender->where($request->shift_type, 1);
+
         if ($request->has('department_id')) {
-            $active_business_member = $active_business_member->whereHas('role', function ($q) use ($request) {
-                $q->whereHas('businessDepartment', function ($q) use ($request) {
-                    $q->where('business_departments.id', $request->department_id);
+            $shift_calender->whereHas('businessMember', function ($q) use ($request) {
+                $q->whereHas('role', function ($q) use ($request) {
+                    $q->whereHas('businessDepartment', function ($q) use ($request) {
+                        $q->where('business_departments.id', $request->department_id);
+                    });
                 });
             });
         }
-        $active_business_member_ids = $active_business_member->pluck('id')->toArray();
 
-        $shift_calender = $shift_assignment_repository->builder()->whereIn('business_member_id', $active_business_member_ids)->whereBetween('date', [$start_date, $end_date]);
-        if ($request->has('shift_type')) $shift_calender = $shift_calender->where($request->shift_type, 1);
-        $shift_calender_data = (new ShiftCalenderTransformer())->transform($shift_calender->get());
-        $shift_calender_employee_data = collect($shift_calender_data['data'])->splice($offset, $limit);
         if ($request->has('search')) {
-            $shift_calender_employee_data = $this->searchEmployeeByNameOrId($shift_calender_employee_data, $request->search);
+            $shift_calender->whereHas('businessMember', function ($q) use ($request) {
+                $q->whereHas('member.profile', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', "%$request->search%");
+                })->orWhere('employee_id', 'LIKE', "%$request->search%");
+            });
         }
-        $total_data = count($shift_calender_employee_data);
-        $shift_calender_employee_data = $shift_calender_employee_data->toArray();
-        usort($shift_calender_employee_data, array($this,'employeeSortByPDisplayPriority'));
-        $departments = $this->departmentRepo->getBusinessDepartmentByBusiness($business)->pluck('name', 'id')->toArray();
+
+        $total_employees = $shift_calender->count(\DB::raw('DISTINCT business_member_id'));
+
+        $shift_calender_data = (new ShiftCalenderTransformer())->transform($shift_calender->offset($offset)->take($limit)->get());
+
         return api_response($request, null, 200, [
-            'shift_calender_employee' => $shift_calender_employee_data,
+            'shift_calender_employee' => $shift_calender_data['data'],
             'shift_calender_header' => $shift_calender_data['header'],
-            'departments' => $departments,
-            'total' => $total_data
+            'total_employees' => $total_employees
         ]);
     }
 
@@ -229,19 +238,5 @@ class ShiftAssignmentController extends Controller
         $member = new Item($shift_calender, new EmployeeShiftDetailsTransformer());
         $shift_calender = $manager->createData($member)->toArray()['data'];
         return api_response($request, $shift_calender, 200, ['shift_calender' => $shift_calender]);
-    }
-
-    private function employeeSortByPDisplayPriority($a, $b)
-    {
-        if ($a['display_priority'] < $b['display_priority']) return 0;
-        return 1;
-    }
-
-    private function searchEmployeeByNameOrId($active_business_member, $search_key)
-    {
-        return $active_business_member->filter(function($item) use($search_key) {
-            return preg_match("/{$search_key}/i", $item['employee']['name']) || preg_match("/{$search_key}/i", $item['employee']['employee_id']);
-        });
-
     }
 }

@@ -8,19 +8,17 @@ class ShiftCalenderTransformer
     public function transform($shift_calenders)
     {
         $data = $header = [];
-        foreach ($shift_calenders as $shift_calender)
-        {
+        foreach ($shift_calenders as $shift_calender) {
             if (count($header) < 7) {
-                $header[] =
-                    [
-                        'date_raw' => $shift_calender->date,
-                        'date' => Carbon::parse($shift_calender->date)->format('d M'),
-                        'day' => Carbon::parse($shift_calender->date)->format('D')
-                    ];
+                $header[] = [
+                    'date_raw' => $shift_calender->date,
+                    'date' => Carbon::parse($shift_calender->date)->format('d M'),
+                    'day' => Carbon::parse($shift_calender->date)->format('D')
+                ];
             }
             $business_member = null;
             if (!isset($data[$shift_calender->business_member_id]['employee'])){
-                $business_member = BusinessMember::find($shift_calender->business_member_id);
+                $business_member = $shift_calender->businessMember;
                 $department = $business_member->department();
                 $profile = $business_member->member->profile;
                 $data[$shift_calender->business_member_id]['employee'] = [
@@ -45,9 +43,8 @@ class ShiftCalenderTransformer
                 'shift_start' => Carbon::parse($shift_calender->start_time)->format('h:i A'),
                 'shift_end' => Carbon::parse($shift_calender->end_time)->format('h:i A'),
             ];
-            if (!isset($data[$shift_calender->business_member_id]['display_priority'])) $data[$shift_calender->business_member_id]['display_priority'] = $shift_calender->is_shift == 1 ? 0 : 1;
-            else
-                if ($shift_calender->is_shift) $data[$shift_calender->business_member_id]['display_priority'] = $data[$shift_calender->business_member_id]['display_priority'] == 0 ? 0 : 1;
+//            if (!isset($data[$shift_calender->business_member_id]['display_priority'])) $data[$shift_calender->business_member_id]['display_priority'] = $shift_calender->is_shift == 1 ? 0 : 1;
+//            else if ($shift_calender->is_shift) $data[$shift_calender->business_member_id]['display_priority'] = $data[$shift_calender->business_member_id]['display_priority'] == 0 ? 0 : 1;
         }
         return ['header' => $header, 'data' => $data];
     }
