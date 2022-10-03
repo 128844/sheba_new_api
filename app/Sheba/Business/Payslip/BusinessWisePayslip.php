@@ -109,18 +109,23 @@ class BusinessWisePayslip
     public function calculate()
     {
         $last_pay_day = $this->payrollSetting->last_pay_day;
-        $start_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
-        $end_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
+
+        // $start_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
+        // $end_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
+
+        $start_date = $this->calculateStartDate($last_pay_day);
+        $end_date = $this->calculateEndDate();
+
         $business_payslip_data = [
             'business_id'      => $this->business->id,
             'schedule_date'    => $this->className === self::MANUALLY_GENERATED_PAYSLIP ? $this->period : Carbon::now()->toDateString(),
-            'cycle_start_date' => $start_date ? Carbon::parse($start_date)->subMonth()->format('Y-m-d') : ($last_pay_day ? Carbon::parse($last_pay_day)->format(
-                'Y-m-d'
-            ) : Carbon::now()->subMonth()->format('Y-m-d')),
-            'cycle_end_date'   => $end_date ? Carbon::parse($end_date)->subDay()->format('Y-m-d') : Carbon::now()->subDay()->format('Y-m-d'),
+            'cycle_start_date' => $this->calculateStartDate($last_pay_day),
+            'cycle_end_date'   => $this->calculateEndDate(),
             'status'           => Status::PENDING,
         ];
+
         $business_payslip = $this->createBusinessPayslip($business_payslip_data);
+
         foreach ($this->businessMembers as $business_member) {
             try {
                 if ($this->generatedBusinessMemberIds && in_array($business_member->id, $this->generatedBusinessMemberIds)) {
@@ -130,12 +135,13 @@ class BusinessWisePayslip
                 if ($last_pay_day && $joining_date <= Carbon::parse($last_pay_day) || !$last_pay_day && $joining_date <= Carbon::now()->subMonth()) {
                     $joining_date = null;
                 }
+
                 $prorated_time_frame = null;
 
-                $start_date = $start_date ?
-                    Carbon::parse($start_date)->subMonth()->format('Y-m-d') :
-                    ($last_pay_day ? Carbon::parse($last_pay_day)->format('Y-m-d') : Carbon::now()->subMonth()->format('Y-m-d'));
-                $end_date = $end_date ? Carbon::parse($end_date)->subDay()->format('Y-m-d') : Carbon::now()->subDay()->format('Y-m-d');
+//                $start_date = $start_date ?
+//                    Carbon::parse($start_date)->subMonth()->format('Y-m-d') :
+//                    ($last_pay_day ? Carbon::parse($last_pay_day)->format('Y-m-d') : Carbon::now()->subMonth()->format('Y-m-d'));
+//                $end_date = $end_date ? Carbon::parse($end_date)->subDay()->format('Y-m-d') : Carbon::now()->subDay()->format('Y-m-d');
 
                 $time_frame = $this->timeFrame->forDateRange($start_date, $end_date);
                 if ($joining_date) {
@@ -208,13 +214,19 @@ class BusinessWisePayslip
                 app('sentry')->captureException($e);
             }
         }
+
         $package_generate_information = $this->payrollComponentSchedulerCalculation->getPackageGenerateData();
         if ($package_generate_information) {
             $this->updatePackageGenerateDate($package_generate_information);
         }
+
         $this->updatePayDay($this->payrollSetting, $this->business);
     }
 
+    /**
+     * @param $package_generate_information
+     * @return void
+     */
     private function updatePackageGenerateDate($package_generate_information)
     {
         foreach ($package_generate_information as $package_id => $package_generate_data) {
@@ -225,6 +237,11 @@ class BusinessWisePayslip
         }
     }
 
+    /**
+     * @param  PayrollSetting  $payroll_setting
+     * @param  Business  $business
+     * @return void
+     */
     private function updatePayDay(PayrollSetting $payroll_setting, Business $business)
     {
         $next_pay_day = $this->nextPayslipGenerationDay($business);
@@ -234,9 +251,48 @@ class BusinessWisePayslip
         $payroll_setting->update($data);
     }
 
+    /**
+     * @param  array  $business_payslip_data
+     * @return mixed
+     */
     private function createBusinessPayslip(array $business_payslip_data)
     {
         return $this->businessPayslipRepo->create($business_payslip_data);
     }
 
+    /**
+     * @param $last_pay_day
+     * @return string
+     */
+    public function calculateStartDate($last_pay_day): string
+    {
+        if ($this->className === self::MANUALLY_GENERATED_PAYSLIP) {
+            return Carbon::parse($this->period)->subMonth()->format('Y-m-d');
+        }
+
+        return $last_pay_day ? Carbon::parse($last_pay_day)->format('Y-m-d') : Carbon::now()->subMonth()->format('Y-m-d');
+
+//        $start_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
+//        return $start_date ?
+//            Carbon::parse($start_date)->subMonth()->format('Y-m-d') :
+//            ($last_pay_day ?
+//                Carbon::parse($last_pay_day)->format('Y-m-d') :
+//                Carbon::now()->subMonth()->format('Y-m-d')
+//            );
+    }
+
+    /**
+     * @return string
+     */
+    public function calculateEndDate(): string
+    {
+        if ($this->className === self::MANUALLY_GENERATED_PAYSLIP) {
+            return Carbon::parse($this->period)->subDay()->format('Y-m-d');
+        }
+
+        return Carbon::now()->subDay()->format('Y-m-d');
+
+//        $end_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
+//        return $end_date ? Carbon::parse($end_date)->subDay()->format('Y-m-d') : Carbon::now()->subDay()->format('Y-m-d');
+    }
 }
