@@ -110,9 +110,6 @@ class BusinessWisePayslip
     {
         $last_pay_day = $this->payrollSetting->last_pay_day;
 
-        // $start_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
-        // $end_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
-
         $start_date = $this->calculateStartDate($last_pay_day);
         $end_date = $this->calculateEndDate();
 
@@ -271,14 +268,6 @@ class BusinessWisePayslip
         }
 
         return $last_pay_day ? Carbon::parse($last_pay_day)->format('Y-m-d') : Carbon::now()->subMonth()->format('Y-m-d');
-
-//        $start_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
-//        return $start_date ?
-//            Carbon::parse($start_date)->subMonth()->format('Y-m-d') :
-//            ($last_pay_day ?
-//                Carbon::parse($last_pay_day)->format('Y-m-d') :
-//                Carbon::now()->subMonth()->format('Y-m-d')
-//            );
     }
 
     /**
@@ -291,8 +280,5 @@ class BusinessWisePayslip
         }
 
         return Carbon::now()->subDay()->format('Y-m-d');
-
-//        $end_date = $this->className === self::MANUALLY_GENERATED_PAYSLIP ? Carbon::parse($this->period) : null;
-//        return $end_date ? Carbon::parse($end_date)->subDay()->format('Y-m-d') : Carbon::now()->subDay()->format('Y-m-d');
     }
 }
