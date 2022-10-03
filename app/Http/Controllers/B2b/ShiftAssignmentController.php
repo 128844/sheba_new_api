@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use League\Fractal\Manager;
 use Sheba\Business\CoWorker\Statuses;
+use Sheba\Business\ShiftCalendar\CalendarLoader;
 use Sheba\Business\ShiftSetting\ShiftAssign\Requester;
 use Sheba\Business\ShiftSetting\ShiftAssign\Creator;
 use Sheba\Business\ShiftSetting\ShiftAssign\ShiftAssignToCalender;
@@ -47,7 +48,7 @@ class ShiftAssignmentController extends Controller
         $this->shiftAssignToCalender = $shift_assign_to_calender;
     }
 
-    public function index(Request $request, ShiftAssignmentRepository $shift_assignment_repository)
+    public function index(Request $request, CalendarLoader $loader)
     {
         /** @var Business $business */
         $business = $request->business;
@@ -55,41 +56,9 @@ class ShiftAssignmentController extends Controller
         /** @var BusinessMember $business_member */
         $business_member = $request->business_member;
         if (!$business_member) return api_response($request, null, 401);
-        list($offset, $limit) = calculatePagination($request);
 
-        $start_date = $request->start_date ?: Carbon::now()->addDay()->toDateString();
-        $end_date = $request->end_date ?: Carbon::now()->addDays(7)->toDateString();
-
-        $shift_calender = $shift_assignment_repository->builder()
-            ->with('businessMember.member.profile', 'businessMember.role.businessDepartment')
-            ->whereBetween('date', [$start_date, $end_date])
-            ->whereHas('businessMember', function ($q) use ($business) {
-                $q->where('status', Statuses::ACTIVE)->where('business_id', $business->id);
-            });
-
-        if ($request->has('shift_type')) $shift_calender = $shift_calender->where($request->shift_type, 1);
-
-        if ($request->has('department_id')) {
-            $shift_calender->whereHas('businessMember', function ($q) use ($request) {
-                $q->whereHas('role', function ($q) use ($request) {
-                    $q->whereHas('businessDepartment', function ($q) use ($request) {
-                        $q->where('business_departments.id', $request->department_id);
-                    });
-                });
-            });
-        }
-
-        if ($request->has('search')) {
-            $shift_calender->whereHas('businessMember', function ($q) use ($request) {
-                $q->whereHas('member.profile', function ($q) use ($request) {
-                    $q->where('name', 'LIKE', "%$request->search%");
-                })->orWhere('employee_id', 'LIKE', "%$request->search%");
-            });
-        }
-
-        $total_employees = $shift_calender->count(\DB::raw('DISTINCT business_member_id'));
-
-        $shift_calender_data = (new ShiftCalenderTransformer())->transform($shift_calender->offset($offset)->take($limit)->get());
+        list($shift_calender_data,$total_employees) = $loader->load($business, $request);
+        $shift_calender_data = (new ShiftCalenderTransformer())->transform($shift_calender_data);
 
         return api_response($request, null, 200, [
             'shift_calender_employee' => $shift_calender_data['data'],
