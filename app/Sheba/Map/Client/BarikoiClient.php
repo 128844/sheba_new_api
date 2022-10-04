@@ -84,6 +84,7 @@ class BarikoiClient implements Client
 
     private function log($barikoi_url, $barikoi_body, $response)
     {
+        return;
         try {
             DB::table('barikoi_logs')->insert([
                 "url" => request()->url(),
