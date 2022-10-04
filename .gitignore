@@ -18,3 +18,5 @@ composer-auth.json
 .env.dev
 .env.prod
 .env.local
+
+public/pgw-merchant-backend-php/
