@@ -25,7 +25,7 @@ class BarikoiClient implements Client
     public function getAddressFromGeo(Geo $geo): Address
     {
         $address = new BarikoiAddress();
-        if ($geo->isNull()) return $address->setAddress(null);
+        if ($geo->isEmpty()) return $address->setAddress(null);
 
         try {
             $client = new HTTPClient();
