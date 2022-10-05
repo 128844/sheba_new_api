@@ -34,9 +34,19 @@ class Geo
         return $this->lng ? (double)$this->lng : null;
     }
 
+    public function isZero()
+    {
+        return $this->getLat() == 0 || $this->getLng() == 0;
+    }
+
     public function isNull()
     {
         return is_null($this->getLat()) || is_null($this->getLng());
+    }
+
+    public function isEmpty()
+    {
+        return $this->isNull() || $this->isZero();
     }
 
     public function isNotNull()
