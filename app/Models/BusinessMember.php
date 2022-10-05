@@ -3,6 +3,7 @@
 use App\Sheba\Business\Attendance\HalfDaySetting\HalfDayType;
 use Jenssegers\Mongodb\Eloquent\HybridRelations;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
+use Sheba\Business\BusinessMember\ProfileAndDepartmentQuery;
 use Sheba\Business\CoWorker\Statuses;
 use Sheba\Dal\Appreciation\Appreciation;
 use Sheba\Dal\BusinessMemberBkashInfo\BusinessMemberBkashInfo;
@@ -151,6 +152,75 @@ class BusinessMember extends Model
     public function scopeActive($query)
     {
         return $query->whereIn('status', ['active', 'invited']);
+    }
+
+    public function scopeStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeOnlyActive($query)
+    {
+        return $query->status(Statuses::ACTIVE);
+    }
+
+    public function scopeAccessible($query)
+    {
+        return $query->notStatus(Statuses::INACTIVE);
+    }
+
+    public function scopeNotStatus($query, $status)
+    {
+        return $query->where('status', '<>', $status);
+    }
+
+    public function scopeNotInvited($query)
+    {
+        return $query->notStatus(Statuses::INVITED);
+    }
+
+    public function scopeWithProfileAndDepartment($query, ProfileAndDepartmentQuery $request = null)
+    {
+        $request = $request ?? new ProfileAndDepartmentQuery();
+
+        if (!empty($request->department)) {
+            $query->whereHas('role', function ($rq) use ($request) {
+                $rq->whereHas('businessDepartment', function ($bdq) use ($request) {
+                    $bdq->where('business_departments.id', $request->department);
+                });
+            });
+        }
+
+        if (!empty($request->searchTerm)) {
+            $query->whereHas('member.profile', function ($pq) use ($request) {
+                $pq->where('name', 'LIKE', "%$request->searchTerm%");
+            })->orWhere('employee_id', 'LIKE', "%$request->searchTerm%");
+        }
+
+        $query->with([
+            'member' => function ($mq) use ($request) {
+                $mq
+                    ->select('members.id', 'profile_id')
+                    ->with([
+                        'profile' => function ($pq) use ($request) {
+                            $pq->select('profiles.id');
+                            foreach ($request->profileColumns as $profile_column) {
+                                $pq->addSelect($profile_column);
+                            }
+                        }
+                    ]);
+            }, 'role' => function ($rq) {
+                $rq
+                    ->select('business_roles.id', 'business_department_id', 'name')
+                    ->with([
+                        'businessDepartment' => function ($bdq) {
+                            $bdq->select('business_departments.id', 'business_id', 'name');
+                        }
+                    ]);
+            }
+        ]);
+
+        return $query;
     }
 
     /**

@@ -2,10 +2,11 @@
 
 
 use App\Models\Business;
+use App\Models\BusinessMember;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
-use Sheba\Business\CoWorker\Statuses;
+use Sheba\Business\BusinessMember\ProfileAndDepartmentQuery;
 use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 
 class CalendarLoader
@@ -20,76 +21,107 @@ class CalendarLoader
 
     public function load(Business $business, Request $request)
     {
-        list($offset, $limit) = calculatePagination($request);
+        $period = $this->getPeriod($request);
+        list($count, $business_members) = $this->getBusinessMembers($business, $request, $period);
 
+        $business_members = $business_members->isEmpty()
+            ? collect([])
+            : $this->mapBusinessMembersWithAssignments($business_members, $period);
+
+        return [$period, $business_members, $count];
+    }
+
+    private function getPeriod(Request $request)
+    {
         $start_date = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->addDay();
         $end_date = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->addDays(7);
 
-        $period = CarbonPeriod::create($start_date, $end_date);
-
-        $business_member_ids = $this->getBusinessMembersWhoHasShiftType($business, $request, $period);
-
-        $shift_calender_data = collect([]);
-        foreach ($period as $date) {
-            $data = $this->getQuery($business, $request, $business_member_ids)
-                ->where('date', $date->toDateString())
-                ->offset($offset)
-                ->take($limit)
-                ->get();
-            $shift_calender_data->push($data);
-        }
-
-        $shift_calender_data= $shift_calender_data->flatten(1);
-
-        $total_employees = $this->getQuery($business, $request)
-            ->where('date', $start_date->toDateString())
-            ->count(\DB::raw('DISTINCT business_member_id'));
-
-        return [$shift_calender_data, $total_employees];
+        return CarbonPeriod::create($start_date, $end_date);
     }
 
-    private function getBusinessMembersWhoHasShiftType(Business $business, Request $request, CarbonPeriod $period)
+    private function getBusinessMembers(Business $business, Request $request, CarbonPeriod $period)
     {
-        if (!$request->has('shift_type')) return null;
+        list($offset, $limit) = calculatePagination($request);
 
-        return $this->getQuery($business, $request)
-            ->whereBetween('date', [$period->getStartDate()->toDateString(), $period->getEndDate()->toDateString()])
-            ->where($request->shift_type, 1)
+        $query = $business
+            ->getActiveBusinessMember($this->buildProfileQueryRequest($request))
+            ->select('id', 'member_id', 'business_id', 'employee_id', 'business_role_id');
+
+        $count = $query->count();
+
+        if ($request->has('shift_type')) {
+            $shift_assignees = $this->getShiftAssignees($query, $period, $request->shift_type);
+
+            if (empty($shift_assignees)) return [$count, collect([])];
+
+            $query->whereIn('id', $shift_assignees);
+        }
+
+        $business_members = $query->offset($offset)->take($limit)->get();
+
+        return [$count, $business_members];
+    }
+
+    private function buildProfileQueryRequest(Request $request)
+    {
+        $profile_query = new ProfileAndDepartmentQuery();
+        if ($request->has('search')) $profile_query->searchTerm = $request->search;
+        if ($request->has('department_id')) $profile_query->department = $request->department_id;
+        return $profile_query;
+    }
+
+    private function getShiftAssignees($query, CarbonPeriod $period, $shift_type)
+    {
+        return $this->buildAssignmentBaseQuery($period, $query->pluck('id')->toArray())
+            ->where($shift_type, 1)
             ->groupBy('business_member_id')
             ->pluck('business_member_id')
             ->toArray();
     }
 
-    private function getQuery(Business $business, Request $request, $business_member_ids = null)
+    private function buildAssignmentBaseQuery(CarbonPeriod $period, $business_member_ids)
     {
-        $shift_calender = $this->repo->builder()
-            ->with('businessMember.member.profile', 'businessMember.role.businessDepartment')
-            ->whereHas('businessMember', function ($q) use ($business) {
-                $q->where('status', Statuses::ACTIVE)->where('business_id', $business->id);
+        return $this->repo->builder()
+            ->whereIn('business_member_id', $business_member_ids)
+            ->whereBetween('date', [
+                $period->getStartDate()->toDateString(),
+                $period->getEndDate()->toDateString()
+            ]);
+    }
+
+    private function mapBusinessMembersWithAssignments($business_members, CarbonPeriod $period)
+    {
+        $assignments = $this->getAssignments($period, $business_members);
+
+        return $business_members->map(function ($business_member) use ($assignments, $period) {
+            $business_member->shifts = $this->getSingleMemberAssignments($assignments, $business_member, $period);
+            return $business_member;
+        });
+    }
+
+    private function getAssignments(CarbonPeriod $period, $business_members)
+    {
+        return $this
+            ->buildAssignmentBaseQuery($period, $business_members->pluck('id')->toArray())
+            ->get()
+            ->groupBy('business_member_id');
+    }
+
+    private function getSingleMemberAssignments($assignments, BusinessMember $business_member, CarbonPeriod $period)
+    {
+        $data = collect([]);
+
+        $business_member_assignments = $assignments
+            ->get($business_member->id)
+            ->groupBy('date')
+            ->map(function ($assignment) {
+                return $assignment->first();
             });
 
-        if ($request->has('department_id')) {
-            $shift_calender->whereHas('businessMember', function ($q) use ($request) {
-                $q->whereHas('role', function ($q) use ($request) {
-                    $q->whereHas('businessDepartment', function ($q) use ($request) {
-                        $q->where('business_departments.id', $request->department_id);
-                    });
-                });
-            });
+        foreach ($period as $date) {
+            $data->push($business_member_assignments->get($date->toDateString()));
         }
 
-        if ($request->has('search')) {
-            $shift_calender->whereHas('businessMember', function ($q) use ($request) {
-                $q->whereHas('member.profile', function ($q) use ($request) {
-                    $q->where('name', 'LIKE', "%$request->search%");
-                })->orWhere('employee_id', 'LIKE', "%$request->search%");
-            });
-        }
-
-        if (!is_null($business_member_ids)) {
-            $shift_calender->whereIn('business_member_id', $business_member_ids);
-        }
-
-        return $shift_calender;
+        return $data;
     }
 }

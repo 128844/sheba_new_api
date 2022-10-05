@@ -5,6 +5,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
+use Sheba\Business\BusinessMember\ProfileAndDepartmentQuery;
 use Sheba\Business\CoWorker\Statuses;
 use Sheba\Dal\Announcement\Announcement;
 use Sheba\Dal\BaseModel;
@@ -66,6 +67,11 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
         return $this->belongsToMany(Member::class)->withTimestamps();
     }
 
+    public function businessMembers()
+    {
+        return $this->hasMany(BusinessMember::class);
+    }
+
     public function membersWithProfileAndAccessibleBusinessMember()
     {
         return $this->members()->select('members.id', 'profile_id', 'social_links')->with([
@@ -111,59 +117,19 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
 
     public function getAllBusinessMember()
     {
-        return BusinessMember::where('business_id', $this->id)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic', 'dob', 'address', 'nationality', 'nid_no', 'tin_no');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
-        ]);
+        $profile_request = (new ProfileAndDepartmentQuery())
+            ->addProfileColumns(['dob', 'address', 'nationality', 'nid_no', 'tin_no']);
+        return $this->businessMembers()->withProfileAndDepartment($profile_request);
     }
 
-    public function getActiveBusinessMember()
+    public function getActiveBusinessMember(ProfileAndDepartmentQuery $request = null)
     {
-        return BusinessMember::where('business_id', $this->id)->where('status', Statuses::ACTIVE)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
-        ]);
+        return $this->businessMembers()->onlyActive()->withProfileAndDepartment($request);
     }
 
     public function getAccessibleBusinessMember()
     {
-        return BusinessMember::where('business_id', $this->id)->where('status', '<>', Statuses::INACTIVE)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
-        ]);
+        return $this->businessMembers()->accessible()->withProfileAndDepartment();
     }
 
     /**
@@ -171,27 +137,19 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
      */
     public function getAllBusinessMemberExceptInvited()
     {
-        return BusinessMember::where('business_id', $this->id)->where('status', '<>', Statuses::INVITED)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic', 'address');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }, 'leaves' => function ($q) {
-                $q->select('id', 'title', 'business_member_id', 'leave_type_id', 'start_date', 'end_date', 'note', 'total_days', 'left_days', 'status')->with([
-                    'leaveType' => function ($query) {
+        $profile_request = (new ProfileAndDepartmentQuery())
+            ->addProfileColumns(['address']);
+
+        return $this->businessMembers()->notInvited()->withProfileAndDepartment($profile_request)->with([
+            'leaves' => function ($q) {
+                $q
+                    ->select('id', 'title', 'business_member_id', 'leave_type_id', 'start_date', 'end_date', 'note', 'total_days', 'left_days', 'status')
+                    ->with(['leaveType' => function ($query) {
                         $query->withTrashed()->select('id', 'business_id', 'title', 'total_days', 'deleted_at');
                     }]);
             }, 'attendances' => function ($q) {
                 $q->with('actions');
-            },'shifts'
+            }, 'shifts'
         ]);
     }
 

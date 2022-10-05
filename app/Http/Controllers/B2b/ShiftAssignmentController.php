@@ -57,14 +57,11 @@ class ShiftAssignmentController extends Controller
         $business_member = $request->business_member;
         if (!$business_member) return api_response($request, null, 401);
 
-        list($shift_calender_data,$total_employees) = $loader->load($business, $request);
-        $shift_calender_data = (new ShiftCalenderTransformer())->transform($shift_calender_data);
+        list($period, $business_members_with_assignments, $total_employees) = $loader->load($business, $request);
+        $response = (new ShiftCalenderTransformer())
+            ->transform($period, $business_members_with_assignments, $total_employees);
 
-        return api_response($request, null, 200, [
-            'shift_calender_employee' => $shift_calender_data['data'],
-            'shift_calender_header' => $shift_calender_data['header'],
-            'total_employees' => $total_employees
-        ]);
+        return api_response($request, null, 200, $response);
     }
 
     public function assignShift($business, $calender_id, Request $request)
