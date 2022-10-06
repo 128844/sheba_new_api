@@ -5,6 +5,7 @@ use App\Models\BusinessMember;
 use App\Models\BusinessRole;
 use App\Sheba\Business\LiveTracking\DateDropDown;
 use Illuminate\Support\Arr;
+use Sheba\Business\LiveTracking\LiveTrackingInsertJob;
 use Sheba\Dal\TrackingLocation\TrackingLocation;
 use App\Sheba\Business\BusinessBasicInformation;
 use App\Sheba\Business\CoWorker\ManagerSubordinateEmployeeList;
@@ -38,23 +39,9 @@ class TrackingController extends Controller
         $this->setModifier($manager_member);
 
         $locations = $request->locations;
-        $data = [];
 
-        foreach ($locations as $location) {
-            $geo = $this->getGeo($location);
-            $date_time = $this->timeFormat($location['timestamp']);
-            $data[] = [
-                'business_id' => $business->id,
-                'business_member_id' => $business_member->id,
-                'location' => $geo ? json_encode(['lat' => $geo->getLat(), 'lng' => $geo->getLng(), 'address' => $this->getAddress($geo)]) : null,
-                'log' => $location['log'],
-                'date' => $date_time->toDateString(),
-                'time' => $date_time->toTimeString(),
-                'created_at' => $date_time->toDateTimeString()
-            ];
-        }
+        dispatch(new LiveTrackingInsertJob($locations, $business->id, $business_member->id));
 
-        TrackingLocation::insert($data);
         return api_response($request, null, 200);
     }
 
@@ -181,74 +168,6 @@ class TrackingController extends Controller
 
         list($last_tracked_date, $date_dropdown) = $date_drop_down->getDateDropDown($last_tracked_location);
         return api_response($request, null, 200, ['last_tracked' => $last_tracked_date, 'date_dropdown' => $date_dropdown]);
-    }
-
-    /**
-     * @return string
-     */
-    private function getAddress($geo)
-    {
-        try {
-            return (new BarikoiClient)->getAddressFromGeo($geo)->getAddress();
-        } catch (Throwable $exception) {
-            return "";
-        }
-    }
-
-    /**
-     * @param $location
-     * @return Geo|null
-     */
-    private function getGeo($location)
-    {
-        if ($this->isLatAvailable($location) && $this->isLngAvailable($location)) {
-            $geo = new Geo();
-            return $geo->setLat($location['lat'])->setLng($location['lng']);
-        }
-        return null;
-    }
-
-    /**
-     * @param $location
-     * @return bool
-     */
-    private function isLatAvailable($location)
-    {
-        if (isset($location['lat']) && !$this->isNull($location['lat'])) return true;
-        return false;
-    }
-
-    /**
-     * @param $location
-     * @return bool
-     */
-    private function isLngAvailable($location)
-    {
-        if (isset($location['lng']) && !$this->isNull($location['lng'])) return true;
-        return false;
-    }
-
-    /**
-     * @param $data
-     * @return bool
-     */
-    private function isNull($data)
-    {
-        if ($data == " ") return true;
-        if ($data == "") return true;
-        if ($data == 'null') return true;
-        if ($data == null) return true;
-        return false;
-    }
-
-    /**
-     * @param $timestamp
-     * @return string
-     */
-    private function timeFormat($timestamp)
-    {
-        $seconds = $timestamp / 1000;
-        return Carbon::createFromTimestamp($seconds);
     }
 
     /**
