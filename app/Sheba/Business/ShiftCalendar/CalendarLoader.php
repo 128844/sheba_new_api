@@ -111,8 +111,9 @@ class CalendarLoader
     {
         $data = collect([]);
 
-        $business_member_assignments = $assignments
-            ->get($business_member->id)
+        $business_member_assignments = $assignments->get($business_member->id) ?: collect([]);
+
+        $business_member_assignments = $business_member_assignments
             ->groupBy('date')
             ->map(function ($assignment) {
                 return $assignment->first();
