@@ -3,6 +3,7 @@
 use App\Models\BusinessMember;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 
 class ShiftCalenderTransformer
 {
@@ -19,43 +20,60 @@ class ShiftCalenderTransformer
     {
         $data = [];
         foreach ($business_members_with_assignments as $business_member) {
-            /** @var BusinessMember $business_member */
-
-            $department = $business_member->department();
-            $profile = $business_member->member->profile;
-
-            $data[$business_member->id]['employee'] = [
-                'business_member_id' => $business_member->id,
-                'employee_id' => $business_member->employee_id,
-                'name' => $profile->name,
-                'department_name' => $department->name,
-                'pro_pic' => $profile->pro_pic,
-            ];
-
             $assignments = [];
-
             foreach ($business_member->shifts as $shift) {
-                $assignments[] = $shift ? [
-                    'id' => $shift->id,
-                    'date' => $shift->date,
-                    'business_member_id' => $shift->business_member_id,
-                    'is_general' => $shift->is_general,
-                    'is_unassigned' => $shift->is_unassigned,
-                    'is_shift' => $shift->is_shift,
-                    'shift_name' => $shift->shift_name,
-                    'shift_title' => $shift->shift_title,
-                    'shift_color' => $shift->color_code,
-                    'shift_start' => Carbon::parse($shift->start_time)->format('h:i A'),
-                    'shift_end' => Carbon::parse($shift->end_time)->format('h:i A'),
-                ] : null;
+                $assignments[] = $this->transformAssignment($shift);
             }
 
-            $data[$business_member->id]['date'] = $assignments;
+            $data[$business_member->id] = [
+                'employee' => $this->transformEmployee($business_member),
+                'date'=> $assignments
+            ];
 
 //            if (!isset($data[$shift_calender->business_member_id]['display_priority'])) $data[$shift_calender->business_member_id]['display_priority'] = $shift_calender->is_shift == 1 ? 0 : 1;
 //            else if ($shift_calender->is_shift) $data[$shift_calender->business_member_id]['display_priority'] = $data[$shift_calender->business_member_id]['display_priority'] == 0 ? 0 : 1;
         }
         return $data;
+    }
+
+    private function transformEmployee(BusinessMember $business_member)
+    {
+        $department = $business_member->department();
+        $profile = $business_member->member->profile;
+
+        return [
+            'business_member_id' => $business_member->id,
+            'employee_id' => $business_member->employee_id,
+            'name' => $profile->name,
+            'department_name' => $department->name,
+            'pro_pic' => $profile->pro_pic,
+        ];
+    }
+
+    private function transformAssignment($shift)
+    {
+        if (!$shift) return null;
+
+        /** @var ShiftAssignment $shift */
+        $assignment = [
+            'id' => $shift->id,
+            'date' => $shift->date,
+            'is_general' => $shift->is_general,
+            'is_unassigned' => $shift->is_unassigned,
+            'is_shift' => $shift->is_shift,
+        ];
+
+        if ($shift->is_shift) {
+            $assignment = array_merge($assignment, [
+                'shift_name' => $shift->shift_name,
+                'shift_title' => $shift->shift_title,
+                'shift_color' => $shift->color_code,
+                'shift_start' => Carbon::parse($shift->start_time)->format('h:i A'),
+                'shift_end' => Carbon::parse($shift->end_time)->format('h:i A'),
+            ]);
+        }
+
+        return $assignment;
     }
 
     private function transformDates(CarbonPeriod $period)
