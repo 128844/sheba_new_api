@@ -3,6 +3,7 @@
 use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\BusinessMember;
+use App\Models\TrackingLocation;
 use App\Sheba\Business\CoWorker\ManagerSubordinateEmployeeList;
 use App\Sheba\Business\LiveTracking\DateDropDown;
 use App\Transformers\Business\LiveTrackingListTransformer;
@@ -50,39 +51,35 @@ class TrackingController extends Controller
         $business = $request->business;
         /** @var BusinessMember $business_member */
         $business_member = $request->business_member;
-        if (!$business_member) return api_response($request, null, 401);
+        if (!$business_member) {
+            return api_response($request, null, 401);
+        }
 
         $live_tracking_Setting = $business->liveTrackingSettings;
-        $employee_lists = [];
-        (new ManagerSubordinateEmployeeList())->getManager($business_member->id, $employee_lists, $business_member->id);
-        $employee_lists = array_keys($employee_lists);
         list($offset, $limit) = calculatePagination($request);
 
-        $tracking_locations = $this->trackingLocationRepo->builder()
-            ->select('business_id', 'business_member_id', 'location', 'log', 'date', 'time', 'created_at')
-            ->where('business_id', $business->id)
-            ->where('created_at', '>', Carbon::now()->subDays(7)->endOfDay()->toDateTimeString());
-
-        if (!$business_member->isSuperAdmin()) $tracking_locations->whereIn('business_member_id', $employee_lists);
+        $employee_lists = [];
+        if (!$business_member->isSuperAdmin()) {
+            (new ManagerSubordinateEmployeeList())->getManager($business_member->id, $employee_lists, $business_member->id);
+            $employee_lists = array_keys($employee_lists);
+        }
 
         if ($request->has('department')) {
             $business_members = $business->getTrackLocationActiveBusinessMember();
-            $business_members = $co_worker_info_filter->filterByDepartment($business_members, $request)->pluck('id')->toArray();
-            $tracking_locations = $tracking_locations->whereIn('business_member_id', $business_members);
+            $employee_lists = $co_worker_info_filter->filterByDepartment($business_members, $request)->pluck('id')->toArray();
         }
 
-        $tracking_locations = $tracking_locations->groupBy('business_member_id')->orderBy('created_at', 'DESC');
-        $tracking_locations = $tracking_locations->get();
+        $tracking_locations = $this->trackingLocationRepo->getBusinessMembersLastLocationByBusinessForLastNDaysByRaw($business->id, $employee_lists, 3);
 
         $business_members_with_profile = [];
         $business->getAllBusinessMember()->each(function ($business_member) use (&$business_members_with_profile) {
             $role = $business_member->role;
             $business_members_with_profile[$business_member->id] = [
-                'employee_id' => $business_member->employee_id,
-                'employee_role' => $role ? $role->name : null,
+                'employee_id'         => $business_member->employee_id,
+                'employee_role'       => $role ? $role->name : null,
                 'employee_department' => $role ? $role->businessDepartment->name : null,
-                'employee_name' => $business_member->member->profile->name,
-                'pro_pic' => $business_member->member->profile->pro_pic,
+                'employee_name'       => $business_member->member->profile->name,
+                'pro_pic'             => $business_member->member->profile->pro_pic,
             ];
         });
 
@@ -91,13 +88,26 @@ class TrackingController extends Controller
         $resource = new Collection($tracking_locations, new LiveTrackingListTransformer($business_members_with_profile));
         $tracking_locations = $manager->createData($resource)->toArray()['data'];
 
-        if ($request->has('search')) $tracking_locations = $this->searchWithEmployeeName(collect($tracking_locations), $request->search)->values();
-        if ($request->has('no_activity')) $tracking_locations = $this->getEmployeeOfNoActivityForCertainHour(collect($tracking_locations), $request->no_activity)->values();
+        if ($request->has('search')) {
+            $tracking_locations = $this->searchWithEmployeeName(collect($tracking_locations), $request->search)->values();
+        }
+        if ($request->has('no_activity')) {
+            $tracking_locations = $this->getEmployeeOfNoActivityForCertainHour(collect($tracking_locations), $request->no_activity)->values();
+        }
 
         $total_count = count($tracking_locations);
         $tracking_locations = collect($tracking_locations)->splice($offset, $limit);
 
-        return api_response($request, $tracking_locations, 200, ['is_live_tracking_active' => $live_tracking_Setting ? $live_tracking_Setting->is_enable : 0, 'total' => $total_count, 'tracking_locations' => $tracking_locations]);
+        return api_response(
+            $request,
+            $tracking_locations,
+            200,
+            [
+                'is_live_tracking_active' => $live_tracking_Setting ? $live_tracking_Setting->is_enable : 0,
+                'total'                   => $total_count,
+                'tracking_locations'      => $tracking_locations
+            ]
+        );
     }
 
     /**

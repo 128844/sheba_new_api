@@ -59,7 +59,7 @@ class DepartmentController extends Controller
         }
 
         $total_business_departments = count($business_departments);
-        $business_departments = collect($business_departments)->splice($offset, $limit);
+        if ($request->has('limit')) $business_departments = collect($business_departments)->splice($offset, $limit);
 
         if (count($business_departments) > 0) return api_response($request, $business_departments, 200, [
             'departments' => $business_departments,

@@ -15,3 +15,5 @@ resources/assets/ebl/*
 composer-auth.json
 .sentryclirc
 .env.testing
+
+public/pgw-merchant-backend-php/
