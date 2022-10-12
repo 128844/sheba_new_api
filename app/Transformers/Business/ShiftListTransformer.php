@@ -15,7 +15,8 @@ class ShiftListTransformer extends TransformerAbstract
             'start_time' => Carbon::parse($shift->start_time)->format('h:i A'),
             'end_time' => Carbon::parse($shift->end_time)->format('h:i A'),
             'is_half_day_active' => $shift->is_halfday_enable,
-            'color' => $shift->color_code
+            'color' => $shift->color_code,
+            'assignments_count' => $shift->assignments_count
         ];
     }
 }

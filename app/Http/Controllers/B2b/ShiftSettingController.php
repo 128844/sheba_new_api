@@ -8,6 +8,7 @@ use App\Transformers\Business\ShiftDetailsTransformer;
 use App\Transformers\Business\ShiftListTransformer;
 use App\Transformers\CustomSerializer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use League\Fractal\Manager;
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\Item;
@@ -44,7 +45,9 @@ class ShiftSettingController extends Controller
 
         $manager = new Manager();
         $manager->setSerializer(new ArraySerializer());
-        $shifts = new Collection($business->shifts, new ShiftListTransformer());
+        $shifts = new Collection($business->shifts()->withCount(['assignments' => function($query) {
+            $query->select(DB::raw('count(distinct(business_member_id))'));
+        }])->get(), new ShiftListTransformer());
         $shifts = collect($manager->createData($shifts)->toArray()['data']);
         return api_response($request, $shifts, 200, ['shift' => $shifts]);
     }
