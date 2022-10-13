@@ -190,9 +190,9 @@ class MonthlyStat
                         ] : null,
                         'late_note' => (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasLateCheckin()) ? $attendance->checkinAction()->note : null,
                         'left_early_note' => (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasEarlyCheckout()) ? $attendance->checkoutAction()->note : null,
-                        'active_hours' => $attendance->staying_time_in_minutes ? $this->formatMinute($attendance->staying_time_in_minutes) : null,
+                        'active_hours' => $attendance->staying_time_in_minutes ? formatMinuteToHourMinuteString($attendance->staying_time_in_minutes) : null,
                         'overtime_in_minutes' => $overtime_in_minutes ?: 0,
-                        'overtime' => $overtime_in_minutes ? $this->formatMinute($overtime_in_minutes) : null,
+                        'overtime' => $overtime_in_minutes ? formatMinuteToHourMinuteString($overtime_in_minutes) : null,
                         'is_attendance_reconciled' => $attendance->is_attendance_reconciled
                     ];
                     if ($attendance->overrideLogs) {
@@ -228,27 +228,13 @@ class MonthlyStat
         }
         $statistics['present'] = $statistics[Statuses::ON_TIME] + $statistics[Statuses::LATE];
         $statistics['on_leave'] = $statistics['full_day_leave'] + $statistics['half_day_leave'];
-        $statistics['total_hours'] = $statistics['total_hours'] ? $this->formatMinute($statistics['total_hours']) : 0;
-        $statistics['overtime'] = $statistics['overtime_in_minutes'] ? $this->formatMinute($statistics['overtime_in_minutes']) : 0;
+        $statistics['total_hours'] = $statistics['total_hours'] ? formatMinuteToHourMinuteString($statistics['total_hours']) : 0;
+        $statistics['overtime'] = $statistics['overtime_in_minutes'] ? formatMinuteToHourMinuteString($statistics['overtime_in_minutes']) : 0;
         $statistics['leave_days'] = !empty($leave_days) ? implode(", ", $leave_days) : "-";
         $statistics['absent_days'] = !empty($absent_days) ? implode(", ", $absent_days) : "-";
         $statistics['late_days'] = !empty($late_days) ? implode(", ", $late_days) : "-";
 
         return $this->forOneEmployee ? ['statistics' => $statistics, 'daily_breakdown' => $daily_breakdown] : ['statistics' => $statistics];
-    }
-
-    /**
-     * @param $minute
-     * @return string
-     */
-    private function formatMinute($minute)
-    {
-        if ($minute < 60) return "$minute min";
-        $hour = $minute / 60;
-        $intval_hr = intval($hour);
-        $text = "$intval_hr hr ";
-        if ($hour > $intval_hr) $text .= ($minute - (60 * intval($hour))) . " min";
-        return $text;
     }
 
     /**
