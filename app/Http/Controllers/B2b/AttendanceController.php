@@ -218,13 +218,25 @@ class AttendanceController extends Controller
         }
 
         $business_member_leave = $business_member->leaves()->accepted()->between($time_frame)->get();
-        $attendances = $business_member->attendances()->whereBetween('date', $time_frame->getArray())->get();
+        $attendances = $business_member->attendances()->with([
+            'actions' => function ($q) {
+                $q->select('id', 'attendance_id', 'note', 'action', 'status', 'ip', 'is_remote', 'remote_mode', 'is_in_wifi', 'is_geo_location', 'business_office_id', 'location', 'created_at');
+            },
+            'shiftAssignment' => function ($q) {
+                $q->select('id', 'shift_id', 'shift_title', 'color_code', 'is_general', 'is_unassigned', 'is_shift');
+            },
+            'overrideLogs'
+        ])->whereBetween('date', $time_frame->getArray())->get();
         $business_holiday = $business_holiday_repo->getAllByBusiness($business);
         $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business);
 
         $shifts_counts = 0;
-        if ($business_member->isShiftEnable())
-            $shifts_counts = $business_member->shifts()->where('is_general', 0)->whereBetween('date', $this->timeFrame->getArray())->count();
+        if ($business_member->isShiftEnable()) {
+            $shifts_counts = $business_member->shifts()
+                ->where('is_general', 0)
+                ->whereBetween('date', $this->timeFrame->getArray())
+                ->count();
+        }
 
         $employee_attendance = (new MonthlyStat($time_frame, $business, $weekend_settings, $business_member_leave, true, $business_member->isShiftEnable()))
             ->setBusinessHolidays($business_holiday)->transform($attendances, $shifts_counts);

@@ -3,6 +3,7 @@
 use App\Sheba\Business\Attendance\HalfDaySetting\HalfDayType;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Sheba\Business\Attendance\AttendanceShiftFormatter;
 use Sheba\Business\Attendance\CheckWeekend;
 use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\Attendance\Statuses;
@@ -193,7 +194,8 @@ class MonthlyStat
                         'active_hours' => $attendance->staying_time_in_minutes ? formatMinuteToHourMinuteString($attendance->staying_time_in_minutes) : null,
                         'overtime_in_minutes' => $overtime_in_minutes ?: 0,
                         'overtime' => $overtime_in_minutes ? formatMinuteToHourMinuteString($overtime_in_minutes) : null,
-                        'is_attendance_reconciled' => $attendance->is_attendance_reconciled
+                        'is_attendance_reconciled' => $attendance->is_attendance_reconciled,
+                        'shift' => AttendanceShiftFormatter::get($attendance)
                     ];
                     if ($attendance->overrideLogs) {
                         foreach ($attendance->overrideLogs as $override_log) {
@@ -226,6 +228,7 @@ class MonthlyStat
             if ($this->forOneEmployee) $breakdown_data['date'] = $date->toDateString();
             if ($this->forOneEmployee) $daily_breakdown[] = $breakdown_data;
         }
+
         $statistics['present'] = $statistics[Statuses::ON_TIME] + $statistics[Statuses::LATE];
         $statistics['on_leave'] = $statistics['full_day_leave'] + $statistics['half_day_leave'];
         $statistics['total_hours'] = $statistics['total_hours'] ? formatMinuteToHourMinuteString($statistics['total_hours']) : 0;
@@ -234,7 +237,9 @@ class MonthlyStat
         $statistics['absent_days'] = !empty($absent_days) ? implode(", ", $absent_days) : "-";
         $statistics['late_days'] = !empty($late_days) ? implode(", ", $late_days) : "-";
 
-        return $this->forOneEmployee ? ['statistics' => $statistics, 'daily_breakdown' => $daily_breakdown] : ['statistics' => $statistics];
+        $result = ['statistics' => $statistics];
+        if ($this->forOneEmployee) $result['daily_breakdown'] = $daily_breakdown;
+        return $result;
     }
 
     /**
@@ -267,7 +272,7 @@ class MonthlyStat
         $this->businessMemberLeave->each(function ($leave) use (&$business_member_leaves_date, &$business_member_leaves_date_with_half_and_full_day) {
             $leave_period = CarbonPeriod::create($leave->start_date, $leave->end_date);
             foreach ($leave_period as $date) {
-                array_push($business_member_leaves_date, $date->toDateString());
+                $business_member_leaves_date[] = $date->toDateString();
                 $business_member_leaves_date_with_half_and_full_day[$date->toDateString()] = [
                     'is_half_day_leave' => $leave->is_half_day,
                     'which_half_day' => $leave->half_day_configuration,
@@ -367,15 +372,6 @@ class MonthlyStat
     }
 
     /**
-     * @param Attendance $attendance | null
-     * @return bool
-     */
-    private function hasAttendanceButNotAbsent($attendance)
-    {
-        return $attendance && !($attendance->status == Statuses::ABSENT);
-    }
-
-    /**
      * @param $date
      * @return null
      */
@@ -397,9 +393,9 @@ class MonthlyStat
      */
     private function getLeaveType(Carbon $date, array $leaves_date_with_half_and_full_day)
     {
-        if (array_key_exists($date->format('Y-m-d'), $leaves_date_with_half_and_full_day)) {
-            return $leaves_date_with_half_and_full_day[$date->format('Y-m-d')]['leave_type'];
-        }
-        return null;
+        $key = $date->format('Y-m-d');
+        if (!array_key_exists($key, $leaves_date_with_half_and_full_day)) return null;
+
+        return $leaves_date_with_half_and_full_day[$key]['leave_type'];
     }
 }
