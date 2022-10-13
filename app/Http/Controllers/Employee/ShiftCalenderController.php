@@ -5,6 +5,7 @@ use App\Models\Business;
 use App\Sheba\Business\BusinessBasicInformation;
 use App\Models\BusinessMember;
 use App\Sheba\Employee\ShiftCalender;
+use Sheba\Dal\Attendance\EloquentImplementation;
 use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\Helpers\TimeFrame;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class ShiftCalenderController extends Controller
         $this->shiftAssignmentRepository = $shift_assignment_repo;
     }
 
-    public function index(Request $request, TimeFrame $time_frame)
+    public function index(Request $request, TimeFrame $time_frame, EloquentImplementation $attendanceRepository)
     {
         /** @var Business $business */
         $business = $this->getBusiness($request);
@@ -35,8 +36,8 @@ class ShiftCalenderController extends Controller
         $year = $request->year;
         $time_frame = $time_frame->forAMonth($month, $year);
         $shift_calender = $this->shiftAssignmentRepository->builder()->with('shift')->where('business_member_id', $business_member->id)->whereBetween('date', [$time_frame->start, $time_frame->end])->get();
-
-        $shift_data = new ShiftCalender($business, $shift_calender);
+        $employee_attendances = $attendanceRepository->builder()->where('business_member_id', $business_member->id)->whereBetween('date', [$time_frame->start, $time_frame->end])->pluck('checkin_time', 'date')->toArray();
+        $shift_data = new ShiftCalender($business, $shift_calender, $employee_attendances);
         $shift_data = $shift_data->employee_shift_calender();
         return api_response($request, null, 200, ['shift_calender' => $shift_data['employee_shifts'], 'shifts' => $shift_data['shifts']]);
     }
