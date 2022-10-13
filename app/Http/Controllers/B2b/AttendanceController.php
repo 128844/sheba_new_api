@@ -151,8 +151,13 @@ class AttendanceController extends Controller
         }
 
         $count = count($attendances);
-        if ($request->file == 'excel') return (new DailyExcel())->setDate($date->format('Y-m-d'))->setData($attendances)->download();
-        return api_response($request, null, 200, ['attendances' => $attendances, 'total' => $count]);
+        if ($request->file == 'excel') {
+            return (new DailyExcel())->setDate($date->format('Y-m-d'))->setData($attendances)->download();
+        }
+        return api_response($request, null, 200, [
+            'attendances' => $attendances,
+            'total' => $count
+        ]);
     }
 
     /**

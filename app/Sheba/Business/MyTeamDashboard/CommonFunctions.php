@@ -14,12 +14,8 @@ class CommonFunctions
     private $business;
     /** @var Carbon */
     private $startDate;
-    /** @var Carbon */
-    private $endDate;
     /** @var BusinessHolidayRepoInterface $businessHoliday */
     private $businessHoliday;
-    /** @var BusinessWeekendRepoInterface $businessWeekend */
-    private $businessWeekend;
     private $businessWeekendSettingsRepo;
     private $checkWeekend;
 
@@ -27,15 +23,14 @@ class CommonFunctions
      * @param BusinessHolidayRepoInterface $business_holiday_repo
      * @param BusinessWeekendSettingsRepo $business_weekend_settings_repo
      * @param CheckWeekend $check_weekend
-     * @param BusinessWeekendRepoInterface $business_weekend_repo
      */
-    public function __construct(BusinessHolidayRepoInterface $business_holiday_repo,
-                                BusinessWeekendSettingsRepo  $business_weekend_settings_repo,
-                                CheckWeekend                 $check_weekend,
-                                BusinessWeekendRepoInterface $business_weekend_repo)
+    public function __construct(
+        BusinessHolidayRepoInterface $business_holiday_repo,
+        BusinessWeekendSettingsRepo  $business_weekend_settings_repo,
+        CheckWeekend                 $check_weekend
+    )
     {
         $this->businessHoliday = $business_holiday_repo;
-        $this->businessWeekend = $business_weekend_repo;
         $this->businessWeekendSettingsRepo = $business_weekend_settings_repo;
         $this->checkWeekend = $check_weekend;
     }
@@ -57,7 +52,6 @@ class CommonFunctions
     public function setSelectedDate(TimeFrame $selected_date)
     {
         $this->startDate = $selected_date->start;
-        $this->endDate = $selected_date->end;
         return $this;
     }
 
@@ -101,5 +95,13 @@ class CommonFunctions
     private function isHoliday(Carbon $date, $holidays)
     {
         return in_array($date->format('Y-m-d'), $holidays);
+    }
+
+    public function getWeekendOrHolidayString()
+    {
+        $weekend_settings = $this->businessWeekendSettingsRepo->getAllByBusiness($this->business);
+        $weekend_day = $this->checkWeekend->getWeekendDays($this->startDate, $weekend_settings);
+
+        return $this->isWeekend($this->startDate, $weekend_day) ? 'weekend' : 'holiday';
     }
 }

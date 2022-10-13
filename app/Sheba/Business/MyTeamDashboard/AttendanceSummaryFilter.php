@@ -316,16 +316,16 @@ class AttendanceSummaryFilter
 
         $data = [];
         foreach ($business_members as $business_member) {
-            array_push($data, $this->getBusinessMemberData($business_member) + [
-                    'check_in' => null,
-                    'check_out' => null,
-                    'is_absent' => $is_weekend_or_holiday ? 0 : 1,
-                    'is_on_leave' => 0,
-                    'is_holiday' => $is_weekend_or_holiday ? 1 : 0,
-                    'weekend_or_holiday' => $is_weekend_or_holiday ? $this->isWeekendOrHoliday() : null,
-                    'is_half_day_leave' => 0,
-                    'which_half_day_leave' => null,
-                ]);
+            $data[] = $this->getBusinessMemberData($business_member) + [
+                'check_in' => null,
+                'check_out' => null,
+                'is_absent' => $is_weekend_or_holiday ? 0 : 1,
+                'is_on_leave' => 0,
+                'is_holiday' => $is_weekend_or_holiday ? 1 : 0,
+                'weekend_or_holiday' => $is_weekend_or_holiday ? $this->isWeekendOrHoliday() : null,
+                'is_half_day_leave' => 0,
+                'which_half_day_leave' => null,
+            ];
         }
 
         return $data;
