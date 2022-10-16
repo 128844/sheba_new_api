@@ -13,7 +13,7 @@ class EmployeeShiftDetailsTransformer extends TransformerAbstract
             'business_member_id'        => $shift_assignment->business_member_id,
             'shift_id'                  => $shift_assignment->shift_id,
             'shift_name'                => $shift_assignment->shift_name,
-            'date'                      => Carbon::parse($shift_assignment->date)->format('d-m-Y'),
+            'date'                      => Carbon::parse($shift_assignment->date)->toDateString(),
             'start_time'                => Carbon::parse($shift_assignment->start_time)->format('h:i A'),
             'end_time'                  => Carbon::parse($shift_assignment->end_time)->format('h:i A'),
             'is_half_day'               => $shift_assignment->is_half_day,
