@@ -32,8 +32,8 @@ class TopUpTokenManager
         $resource_number = $this->partner->getContactNumber();
         if ($otp_number != $resource_number) throw new UnauthorizedTokenCreationException();
 
-        $time_since_midnight = time() - strtotime("midnight");
-        $remaining_time = (24 * 3600) - $time_since_midnight;
+        $time_since_midnight_after_one_week = time() - strtotime("midnight". " +1 week");
+        $remaining_time = (24 * 3600) - $time_since_midnight_after_one_week;
 
         $payload = [
             'iss' => "topup-jwt",
