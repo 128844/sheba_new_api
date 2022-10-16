@@ -115,19 +115,18 @@ class ShiftAssignToCalender
         $this->shiftCalenderRequester->setIsHalfDayActivated(0)
                                      ->setIsUnassignedActivated(1)
                                      ->setIsShiftActivated(0);
-        if($request->repeat) {
-            $end_date = $request->end_date;
-            $time_frame = $this->timeFrame->forDateRange($shift_calender->date, $end_date);
-            return $this->shiftAssignmentRepository->where('is_shift', 1)
-                ->where('business_member_id', $shift_calender->business_member_id)
-                ->whereBetween('date', [$time_frame->start, $time_frame->end])->get();
+
+        $assignments = $this->shiftAssignmentRepository->where('is_shift', 1)
+            ->where('business_member_id', $shift_calender->business_member_id);
+
+        if ($request->repeat) {
+            $time_frame = $this->timeFrame->forDateRange($shift_calender->date, $request->end_date);
+            $assignments = $assignments->whereBetween('date', [$time_frame->start, $time_frame->end]);
+        } else {
+            $assignments = $assignments->where('date', $shift_calender->date);
         }
-        else
-        {
-            return $this->shiftAssignmentRepository->where('is_shift', 1)
-                ->where('business_member_id', $shift_calender->business_member_id)
-                ->where('date', $shift_calender->date)->get();
-        }
+
+        return $assignments->get();
     }
 
     public function checkShiftStartDate($start_date, Requester $shift_calender_requester)
@@ -136,6 +135,6 @@ class ShiftAssignToCalender
         $current_date = Carbon::now();
         $start_date = Carbon::parse($start_date);
         $message = "You can not change anything from previous calender date!!!";
-        if($start_date->lte($current_date)) $this->shiftCalenderRequester->setShiftAssignError($message);
+        if ($start_date->lte($current_date)) $this->shiftCalenderRequester->setShiftAssignError($message);
     }
 }
