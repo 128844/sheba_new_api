@@ -1,10 +1,13 @@
 <?php namespace Sheba\Business\ShiftSetting\ShiftAssign;
 
-use Sheba\Business\ShiftSetting\ShiftAssign\Requester;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
+use Sheba\ModificationFields;
 
 class ShiftRemover
 {
+    use ModificationFields;
+
     /*** @var ShiftAssignmentRepository  $shiftAssignmentRepository */
     private $shiftAssignmentRepository;
 
@@ -28,6 +31,14 @@ class ShiftRemover
         foreach ($shift_calender as $calender_data) {
             $this->shiftAssignmentRepository->update($calender_data, $data);
         }
+    }
+
+    public function moveToGeneral(ShiftAssignment $assignment)
+    {
+        $this->shiftAssignmentRepository
+            ->where('business_member_id', $assignment->business_member_id)
+            ->where('date', '>=', $assignment->date)
+            ->update($this->withUpdateModificationField($this->makeData()));
     }
 
     private function makeData()
