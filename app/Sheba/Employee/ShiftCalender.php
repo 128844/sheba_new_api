@@ -30,7 +30,8 @@ class ShiftCalender
                 'is_general' => $employeeShift->is_general,
                 'is_unassigned' => $employeeShift->is_unassigned,
                 'is_shift' => $employeeShift->is_shift,
-                'color_code' => $employeeShift->color_code
+                'color_code' => $employeeShift->color_code,
+                'is_future_date' => Carbon::now()->toDateString() < $employeeShift->date ? 1 : 0
             ];
 
             if($employeeShift->is_general){
@@ -77,8 +78,8 @@ class ShiftCalender
             'id'            => $id,
             'title'         => $name,
             'color_code'    => $color_code,
-            'start_time'    => $start_time,
-            'end_time'      => $end_time
+            'start_time'    => Carbon::parse($start_time)->format('h:i A'),
+            'end_time'      => Carbon::parse($end_time)->format('h:i A'),
         ];
     }
 }
