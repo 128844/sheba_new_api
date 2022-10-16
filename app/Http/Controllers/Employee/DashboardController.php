@@ -45,46 +45,50 @@ class DashboardController extends Controller
                 'target_type' => 'attendance',
             ],
             [#2
+                'title' => 'Shift Calendar',
+                'target_type' => 'shift_calendar',
+            ],
+            [#3
                 'title' => 'Notice',
                 'target_type' => 'notice',
             ],
-            [#3
+            [#4
                 'title' => 'Expense',
                 'target_type' => 'expense',
             ],
-            [#4
+            [#5
                 'title' => 'Leave',
                 'target_type' => 'leave',
             ],
-            [#5
+            [#6
                 'title' => 'Approval',
                 'target_type' => 'approval',
             ],
-            [#6
+            [#7
                 'title' => 'Phonebook',
                 'target_type' => 'phonebook',
             ],
-            [#7
+            [#8
                 'title' => 'Payslip',
                 'target_type' => 'payslip',
 
             ],
-            [#8
+            [#9
                 'title' => 'Visit',
                 'target_type' => 'visit',
 
             ],
-            [#9
+            [#10
                 'title' => 'Tracking',
                 'target_type' => 'tracking',
 
             ],
-            [#10
+            [#11
                 'title' => 'My Team',
                 'target_type' => 'my_team',
 
             ],
-            [#11
+            [#12
                 'title' => 'Feedback',
                 'target_type' => 'feedback',
                 'link' => "https://sheba.freshdesk.com/support/tickets/new"
@@ -95,6 +99,8 @@ class DashboardController extends Controller
         if (!$is_enable_employee_visit) $dashboard->forget(8);#Visit
         if (!$this->isLiveTrackingEnable($live_tracking_settings) || !$is_manager) $dashboard->forget(9);#Tracking
         if (!$is_manager) $dashboard->forget(10);#My Team
+        if (!$business->isShiftEnable()) $dashboard->forget(2);#ShiftCalendar
+
 
         return api_response($request, $dashboard, 200, ['dashboard' => $dashboard->values()]);
     }

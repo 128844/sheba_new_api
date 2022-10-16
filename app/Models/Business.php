@@ -548,4 +548,9 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
         return $this->liveTrackingSettings() ? $this->liveTrackingSettings->is_enable : false;
     }
 
+    public function isShiftEnable(): bool
+    {
+        return $this->is_shift_enable;
+    }
+
 }
