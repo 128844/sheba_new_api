@@ -7,22 +7,6 @@ class DailyExcel
     private $dailyData;
     private $data = [];
     private $date;
-    private $employeeId;
-    private $employeeName;
-    private $department;
-    private $status;
-    private $checkInTime;
-    private $checkInStatus;
-    private $checkInLocation;
-    private $checkInAddress;
-    private $checkOutTime;
-    private $checkOutStatus;
-    private $checkOutLocation;
-    private $checkOutAddress;
-    private $totalHours;
-    private $lateNote;
-    private $leftEarlyNote;
-    private $overtime;
 
     private function initializeData()
     {
