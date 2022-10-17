@@ -247,8 +247,9 @@ class CoWorkerController extends Controller
 
         $business_member = $this->coWorkerCreator->basicInfoStore();
 
-        if ($business_member) return api_response($request, null, 200, ['business_member_id' => $business_member->id]);
-        return api_response($request, null, 404);
+        if (!$business_member) return api_response($request, null, 404);
+
+        return api_response($request, null, 200, ['business_member_id' => $business_member->id]);
     }
 
     /**

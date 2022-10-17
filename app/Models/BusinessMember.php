@@ -393,8 +393,7 @@ class BusinessMember extends Model
 
     public function isBusinessMemberActive()
     {
-        if ($this->status == Statuses::ACTIVE) return true;
-        return false;
+        return $this->status == Statuses::ACTIVE;
     }
 
     /**

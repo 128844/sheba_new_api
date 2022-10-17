@@ -88,9 +88,15 @@ class CoWorkerStatusController extends Controller
             return api_response($request, 1, 200);
         }
         if ($this->isActive($request->status)) {
-            $this->coWorkerExistenceCheck->setBusiness($business)->setBusinessMember($business_member)->isActiveOrInvitedInAnotherBusiness();
+            $this->coWorkerExistenceCheck
+                ->setBusiness($business)
+                ->setBusinessMember($business_member)
+                ->isActiveOrInvitedInAnotherBusiness();
+
             if ($this->coWorkerExistenceCheck->hasError()) {
-                return api_response($request, null, $this->coWorkerExistenceCheck->getErrorCode(), ['message' => $this->coWorkerExistenceCheck->getErrorMessage()]);
+                return api_response($request, null, $this->coWorkerExistenceCheck->getErrorCode(), [
+                    'message' => $this->coWorkerExistenceCheck->getErrorMessage()
+                ]);
             }
         }
         $business_member = $this->coWorkerUpdater->statusUpdate();
@@ -238,8 +244,7 @@ class CoWorkerStatusController extends Controller
      */
     private function isActive($requested_status)
     {
-        if ($requested_status == Statuses::ACTIVE) return true;
-        return false;
+        return $requested_status == Statuses::ACTIVE;
     }
 
     /**
