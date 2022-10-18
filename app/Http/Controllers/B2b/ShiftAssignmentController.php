@@ -86,6 +86,7 @@ class ShiftAssignmentController extends Controller
         $business_shift = $this->businessShiftRepository->find($request->shift_id);
         if (!$business_shift) return api_response($request, null, 404);
         $shift_calender = $this->shiftAssignmentRepository->find($calender_id);
+        $assigning_business_member = $shift_calender->businessMember;
 
         $this->shiftAssignToCalender->checkShiftStartDate($shift_calender->date, $this->shiftCalenderRequester);
         if ($this->shiftCalenderRequester->hasError()) return api_response($request, null, $this->shiftCalenderRequester->getErrorCode(), ['message' => $this->shiftCalenderRequester->getErrorMessage()]);
@@ -116,7 +117,7 @@ class ShiftAssignmentController extends Controller
             ->setIsShiftActivated(1)
             ->setColorCode($business_shift->color_code);
 
-        $this->shiftAssignToCalender->checkShiftRepeat($request, $shift_calender, $business_member, $this->shiftCalenderRequester);
+        $this->shiftAssignToCalender->checkShiftRepeat($request, $shift_calender, $assigning_business_member, $this->shiftCalenderRequester);
         $shift_calender = $this->shiftCalenderRequester->getData();
         if ($this->shiftCalenderRequester->hasError()) return api_response($request, null, $this->shiftCalenderRequester->getErrorCode(), ['message' => $this->shiftCalenderRequester->getErrorMessage()]);
         $this->shiftCalenderCreator->setShiftCalenderRequester($this->shiftCalenderRequester)->update($shift_calender);
@@ -182,9 +183,9 @@ class ShiftAssignmentController extends Controller
         if (!$business_member) return api_response($request, null, 401);
 
         $total_active_employee_ids = $business->getActiveBusinessMember()->pluck('id')->toArray();
-        $under_general_attendance_count = $shift_assignment_repository->where('business_member_id', $total_active_employee_ids)->where('is_general', 1)->where('date', '<', Carbon::now()->toDateString())->count();
-        $under_shift_count = $shift_assignment_repository->where('business_member_id', $total_active_employee_ids)->where('is_shift', 1)->where('date', '<', Carbon::now()->toDateString())->count();
-        $unassigned_shift_count = $shift_assignment_repository->where('business_member_id', $total_active_employee_ids)->where('is_unassigned', 1)->where('date', '>', Carbon::now()->toDateString())->count();
+        $under_general_attendance_count = $shift_assignment_repository->builder()->whereIn('business_member_id', $total_active_employee_ids)->where('is_general', 1)->where('date', '<', Carbon::now()->toDateString())->count();
+        $under_shift_count = $shift_assignment_repository->builder()->whereIn('business_member_id', $total_active_employee_ids)->where('is_shift', 1)->where('date', '<', Carbon::now()->toDateString())->count();
+        $unassigned_shift_count = $shift_assignment_repository->builder()->whereIn('business_member_id', $total_active_employee_ids)->where('is_unassigned', 1)->where('date', '>', Carbon::now()->toDateString())->count();
 
         return api_response($request, null, 200, ['dashboard' => [
             'total_employee' => count($total_active_employee_ids),
