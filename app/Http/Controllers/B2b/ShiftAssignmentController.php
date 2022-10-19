@@ -72,7 +72,7 @@ class ShiftAssignmentController extends Controller
             'repeat_type'               => 'string',
             'repeat_range'              => 'integer',
             'days'                      => 'array',
-            'end_date'                  => 'date_format:Y-m-d'
+            'end_date'                  => 'required_id:repeat,1|date_format:Y-m-d'
         ]);
 
         /** @var Business $business */
@@ -86,6 +86,13 @@ class ShiftAssignmentController extends Controller
         $business_shift = $this->businessShiftRepository->find($request->shift_id);
         if (!$business_shift) return api_response($request, null, 404);
         $shift_calender = $this->shiftAssignmentRepository->find($calender_id);
+
+        if ($request->has('end_date') && $shift_calender->getDate()->gte(Carbon::parse($request->end_date))) {
+            return api_response($request, null, 400, [
+                'message' => "Repeat end date must be greater than assignment start date"
+            ]);
+        }
+
         $assigning_business_member = $shift_calender->businessMember;
 
         $this->shiftAssignToCalender->checkShiftStartDate($shift_calender->date, $this->shiftCalenderRequester);
@@ -119,7 +126,9 @@ class ShiftAssignmentController extends Controller
 
         $this->shiftAssignToCalender->checkShiftRepeat($request, $shift_calender, $assigning_business_member, $this->shiftCalenderRequester);
         $shift_calender = $this->shiftCalenderRequester->getData();
-        if ($this->shiftCalenderRequester->hasError()) return api_response($request, null, $this->shiftCalenderRequester->getErrorCode(), ['message' => $this->shiftCalenderRequester->getErrorMessage()]);
+        if ($this->shiftCalenderRequester->hasError()) {
+            return api_response($request, null, $this->shiftCalenderRequester->getErrorCode(), ['message' => $this->shiftCalenderRequester->getErrorMessage()]);
+        }
         $this->shiftCalenderCreator->setShiftCalenderRequester($this->shiftCalenderRequester)->update($shift_calender);
         return api_response($request, null, 200);
     }

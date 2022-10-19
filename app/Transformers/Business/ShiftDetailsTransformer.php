@@ -19,6 +19,7 @@ class ShiftDetailsTransformer extends TransformerAbstract
             'is_end_grace_enable' => $shift->checkout_grace_enable,
             'end_grace_time' => $shift->checkout_grace_time,
             'is_half_day_active' => $shift->is_halfday_enable,
+            'assignments_count' => $shift->assignments_count,
             'created_at' => $shift->created_at->format('h:i A d/m/Y'),
             'updated_at' => $shift->updated_at->format('h:i A d/m/Y'),
             'created_by' => str_replace('Member-', '', $shift->created_by_name),

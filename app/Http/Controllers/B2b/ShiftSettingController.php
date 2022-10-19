@@ -107,6 +107,9 @@ class ShiftSettingController extends Controller
 
         $manager = new Manager();
         $manager->setSerializer(new CustomSerializer());
+
+        $business_shift->assignments_count = $business_shift->assignments()->count(DB::raw('distinct(business_member_id)'));
+
         $business_shift = $manager
             ->createData(new Item($business_shift, new ShiftDetailsTransformer()))
             ->toArray()['data'];
