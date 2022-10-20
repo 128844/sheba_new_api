@@ -72,7 +72,7 @@ class ShiftAssignmentController extends Controller
             'repeat_type'               => 'string',
             'repeat_range'              => 'integer',
             'days'                      => 'array',
-            'end_date'                  => 'required_id:repeat,1|date_format:Y-m-d'
+            'end_date'                  => 'required_if:repeat,1|date_format:Y-m-d'
         ]);
 
         /** @var Business $business */
@@ -101,8 +101,8 @@ class ShiftAssignmentController extends Controller
         $general_to_unassign_data = $this->shiftAssignToCalender->generalToUnassign($shift_calender, $this->shiftCalenderRequester);
         $this->shiftRemover->setShiftCalenderRequester($this->shiftCalenderRequester)->update($general_to_unassign_data);
 
-        $shift_to_unassign_data = $this->shiftAssignToCalender->shiftToUnassign($shift_calender, $this->shiftCalenderRequester, $request);
-        $this->shiftRemover->setShiftCalenderRequester($this->shiftCalenderRequester)->update($shift_to_unassign_data);
+        //$shift_to_unassign_data = $this->shiftAssignToCalender->shiftToUnassign($shift_calender, $this->shiftCalenderRequester, $request);
+        //$this->shiftRemover->setShiftCalenderRequester($this->shiftCalenderRequester)->update($shift_to_unassign_data);
 
         $this->shiftCalenderRequester->setShiftId($request->shift_id)
             ->setShiftName($business_shift->name)
@@ -126,6 +126,7 @@ class ShiftAssignmentController extends Controller
 
         $this->shiftAssignToCalender->checkShiftRepeat($request, $shift_calender, $assigning_business_member, $this->shiftCalenderRequester);
         $shift_calender = $this->shiftCalenderRequester->getData();
+
         if ($this->shiftCalenderRequester->hasError()) {
             return api_response($request, null, $this->shiftCalenderRequester->getErrorCode(), ['message' => $this->shiftCalenderRequester->getErrorMessage()]);
         }

@@ -32,7 +32,6 @@ class ShiftAssignToCalender
         $dates = [];
         if($request->repeat_type == 'days') $dates = $this->getDatesFromDayRepeat($shift_calender->date, $request->end_date, $request->repeat_range);
         elseif ($request->repeat_type == 'weeks') $dates = $this->getDatesFromWeekRepeat($shift_calender->date, $request->end_date, $request->repeat_range, $request->days);
-
         foreach ($dates as $date)
         {
             $shift_calender = $this->shiftAssignmentRepository->where('business_member_id', $business_member->id)->where('date', $date)->first();
@@ -87,11 +86,11 @@ class ShiftAssignToCalender
     public function getDatesFromWeekRepeat($start_date, $end_date, $repeat, $days)
     {
         $dates = [];
-        $end_date = Carbon::parse($end_date)->toDateString();
-        $date = $start_date;
+        $end_date = Carbon::parse($end_date);
         foreach ($days as $day) {
             $day = Carbon::parse($day)->dayOfWeek;
-            $start_date = Carbon::parse($start_date)->next($day);
+            $start_date = Carbon::parse($start_date);
+            if (!$start_date->isDayOfWeek($day)) $start_date = $start_date->next($day);
             for ($date = $start_date->copy(); $date->lte($end_date); $date->addWeeks($repeat)) {
                 $dates[] = $date->format('Y-m-d');
             }
