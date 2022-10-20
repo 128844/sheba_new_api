@@ -86,12 +86,13 @@ class ShiftAssignToCalender
     public function getDatesFromWeekRepeat($start_date, $end_date, $repeat, $days)
     {
         $dates = [];
+        $start_date = Carbon::parse($start_date);
         $end_date = Carbon::parse($end_date);
         foreach ($days as $day) {
             $day = Carbon::parse($day)->dayOfWeek;
-            $start_date = Carbon::parse($start_date);
-            if (!$start_date->isDayOfWeek($day)) $start_date = $start_date->next($day);
-            for ($date = $start_date->copy(); $date->lte($end_date); $date->addWeeks($repeat)) {
+            $start_date_for_this_day = $start_date->copy();
+            if (!$start_date_for_this_day->isDayOfWeek($day)) $start_date_for_this_day = $start_date_for_this_day->next($day);
+            for ($date = $start_date_for_this_day->copy(); $date->lte($end_date); $date->addWeeks($repeat)) {
                 $dates[] = $date->format('Y-m-d');
             }
         }
