@@ -60,11 +60,12 @@ class CommonFunctions
      */
     public function isWeekendHoliday()
     {
+        $date = $this->startDate ?: Carbon::now();
         $weekend_settings = $this->businessWeekendSettingsRepo->getAllByBusiness($this->business);
         $business_holiday = $this->businessHoliday->getAllByBusiness($this->business);
 
         $dates_of_holidays_formatted = [];
-        $weekend_day = $this->checkWeekend->getWeekendDays($this->startDate, $weekend_settings);
+        $weekend_day = $this->checkWeekend->getWeekendDays($date, $weekend_settings);
         foreach ($business_holiday as $holiday) {
             $start_date = Carbon::parse($holiday->start_date);
             $end_date = Carbon::parse($holiday->end_date);
@@ -73,8 +74,8 @@ class CommonFunctions
             }
         }
 
-        return $this->isWeekend($this->startDate, $weekend_day)
-            || $this->isHoliday($this->startDate, $dates_of_holidays_formatted);
+        return $this->isWeekend($date, $weekend_day)
+            || $this->isHoliday($date, $dates_of_holidays_formatted);
     }
 
     /**

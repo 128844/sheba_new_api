@@ -2,6 +2,7 @@
 
 use App\Models\Business;
 use App\Models\BusinessMember;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Sheba\Business\Attendance\AttendanceTypes\AttendanceSuccess;
 use Sheba\Business\AttendanceActionLog\StatusCalculator\CheckinStatusCalculator;
@@ -9,6 +10,7 @@ use Sheba\Business\AttendanceActionLog\StatusCalculator\CheckoutStatusCalculator
 use Sheba\Business\AttendanceActionLog\StatusCalculator\ShiftCheckinStatusCalculator;
 use Sheba\Business\AttendanceActionLog\StatusCalculator\ShiftCheckoutStatusCalculator;
 use Sheba\Dal\Attendance\Model as Attendance;
+use Sheba\Dal\Attendance\Statuses;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use Sheba\Dal\AttendanceActionLog\EloquentImplementation as AttendanceActionLogRepositoryInterface;
 use Sheba\Dal\BusinessAttendanceTypes\AttendanceTypes;
@@ -46,6 +48,7 @@ class Creator
     private $shiftCheckoutStatusCalculator;
     /*** @var BusinessMember */
     private $businessMember;
+    private $businessOfficeHours;
 
     /**
      * Creator constructor.
@@ -70,6 +73,7 @@ class Creator
     public function setBusiness(Business $business)
     {
         $this->business = $business;
+        $this->businessOfficeHours = $this->business->officeHour;
         return $this;
     }
 
@@ -176,14 +180,24 @@ class Creator
      */
     public function create()
     {
+        $is_in_grace_period = 0;
         if ($this->action == Actions::CHECKIN){
-            if (!$this->shiftAssignment  || $this->shiftAssignment->is_general) $status = $this->checkinStatusCalculator->setBusiness($this->business)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
-            else $status = $this->shiftCheckinStatusCalculator->setBusinessMember($this->businessMember)->setShiftAssignment($this->shiftAssignment)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
+            if (!$this->shiftAssignment  || $this->shiftAssignment->is_general) {
+                $status = $this->checkinStatusCalculator->setBusiness($this->business)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
+                $is_in_grace_period = $this->businessOfficeHours->is_start_grace_time_enable && Carbon::now()->greaterThan(Carbon::parse($this->businessOfficeHours->start_time)) && Carbon::now()->lessThanOrEqualTo(Carbon::parse($this->businessOfficeHours->start_time)->addMinutes($this->businessOfficeHours->start_grace_time)) ? 1 : 0;
+            } else {
+                $status = $this->shiftCheckinStatusCalculator->setBusinessMember($this->businessMember)->setShiftAssignment($this->shiftAssignment)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
+                $is_in_grace_period = $this->shiftAssignment->checkin_grace_enable && Carbon::now()->greaterThan(Carbon::parse($this->shiftAssignment->date . " ".$this->shiftAssignment->start_time)) && Carbon::now()->lessThanOrEqualTo(Carbon::parse($this->shiftAssignment->date . " ".$this->shiftAssignment->start_time)->addMinutes($this->shiftAssignment->checkin_grace_time)) ? 1 : 0;
+            }
+
         } else {
-
-            if (!$this->shiftAssignment  || $this->shiftAssignment->is_general) $status = $this->checkoutStatusCalculator->setBusiness($this->business)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
-            else $status = $this->shiftCheckoutStatusCalculator->setBusinessMember($this->businessMember)->setShiftAssignment($this->shiftAssignment)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
-
+            if (!$this->shiftAssignment  || $this->shiftAssignment->is_general) {
+                $status = $this->checkoutStatusCalculator->setBusiness($this->business)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
+                $is_in_grace_period = $this->businessOfficeHours->is_end_grace_time_enable && Carbon::now()->lessThan(Carbon::parse($this->businessOfficeHours->end_time)) && Carbon::now()->greaterThanOrEqualTo(Carbon::parse($this->businessOfficeHours->end_time)->subMinutes($this->businessOfficeHours->end_grace_time)) ? 1 : 0;
+            } else {
+                $status = $this->shiftCheckoutStatusCalculator->setBusinessMember($this->businessMember)->setShiftAssignment($this->shiftAssignment)->setAction($this->action)->setAttendance($this->attendance)->setWhichHalfDay($this->whichHalfDay)->calculate();
+                $is_in_grace_period = $this->shiftAssignment->checkout_grace_enable && Carbon::now()->lessThan(Carbon::parse($this->shiftAssignment->date . " ".$this->shiftAssignment->end_time)) && Carbon::now()->greaterThanOrEqualTo(Carbon::parse($this->shiftAssignment->date . " ".$this->shiftAssignment->end_time)->subMinutes($this->shiftAssignment->checkout_grace_time)) ? 1 : 0;
+            }
         }
 
         $attendance_log_data = [
@@ -193,7 +207,8 @@ class Creator
             'ip' => $this->ip,
             'user_agent' => $this->userAgent,
             'device_id' => $this->deviceId,
-            'status' => $status
+            'status' => $status,
+            'in_grace_period' => $is_in_grace_period
         ];
 
         if ($this->attendanceSuccess->getAttendanceType() === AttendanceTypes::IP_BASED) {

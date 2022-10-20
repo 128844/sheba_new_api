@@ -194,9 +194,9 @@ class AttendanceAction
     private function createAttendance()
     {
         $attendance = $this->attendanceCreator
-            ->setBusinessMemberId($this->businessMember->id)
+            ->setBusinessMember($this->businessMember)
             ->setDate($this->shiftAssignment ? $this->shiftAssignment->date : Carbon::now()->toDateString())
-            ->setShiftAssignmentId($this->shiftAssignmentId)
+            ->setShiftAssignment($this->shiftAssignment)
             ->create();
 
         $this->setAttendance($attendance);
