@@ -97,6 +97,10 @@ class Updater
             ->setShiftTitle($this->shiftRequester->getTitle())
             ->setStartTime($this->shiftRequester->getStartTime())
             ->setEndTime($this->shiftRequester->getEndTime())
+            ->setIsCheckinGraceEnable($this->shiftRequester->getIsCheckInGraceAllowed())
+            ->setIsCheckoutGraceEnable($this->shiftRequester->getIsCheckOutGraceAllowed())
+            ->setCheckinGraceTime($this->shiftRequester->getCheckinGraceTime())
+            ->setCheckoutGraceTime($this->shiftRequester->getCheckOutGraceTime())
             ->setIsHalfDayActivated($this->shiftRequester->getIsHalfDayActivated());
     }
 

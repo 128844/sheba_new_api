@@ -10,15 +10,27 @@ class Updater
 
     public function update($shift, Requester $request)
     {
-        $data = [];
+        if ($request->getColorCode()) {
+            $data['color_code'] = $request->getColorCode();
+            return $shift->update($this->withUpdateModificationField($data));
+        }
 
-        if ($request->getColorCode() != null) $data['color'] = $request->getColorCode();
-        if ($request->getShiftName() != null) $data['shift_name'] = $request->getShiftName();
-        if ($request->getShiftTitle() != null) $data['shift_title'] = $request->getShiftTitle();
-        if ($request->getStartTime() != null) $data['start_time'] = $request->getStartTime();
-        if ($request->getEndTime() != null) $data['end_time'] = $request->getEndTime();
-        if ($request->getIsHalfDayActivated() != null) $data['is_half_day'] = $request->getIsHalfDayActivated();
+        $data = [
+            'shift_name' => $request->getShiftName(),
+            'shift_title' => $request->getShiftTitle(),
+            'start_time' => $request->getStartTime(),
+            'end_time' => $request->getEndTime(),
+            'is_half_day' => $request->getIsHalfDayActivated(),
+            'checkin_grace_enable' => $request->getIsCheckinGraceEnable(),
+            'checkout_grace_enable' => $request->getIsCheckoutGraceEnable(),
+            'checkin_grace_time' => $request->getCheckinGraceTime(),
+            'checkout_grace_time' => $request->getCheckoutGraceTime()
+        ];
 
-        $shift->update($this->withUpdateModificationField($data));
+        if ($request->getIsGeneralActivated()) $data['is_general'] = $request->getIsGeneralActivated();
+        if ($request->getIsShiftActivated()) $data['is_shift'] = $request->getIsShiftActivated();
+        if ($request->getIsUnassignedActivated()) $data['is_unassigned'] = $request->getIsUnassignedActivated();
+
+        return $shift->update($this->withUpdateModificationField($data));
     }
 }
