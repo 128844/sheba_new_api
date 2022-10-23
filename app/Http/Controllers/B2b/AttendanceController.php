@@ -200,12 +200,14 @@ class AttendanceController extends Controller
      */
     public function showStat($business, $member, Request $request, BusinessHolidayRepoInterface $business_holiday_repo,
                              BusinessWeekendSettingsRepo $business_weekend_settings_repo,
-                             AttendanceList $list, DetailsExcel $details_excel, Filter $daily_filer)
+                             AttendanceList $list, DetailsExcel $details_excel, Filter $daily_filer, BusinessMemberRepositoryInterface $business_member_repository)
     {
         $this->validate($request, ['month' => 'numeric|min:1|max:12']);
         $business = $request->business;
         /** @var BusinessMember $business_member */
-        $business_member = $request->business_member;
+        $business_member = $business_member_repository->where('business_id', $business->id)->where('member_id', $member)->first();
+
+        if (!$business_member) return api_response($request, null, 404);
 
         $time_frame = $this->timeFrame->forDateRange($request->start_date, $request->end_date);
         $business_member_joining_date = $business_member->join_date;
