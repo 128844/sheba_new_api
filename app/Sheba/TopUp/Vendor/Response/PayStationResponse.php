@@ -14,7 +14,8 @@ class PayStationResponse extends TopUpResponse
 
     public function isCompleted(): bool
     {
-        return $this->response && $this->response->Status == "SUCCESS";
+        // return $this->response && $this->response->Status == "SUCCESS";
+        return $this->response && $this->response->status_code == "2000";
     }
 
     /**
@@ -22,7 +23,8 @@ class PayStationResponse extends TopUpResponse
      */
     public function getTransactionId()
     {
-        return $this->response->Transiction_id;
+        // return $this->response->Transiction_id;
+        return $this->response->trxId;
     }
 
     /**
@@ -41,9 +43,6 @@ class PayStationResponse extends TopUpResponse
         return $this->response->Message;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function resolveTopUpSuccessStatus(): string
     {
         return PayStation::getInitialStatusStatically();

@@ -338,7 +338,7 @@ class TopUpController extends Controller
     /**
      * @throws Throwable
      */
-    public function payStationStatusUpdate(Request $request)
+    public function payStationStatusUpdate(Request $request): JsonResponse
     {
         $this->ipnHandle($request, Names::PAY_STATION);
         return api_response($request, 1, 200);
