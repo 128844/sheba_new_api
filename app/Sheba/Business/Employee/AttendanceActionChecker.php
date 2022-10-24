@@ -6,6 +6,7 @@ use Sheba\Business\ShiftAssignment\ShiftAssignmentFinder;
 use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use Sheba\Dal\ShiftAssignment\ShiftAssignment;
+use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 
 class AttendanceActionChecker
 {
@@ -21,17 +22,20 @@ class AttendanceActionChecker
     private $attendanceOfToday;
     /** @var Attendance */
     private $lastAttendance;
+    /*** @var ShiftAssignmentRepository */
+    private $shiftAssignmentRepository;
 
-    public function __construct(ShiftAssignmentFinder $shift_assignment_finder)
+    public function __construct(ShiftAssignmentFinder $shift_assignment_finder, ShiftAssignmentRepository $shiftAssignmentRepository)
     {
         $this->shiftAssignmentFinder = $shift_assignment_finder;
+        $this->shiftAssignmentRepository = $shiftAssignmentRepository;
     }
 
     public function setBusinessMember(BusinessMember $business_member): AttendanceActionChecker
     {
         $this->businessMember = $business_member;
         $this->business = $this->businessMember->business;
-        if ($this->business->isShiftEnabled()) $this->currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
+        if ($this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) $this->currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
         $this->attendanceOfToday = $this->businessMember->attendanceOfToday();
         $this->lastAttendance = $this->businessMember->lastAttendance();
         return $this;
@@ -44,7 +48,7 @@ class AttendanceActionChecker
 
     public function canCheckIn(): bool
     {
-        if (!$this->business->isShiftEnabled()) return $this->canCheckInForAttendance($this->attendanceOfToday);
+        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckInForAttendance($this->attendanceOfToday);
 
         return $this->canCheckInForAttendance($this->currentAssignment->attendance);
     }
@@ -69,7 +73,7 @@ class AttendanceActionChecker
 
     public function canCheckOut(): bool
     {
-        if (!$this->business->isShiftEnabled()) return $this->canCheckOutForAttendance($this->attendanceOfToday);
+        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckOutForAttendance($this->attendanceOfToday);
 
         return $this->canCheckOutForAttendance($this->currentAssignment->attendance);
     }
@@ -113,7 +117,7 @@ class AttendanceActionChecker
 
     public function hasAttendance(): bool
     {
-        if ($this->business->isShiftEnabled() && $this->currentAssignment->attendance) return true;
+        if ($this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id) && $this->currentAssignment->attendance) return true;
         else if ($this->attendanceOfToday) return true;
         return false;
     }

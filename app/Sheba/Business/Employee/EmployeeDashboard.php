@@ -11,6 +11,7 @@ use Sheba\Dal\ApprovalRequest\Contract as ApprovalRequestRepositoryInterface;
 use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use Sheba\Dal\BusinessMemberBadge\BusinessMemberBadgeRepository;
+use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\Dal\Visit\VisitRepository;
 use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 
@@ -40,10 +41,12 @@ class EmployeeDashboard
     private $shiftAssignmentFinder;
     /*** @var ShiftAssignment | null */
     private $currentAssignment;
+    /*** @var ShiftAssignmentRepository */
+    private $shiftAssignmentRepository;
 
     public function __construct(ActionProcessor $action_processor, ProfileCompletionCalculator $completion_calculator,
                                 VisitRepository $visit_repository, ApprovalRequestRepositoryInterface $approval_request_repository,
-                                BusinessMemberBadgeRepository $badge_repo, ShiftAssignmentFinder $shift_assignment_finder)
+                                BusinessMemberBadgeRepository $badge_repo, ShiftAssignmentFinder $shift_assignment_finder, ShiftAssignmentRepository $shiftAssignmentRepository)
     {
         $this->actionProcessor = $action_processor;
         $this->completionCalculator = $completion_calculator;
@@ -51,13 +54,14 @@ class EmployeeDashboard
         $this->approvalRequestRepo = $approval_request_repository;
         $this->badgeRepo = $badge_repo;
         $this->shiftAssignmentFinder = $shift_assignment_finder;
+        $this->shiftAssignmentRepository = $shiftAssignmentRepository;
     }
 
     public function setBusinessMember(BusinessMember $business_member): EmployeeDashboard
     {
         $this->businessMember = $business_member;
         $this->business = $this->businessMember->business;
-        if ($this->business->isShiftEnabled()) $this->currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
+        if ($this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) $this->currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
         $this->attendanceOfToday = $this->businessMember->attendanceOfToday();
         $this->lastAttendance = $this->businessMember->lastAttendance();
         $this->member = $this->businessMember->member;
