@@ -17,9 +17,7 @@ class MtbQr extends QRPaymentMethod
     const QR_GENERATE_SUCCESS_CODE = "001";
 
     private $mtbClient;
-
     private $qrString;
-
     private $refId;
 
     public function __construct(MtbServerClient $client)
@@ -35,15 +33,17 @@ class MtbQr extends QRPaymentMethod
     public function validate(): bool
     {
         $data = $this->makeApiData();
-
         $url = QRPaymentStatics::MTB_VALIDATE_URL . http_build_query($data);
-
         $response = $this->mtbClient->get($url, AuthTypes::BASIC_AUTH_TYPE);
-        Redis::set('MTB', json_encode($response));
+
+        $redis_name_space = 'MTB::validate_' . $this->merchantId;
+        Redis::set($redis_name_space, json_encode($response));
+
         if (isset($response["transactions"])) {
             $transaction = $response["transactions"];
             if (count($transaction) > 0) return true;
         }
+
         return false;
     }
 
@@ -63,10 +63,11 @@ class MtbQr extends QRPaymentMethod
     public function getMTBQRString(): MtbQr
     {
         $data = $this->makeDataForQRGenerate();
-
         $url = QRPaymentStatics::MTB_QR_GENERATE_URL . http_build_query($data);
-
         $response = $this->mtbClient->get($url, AuthTypes::BASIC_AUTH_TYPE);
+
+        $redis_name_space = 'MTB::mtb_qr_string_' . $this->merchantId;
+        Redis::set($redis_name_space, json_encode($response));
 
         if (isset($response["respCode"]) && $response["respCode"] === self::QR_GENERATE_SUCCESS_CODE) {
             $this->qrString = $response["QRString"];
