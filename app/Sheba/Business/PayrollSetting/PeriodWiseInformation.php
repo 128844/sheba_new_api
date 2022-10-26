@@ -112,8 +112,8 @@ class PeriodWiseInformation
 
         $this->getAttendances()->each(function (Attendance $attendance) {
             $attendance->actions->each(function (AttendanceActionLog $action) {
-                $this->result->total_late_checkin += $action->isLateCheckInAfterGrace();
-                $this->result->total_early_checkout += $action->isEarlyCheckOutBeforeGrace();
+                $this->result->total_late_checkin += $action->isLateCheckIn();
+                $this->result->total_early_checkout += $action->isEarlyCheckOut();
                 $this->result->grace_time_over += $action->isGraced();
             });
             $this->result->total_present++;
