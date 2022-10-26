@@ -7,11 +7,14 @@ use Illuminate\Foundation\Application;
 use InvalidArgumentException;
 use Sheba\Dal\TopupOrder\Statuses;
 use Sheba\TopUp\Exception\GatewayTimeout;
+use Sheba\TopUp\Exception\PayStationInvalidCredentialsException;
+use Sheba\TopUp\Exception\PayStationInvalidReferNoException;
 use Sheba\TopUp\Exception\PayStationNotWorkingException;
 use Sheba\TopUp\Exception\TopUpStillNotResolvedException;
 use Sheba\TopUp\Exception\UnknownIpnStatusException;
 use Sheba\TopUp\Gateway\Clients\PayStationClient;
 use Sheba\TopUp\Gateway\FailedReason\PayStationFailedReason;
+use Sheba\TopUp\Gateway\Statuses\PayStationStatuses;
 use Sheba\TopUp\Vendor\Response\Ipn\IpnResponse;
 use Sheba\TopUp\Vendor\Response\Ipn\PayStation\PayStationEnquiryFailResponse;
 use Sheba\TopUp\Vendor\Response\Ipn\PayStation\PayStationEnquirySuccessResponse;
@@ -80,28 +83,35 @@ class PayStation implements Gateway, HasIpn
      * @return IpnResponse
      * @throws TPProxyServerError
      * @throws TopUpStillNotResolvedException
-     * @throws UnknownIpnStatusException
+     * @throws UnknownIpnStatusException|PayStationInvalidCredentialsException|PayStationInvalidReferNoException
      */
     public function enquire(TopUpOrder $topup_order): IpnResponse
     {
         $api_response = $this->payStationClient->enquiry($topup_order);
-        // $api_response = $this->call($this->makeUrlForEnquiry($topup_order));
-        $status = property_exists($api_response, 'Status') ? $api_response->Status : $api_response->request_status;
+        if ($api_response->rsp_code == 5001) {
+            throw new PayStationInvalidCredentialsException();
+        }
 
+        if ($api_response->rsp_code == 5004) {
+            throw new PayStationInvalidReferNoException();
+        }
+
+        $status = $api_response->data->status;
         /** @var $ipn_response IpnResponse */
-        if ($status == 'Success') {
+        if ($status == PayStationStatuses::SUCCESS) {
             $ipn_response = app(PayStationEnquirySuccessResponse::class);
         } else {
-            if ($status == 'Failed') {
+            if ($status == PayStationStatuses::FAILED) {
                 $ipn_response = app(PayStationEnquiryFailResponse::class);
             } else {
-                if ($status == 'Processing') {
+                if ($status == PayStationStatuses::PROCESSING) {
                     throw new TopUpStillNotResolvedException($api_response);
                 } else {
                     throw new UnknownIpnStatusException();
                 }
             }
         }
+
         $ipn_response->setResponse($api_response);
         return $ipn_response;
     }
@@ -208,9 +218,9 @@ class PayStation implements Gateway, HasIpn
      */
     public function buildIpnResponse($request_data)
     {
-        if ($request_data['status'] == "Success") {
+        if ($request_data['status'] == PayStationStatuses::SUCCESS) {
             return app(PayStationSuccessResponse::class);
-        } elseif ($request_data['status'] == "Failed") {
+        } elseif ($request_data['status'] == PayStationStatuses::FAILED) {
             return app(PayStationFailResponse::class);
         }
 

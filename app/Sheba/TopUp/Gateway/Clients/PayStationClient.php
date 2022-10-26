@@ -36,8 +36,8 @@ class PayStationClient
         $this->tpRequest = $request;
 
         $this->baseUrl = config('topup.pay_station.base_url');
-        $this->topupEnquiryUrl = config('topup.pay_station.base_url_v1').'/number-check';
-        $this->singleTopupUrl = $this->baseUrl."/recharge";
+        $this->topupEnquiryUrl = $this->baseUrl.'/enquiry';
+        $this->singleTopupUrl = $this->baseUrl.'/recharge';
         $this->userName = config('topup.pay_station.user_name');
         $this->password = config('topup.pay_station.password');
         $this->authNumber = config('topup.pay_station.auth_number');
@@ -130,15 +130,16 @@ class PayStationClient
      */
     public function enquiry(TopUpOrder $topup_order)
     {
-        $url = $this->topupEnquiryUrl
-            ."?ref=".$topup_order->getGatewayRefId()
-            ."&user_name=".$this->userName
-            ."&password=".$this->password;
+        $request_data = ['refer_no' => $topup_order->getGatewayRefId()];
+        $headers = $this->getHeaders();
+        $headers['Content-Type'] = 'application/json';
 
         $this->tpRequest
-            ->setMethod(TPRequest::METHOD_GET)
-            ->setUrl($url)
-            ->setTimeout(60);
+            ->setMethod(TPRequest::METHOD_POST)
+            ->setUrl($this->topupEnquiryUrl)
+            ->setHeaders($headers)
+            ->setTimeout(60)
+            ->setInput($request_data);
 
         return $this->tpClient->call($this->tpRequest);
     }
