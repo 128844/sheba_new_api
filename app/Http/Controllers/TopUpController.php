@@ -319,9 +319,7 @@ class TopUpController extends Controller
             $actual_response = $e->getResponse();
         }
 
-        return api_response($request, 1, 200, [
-            'actual_response' => $actual_response
-        ]);
+        return api_response($request, 1, 200, ['actual_response' => $actual_response]);
     }
 
     /**
