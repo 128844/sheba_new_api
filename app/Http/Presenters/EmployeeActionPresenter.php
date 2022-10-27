@@ -23,8 +23,8 @@ class EmployeeActionPresenter extends Presenter
             'checkin_time' => $this->actionTimeFormatter($this->attendanceActionChecker->getCheckInTime()),
             'checkout_time' => $this->actionTimeFormatter($this->attendanceActionChecker->getCheckOutTime()),
             'is_geo_required' => $is_remote_enable ? 1 : 0,
-            'is_remote_enable' => (int) $is_remote_enable,
-            'is_geo_location_enable' => (int) $this->attendanceActionChecker->isGeoLocationAttendanceEnable(),
+            'is_remote_enable' => $is_remote_enable,
+            'is_geo_location_enable' => $this->attendanceActionChecker->isGeoLocationAttendanceEnable(),
             'is_live_track_enable' => (int) $this->attendanceActionChecker->isLiveTrackEnable(),
             'shift' => $this->getShiftAssignmentDetails()
         ];
@@ -45,6 +45,7 @@ class EmployeeActionPresenter extends Presenter
     private function actionTimeFormatter($action_time)
     {
         if (!$action_time) return null;
-        return Carbon::parse($action_time)->format('h:i A');
+        //return Carbon::parse($action_time)->format('h:i:s');
+        return $action_time;
     }
 }
