@@ -112,69 +112,71 @@ class EmployeeDashboard
     {
         return $this->approvalRequestRepo->countApprovalRequestByBusinessMember($this->businessMember) > 0;
     }
-//
-//    public function canCheckIn(): bool
-//    {
-//        if (!$this->business->isShiftEnabled()) return $this->canCheckInForAttendance($this->attendanceOfToday);
-//
-//        return $this->canCheckInForAttendance($this->currentAssignment->attendance);
-//    }
-//
-//    /**
-//     * @param Attendance $attendance
-//     * @return bool
-//     */
-//    private function canCheckInForAttendance($attendance): bool
-//    {
-//        return !$attendance || $attendance->canTakeThisAction(Actions::CHECKIN);
-//    }
-//
-//    /**
-//     * @param Attendance $attendance
-//     * @return bool
-//     */
-//    private function canCheckOutForAttendance($attendance): bool
-//    {
-//        return $attendance && $attendance->canTakeThisAction(Actions::CHECKOUT);
-//    }
-//
-//    public function canCheckOut(): bool
-//    {
-//        if (!$this->business->isShiftEnabled()) return $this->canCheckOutForAttendance($this->attendanceOfToday);
-//
-//        return $this->canCheckOutForAttendance($this->currentAssignment->attendance);
-//    }
-//
-//    public function hasLastAttendance(): bool
-//    {
-//        return !is_null($this->lastAttendance);
-//    }
-//
-//    public function getLastAttendanceDate()
-//    {
-//        return $this->lastAttendance ? Carbon::parse($this->lastAttendance['date']): null;
-//    }
-//
-//    public function getNoteAction()
-//    {
-//        $last_attendance_log = $this->lastAttendance ? $this->lastAttendance->actions()->get()->sortByDesc('id')->first() : null;
-//
-//        if (!$last_attendance_log || $last_attendance_log['note']) return null;
-//
-//        $checkin = $this->actionProcessor->setActionName(Actions::CHECKIN)->getAction();
-//        $checkout = $this->actionProcessor->setActionName(Actions::CHECKOUT)->getAction();
-//
-//        if ($last_attendance_log['action'] == Actions::CHECKIN && $checkin->isLateNoteRequiredForSpecificDate($this->lastAttendance['date'], $this->lastAttendance['checkin_time'])) return Actions::CHECKIN;
-//        if ($last_attendance_log['action'] == Actions::CHECKOUT && $checkout->isLeftEarlyNoteRequiredForSpecificDate($this->lastAttendance['date'], $this->lastAttendance['checkout_time'])) return Actions::CHECKOUT;
-//
-//        return null;
-//    }
-//
-//    /**
-//     * @return ShiftAssignment | null
-//     */
-//    public function getCurrentAssignment()
-//    {
-//        return $this->currentAssignment;
-//    }
+
+    public function canCheckIn(): bool
+    {
+        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckInForAttendance($this->attendanceOfToday);
+
+        return $this->canCheckInForAttendance($this->currentAssignment->attendance);
+    }
+
+    /**
+     * @param Attendance $attendance
+     * @return bool
+     */
+    private function canCheckInForAttendance($attendance): bool
+    {
+        return !$attendance || $attendance->canTakeThisAction(Actions::CHECKIN);
+    }
+
+    /**
+     * @param Attendance $attendance
+     * @return bool
+     */
+    private function canCheckOutForAttendance($attendance): bool
+    {
+        return $attendance && $attendance->canTakeThisAction(Actions::CHECKOUT);
+    }
+
+    public function canCheckOut(): bool
+    {
+        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckOutForAttendance($this->attendanceOfToday);
+
+        return $this->canCheckOutForAttendance($this->currentAssignment->attendance);
+    }
+
+    public function hasLastAttendance(): bool
+    {
+        if ($this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id) && $this->currentAssignment->attendance) return true;
+        else if ($this->attendanceOfToday) return true;
+        return false;
+    }
+
+    public function getLastAttendanceDate()
+    {
+        return $this->lastAttendance ? Carbon::parse($this->lastAttendance['date']): null;
+    }
+
+    public function getNoteAction()
+    {
+        $last_attendance_log = $this->lastAttendance ? $this->lastAttendance->actions()->get()->sortByDesc('id')->first() : null;
+
+        if (!$last_attendance_log || $last_attendance_log['note']) return null;
+
+        $checkin = $this->actionProcessor->setActionName(Actions::CHECKIN)->getAction();
+        $checkout = $this->actionProcessor->setActionName(Actions::CHECKOUT)->getAction();
+
+        if ($last_attendance_log['action'] == Actions::CHECKIN && $checkin->isLateNoteRequiredForSpecificDate($this->lastAttendance['date'], $this->lastAttendance['checkin_time'])) return Actions::CHECKIN;
+        if ($last_attendance_log['action'] == Actions::CHECKOUT && $checkout->isLeftEarlyNoteRequiredForSpecificDate($this->lastAttendance['date'], $this->lastAttendance['checkout_time'])) return Actions::CHECKOUT;
+
+        return null;
+    }
+
+    /**
+     * @return ShiftAssignment | null
+     */
+    public function getCurrentAssignment()
+    {
+        return $this->currentAssignment;
+    }
 }

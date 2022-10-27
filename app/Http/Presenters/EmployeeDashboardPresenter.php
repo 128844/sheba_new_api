@@ -33,14 +33,14 @@ class EmployeeDashboardPresenter extends Presenter
         $pending_visit_count = $this->employeeDashboard->getPendingVisitCount();
         $single_pending_visit = $this->employeeDashboard->getSinglePendingVisit();
         $current_visit = $this->employeeDashboard->getCurrentVisit();
-        //$note_action = $this->employeeDashboard->getNoteAction();
+        $note_action = $this->employeeDashboard->getNoteAction();
         return [
             'info' => [
                 'id' => $this->member->id,
                 'business_member_id' => $this->businessMember->id,
                 'department_id' => $department ? $department->id : null,
                 'notification_count' => $this->member->notifications()->unSeen()->count(),
-                /*'attendance' => [
+                'attendance' => [
                     'can_checkin' => (int) $this->employeeDashboard->canCheckIn(),
                     'can_checkout' => (int) $this->employeeDashboard->canCheckOut(),
                     'shift' => $this->getShiftAssignmentDetails()
@@ -49,7 +49,7 @@ class EmployeeDashboardPresenter extends Presenter
                     'date' => $this->employeeDashboard->hasLastAttendance() ? $this->employeeDashboard->getLastAttendanceDate()->format('jS F Y') : null,
                     'is_note_required' => is_null($note_action) ? 0 : 1,
                     'note_action' => $note_action
-                ],*/
+                ],
                 'is_remote_enable' => $this->business->isRemoteAttendanceEnable($this->businessMember->id),
                 'is_approval_request_required' => $this->employeeDashboard->isApprovalRequestRequired() ? 1 : 0,
                 'approval_requests' => ['pending_request' => $this->employeeDashboard->getPendingApprovalRequestCount()],
@@ -80,7 +80,7 @@ class EmployeeDashboardPresenter extends Presenter
         ];
     }
 
-    /*private function getShiftAssignmentDetails()
+    private function getShiftAssignmentDetails()
     {
         $current_assignment = $this->employeeDashboard->getCurrentAssignment();
         if (!$current_assignment) return null;
@@ -90,6 +90,6 @@ class EmployeeDashboardPresenter extends Presenter
             'start_time' => $current_assignment->start_time,
             'end_time' => $current_assignment->end_time,
         ];
-    }*/
+    }
 
 }
