@@ -34,7 +34,7 @@ class MonthlyStat
      * @param bool $for_one_employee
      * @param bool $is_shift_on
      */
-    public function __construct(TimeFrame $time_frame, $business, $weekend_settings, $business_member_leave, $for_one_employee = true,
+    public function __construct(TimeFrame $time_frame, $business, $business_holiday, $weekend_settings, $business_member_leave, $for_one_employee = true,
                                           $is_shift_on = false)
     {
         $this->timeFrame = $time_frame;
