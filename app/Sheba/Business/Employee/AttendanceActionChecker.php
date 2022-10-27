@@ -88,14 +88,14 @@ class AttendanceActionChecker
 
     public function getCheckInTime()
     {
-        if ($this->business->isShiftEnabled() && $this->hasAttendance()) return $this->currentAssignment->attendance->getCheckInTime();
+        if ($this->hasAttendanceOnShift()) return $this->currentAssignment->attendance->getCheckInTime();
         else if ($this->hasAttendance()) return $this->attendanceOfToday->getCheckInTime();
         return null;
     }
 
     public function getCheckOutTime()
     {
-        if ($this->business->isShiftEnabled() && $this->hasAttendance()) return $this->currentAssignment->attendance->getCheckOutTime();
+        if ($this->hasAttendanceOnShift()) return $this->currentAssignment->attendance->getCheckOutTime();
         else if ($this->hasAttendance()) return $this->attendanceOfToday->getCheckOutTime();
         return null;
     }
@@ -115,11 +115,14 @@ class AttendanceActionChecker
         return $this->business->isLiveTrackEnabled();
     }
 
-    public function hasAttendance(): bool
+    private function hasAttendance(): bool
     {
-        if ($this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id) && $this->currentAssignment->attendance) return true;
-        else if ($this->attendanceOfToday) return true;
-        return false;
+        return !is_null($this->attendanceOfToday);
+    }
+
+    private function hasAttendanceOnShift(): bool
+    {
+        return $this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id) && $this->currentAssignment->attendance;
     }
 
 /*
