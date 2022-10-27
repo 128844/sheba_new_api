@@ -1,10 +1,13 @@
 <?php namespace Sheba\Business\CoWorker;
 
 use App\Sheba\Business\BusinessMemberBkashAccount\Requester as CoWorkerBkashAccountRequester;
+use Carbon\CarbonPeriod;
 use Exception;
 use Sheba\Business\BusinessMemberStatusChangeLog\Creator as BusinessMemberStatusChangeLogCreator;
 use Sheba\Business\BusinessMember\Requester as BusinessMemberRequester;
 use Sheba\Business\CoWorker\Requests\Requester as CoWorkerRequester;
+use Sheba\Business\Shift\ShiftAssignmentRequest;
+use Sheba\Business\ShiftAssignment\ShiftAssignmentCreatorForNewlyActiveEmployee;
 use Sheba\Dal\Salary\SalaryRepository;
 use Sheba\Repositories\Interfaces\BusinessMemberRepositoryInterface;
 use Sheba\Business\BusinessMember\Creator as BusinessMemberCreator;
@@ -67,23 +70,23 @@ class Updater
     private $profile;
     /** @var BusinessRole $businessRole */
     private $businessRole;
-    /** BusinessMemberRepositoryInterface $businessMemberRepository */
+    /** @var BusinessMemberRepositoryInterface $businessMemberRepository */
     private $businessMemberRepository;
-    /** RoleRequester $roleRequester */
+    /** @var RoleRequester $roleRequester */
     private $roleRequester;
-    /** RoleCreator $roleCreator */
+    /** @var RoleCreator $roleCreator */
     private $roleCreator;
-    /** RoleUpdater $roleUpdater */
+    /** @var RoleUpdater $roleUpdater */
     private $roleUpdater;
-    /** BusinessMemberRequester $businessMemberRequester */
+    /** @var BusinessMemberRequester $businessMemberRequester */
     private $businessMemberRequester;
-    /** BusinessMemberCreator $businessMemberCreator */
+    /** @var BusinessMemberCreator $businessMemberCreator */
     private $businessMemberCreator;
-    /** BusinessMemberUpdater $businessMemberUpdater */
+    /** @var BusinessMemberUpdater $businessMemberUpdater */
     private $businessMemberUpdater;
-    /** ProfileBankInfoInterface $profileBankInfoRepository */
+    /** @var ProfileBankInfoInterface $profileBankInfoRepository */
     private $profileBankInfoRepository;
-    /** MemberRepositoryInterface $memberRepository */
+    /** @var MemberRepositoryInterface $memberRepository */
     private $memberRepository;
     /** @var BusinessRoleRepositoryInterface $businessRoleRepository */
     private $businessRoleRepository;
@@ -91,9 +94,7 @@ class Updater
     private $email;
     /** @var Business $business */
     private $business;
-    /**
-     * @var array
-     */
+    /** @var array */
     private $businessMemberData = [];
     /**  @var BusinessMemberStatusChangeLogCreator $businessMemberStatusChangeLogCreator */
     private $businessMemberStatusChangeLogCreator;
@@ -101,6 +102,8 @@ class Updater
     private $coWorkerBkashAccRequester;
     /*** @var SalaryRepository */
     private $salaryRepo;
+    /** @var ShiftAssignmentCreatorForNewlyActiveEmployee */
+    private $newlyActiveEmployeeShiftAssignment;
 
     /**
      * Updater constructor.
@@ -118,14 +121,20 @@ class Updater
      * @param BusinessRoleRepositoryInterface $business_role_repository
      * @param BusinessMemberStatusChangeLogCreator $business_member_status_change_log_creator
      * @param CoWorkerBkashAccountRequester $co_worker_bkash_acc_requester
+     * @param ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment
+     * @param SalaryRepository $salary_repo
      */
-    public function __construct(FileRepository                       $file_repository, ProfileRepository $profile_repository,
-                                BusinessMemberRepositoryInterface    $business_member_repository,
-                                RoleRequester                        $role_requester, RoleCreator $role_creator, RoleUpdater $role_updater,
-                                BusinessMemberRequester              $business_member_requester, BusinessMemberCreator $business_member_creator,
-                                BusinessMemberUpdater                $business_member_updater, ProfileBankInfoInterface $profile_bank_information,
-                                MemberRepositoryInterface            $member_repository, BusinessRoleRepositoryInterface $business_role_repository,
-                                BusinessMemberStatusChangeLogCreator $business_member_status_change_log_creator, CoWorkerBkashAccountRequester $co_worker_bkash_acc_requester)
+    public function __construct(
+        FileRepository $file_repository, ProfileRepository $profile_repository,
+        BusinessMemberRepositoryInterface $business_member_repository,
+        RoleRequester $role_requester, RoleCreator $role_creator, RoleUpdater $role_updater,
+        BusinessMemberRequester $business_member_requester, BusinessMemberCreator $business_member_creator,
+        BusinessMemberUpdater $business_member_updater, ProfileBankInfoInterface $profile_bank_information,
+        MemberRepositoryInterface $member_repository, BusinessRoleRepositoryInterface $business_role_repository,
+        BusinessMemberStatusChangeLogCreator $business_member_status_change_log_creator,
+        CoWorkerBkashAccountRequester $co_worker_bkash_acc_requester,
+        ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment, SalaryRepository $salary_repo
+    )
     {
         $this->fileRepository = $file_repository;
         $this->profileRepository = $profile_repository;
@@ -141,7 +150,8 @@ class Updater
         $this->businessRoleRepository = $business_role_repository;
         $this->businessMemberStatusChangeLogCreator = $business_member_status_change_log_creator;
         $this->coWorkerBkashAccRequester = $co_worker_bkash_acc_requester;
-        $this->salaryRepo = app(SalaryRepository::class);
+        $this->salaryRepo = $salary_repo;
+        $this->newlyActiveEmployeeShiftAssignment = $shift_assignment;
     }
 
     /**
@@ -256,8 +266,7 @@ class Updater
      */
     private function isFile($image)
     {
-        if ($image instanceof Image || $image instanceof UploadedFile) return true;
-        return false;
+        return ($image instanceof Image || $image instanceof UploadedFile);
     }
 
     private function getBusinessRole()
@@ -301,7 +310,7 @@ class Updater
             return [$this->businessMember, $profile_pic_name, $profile_pic];
         } catch (Throwable $e) {
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }
@@ -391,7 +400,7 @@ class Updater
             return [$this->profile, $nid_image_front_name, $nid_image_front, $nid_image_back_name, $nid_image_back, $passport_image_name, $passport_image_link];
         } catch (Throwable $e) {
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }
@@ -448,9 +457,8 @@ class Updater
             DB::commit();
             return [$this->profile, $tin_certificate_name, $tin_certificate_link];
         } catch (Throwable $e) {
-
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }
@@ -484,7 +492,7 @@ class Updater
             return $this->member;
         } catch (Throwable $e) {
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }
@@ -503,11 +511,14 @@ class Updater
                 (new InvalidToken())->invalidTheTokens($this->profile->email);
             }
             $this->businessMember = $this->businessMemberUpdater->setBusinessMember($this->businessMember)->update($business_member_data);
+
+            $this->newlyActiveEmployeeShiftAssignment->handle($this->business, $this->businessMember);
+
             DB::commit();
             return $this->businessMember;
         } catch (Throwable $e) {
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }
@@ -521,7 +532,7 @@ class Updater
             DB::commit();
         } catch (Throwable $e) {
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }
@@ -539,6 +550,9 @@ class Updater
         $this->businessMemberUpdater->setBusinessMember($this->businessMember)->update($business_member_data);
 
         $this->updateSalary();
+
+        $this->newlyActiveEmployeeShiftAssignment->handle($this->business, $this->businessMember);
+
         return $this->businessMember;
 
     }
@@ -556,7 +570,7 @@ class Updater
             DB::commit();
         } catch (Throwable $e) {
             DB::rollback();
-            app('sentry')->captureException($e);
+            logError($e);
             return null;
         }
     }

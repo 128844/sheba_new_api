@@ -1,9 +1,11 @@
 <?php namespace App\Http\Controllers\Employee;
 
+use App\Http\Presenters\EmployeeActionPresenter;
 use App\Sheba\Business\BusinessBasicInformation;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Sheba\Business\Attendance\AttendanceCommonInfo;
+use Sheba\Business\Employee\AttendanceActionChecker;
 use Sheba\Dal\AttendanceActionLog\RemoteMode;
 use Sheba\Dal\BusinessHoliday\Contract as BusinessHolidayRepoInterface;
 use Sheba\Business\AttendanceActionLog\ActionChecker\ActionProcessor;
@@ -12,6 +14,7 @@ use Sheba\Business\AttendanceActionLog\AttendanceAction;
 use App\Transformers\Business\AttendanceTransformer;
 use App\Sheba\Business\Attendance\Note\Updater as AttendanceNoteUpdater;
 use Sheba\Dal\Attendance\Model as Attendance;
+use Sheba\Dal\BusinessOffice\Contract as BusinessOffice;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use App\Transformers\CustomSerializer;
 use App\Http\Controllers\Controller;
@@ -19,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use League\Fractal\Resource\Item;
 use App\Models\BusinessMember;
 use Sheba\Dal\BusinessWeekendSettings\BusinessWeekendSettingsRepo;
+use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\ModificationFields;
 use Illuminate\Http\Request;
 use Sheba\Helpers\TimeFrame;
@@ -40,8 +44,8 @@ class AttendanceController extends Controller
      * @param BusinessWeekendSettingsRepo $business_weekend_settings_repo
      * @return JsonResponse
      */
-    public function index(Request                     $request, AttendanceRepoInterface $attendance_repo, TimeFrame $time_frame, BusinessHolidayRepoInterface $business_holiday_repo,
-                          BusinessWeekendSettingsRepo $business_weekend_settings_repo)
+    public function index(Request $request, AttendanceRepoInterface $attendance_repo, TimeFrame $time_frame, BusinessHolidayRepoInterface $business_holiday_repo,
+                          BusinessWeekendSettingsRepo $business_weekend_settings_repo, BusinessOffice $business_office)
     {
         $this->validate($request, ['year' => 'required|string', 'month' => 'required|string']);
         $year = $request->year;
@@ -67,7 +71,7 @@ class AttendanceController extends Controller
 
         $manager = new Manager();
         $manager->setSerializer(new CustomSerializer());
-        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave));
+        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office));
         $attendances_data = $manager->createData($resource)->toArray()['data'];
 
         return api_response($request, null, 200, [
@@ -89,7 +93,7 @@ class AttendanceController extends Controller
      * @return JsonResponse
      * @throws ValidationException
      */
-    public function takeAction(Request $request, AttendanceAction $attendance_action)
+    public function takeAction(Request $request, AttendanceAction $attendance_action, ShiftAssignmentRepository $shift_assignment_repository)
     {
         $validation_data = [
             'action' => 'required|string|in:' . implode(',', Actions::get()),
@@ -114,14 +118,14 @@ class AttendanceController extends Controller
         }
         #$this->validate($request, $validation_data);
         $this->setModifier($business_member->member);
-
         $attendance_action->setBusinessMember($business_member)
             ->setAction($request->action)
             ->setBusiness($business_member->business)
             ->setDeviceId($request->device_id)
             ->setRemoteMode($request->remote_mode)
             ->setLat($request->lat)
-            ->setLng($request->lng);
+            ->setLng($request->lng)
+            ->setShiftAssignmentId($request->shift_assignment_id);
         $action = $attendance_action->doAction();
 
         $result = $action->getResult();
@@ -144,28 +148,10 @@ class AttendanceController extends Controller
         return (Carbon::now()->month == (int)$month && Carbon::now()->year == (int)$year);
     }
 
-    public function getTodaysInfo(Request $request, ActionProcessor $action_processor)
+    public function getTodaysInfo(Request $request, AttendanceActionChecker $attendance_action_checker)
     {
-        /** @var BusinessMember $business_member */
-        $business_member = $this->getBusinessMember($request);
-        if (!$business_member) return api_response($request, null, 404);
-        /** @var Attendance $attendance */
-        $attendance = $business_member->attendanceOfToday();
-        /** @var Business $business */
-        $business = $this->getBusiness($request);
-        $is_remote_enable = $business->isRemoteAttendanceEnable($business_member->id);
-        $is_geo_location_enable = $business->isGeoLocationAttendanceEnable();
-        $data = [
-            'can_checkin' => !$attendance ? 1 : ($attendance->canTakeThisAction(Actions::CHECKIN) ? 1 : 0),
-            'can_checkout' => $attendance && $attendance->canTakeThisAction(Actions::CHECKOUT) ? 1 : 0,
-            'checkin_time' => $attendance ? $attendance->checkin_time : null,
-            'checkout_time' => $attendance ? $attendance->checkout_time : null,
-            'is_geo_required' => $is_remote_enable ? 1 : 0,
-            'is_remote_enable' => $is_remote_enable,
-            'is_geo_location_enable' => $is_geo_location_enable,
-            'is_live_track_enable' => $business->liveTrackingSettings && $business->liveTrackingSettings->is_enable ? $business_member->is_live_track_enable : 0
-        ];
-        return api_response($request, null, 200, ['attendance' => $data]);
+        $attendance_action_checker->setBusinessMember($request->business_member);
+        return api_response($request, null, 200, ['attendance' => (new EmployeeActionPresenter($attendance_action_checker))->toArray()]);
     }
 
     public function attendanceInfo(Request $request, AttendanceCommonInfo $attendance_common_info)

@@ -10,6 +10,7 @@ trait AttendanceBasicInfo
     {
         return in_array($date->format('Y-m-d'), $leaves);
     }
+
     public function formatLeaveAsDateArray($business_member_leave)
     {
         $business_member_leaves_date = [];
@@ -27,18 +28,22 @@ trait AttendanceBasicInfo
 
         return [array_unique($business_member_leaves_date), $business_member_leaves_date_with_half_and_full_day];
     }
+
     public function isWeekendHoliday($date, $weekend_day, $dates_of_holidays_formatted)
     {
         return $this->isWeekend($date, $weekend_day) || $this->isHoliday($date, $dates_of_holidays_formatted);
     }
+
     public function isWeekend(Carbon $date, $weekend_day)
     {
         return in_array(strtolower($date->format('l')), $weekend_day);
     }
+
     public function isHoliday(Carbon $date, $holidays)
     {
         return in_array($date->format('Y-m-d'), $holidays);
     }
+
     public function getHolidaysFormatted($business_holiday)
     {
         $data = [];
@@ -51,6 +56,7 @@ trait AttendanceBasicInfo
         }
         return $data;
     }
+
     public function getFormattedWeekendsString($weekends)
     {
         sort($weekends);

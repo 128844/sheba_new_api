@@ -14,12 +14,8 @@ class CommonFunctions
     private $business;
     /** @var Carbon */
     private $startDate;
-    /** @var Carbon */
-    private $endDate;
     /** @var BusinessHolidayRepoInterface $businessHoliday */
     private $businessHoliday;
-    /** @var BusinessWeekendRepoInterface $businessWeekend */
-    private $businessWeekend;
     private $businessWeekendSettingsRepo;
     private $checkWeekend;
 
@@ -27,15 +23,14 @@ class CommonFunctions
      * @param BusinessHolidayRepoInterface $business_holiday_repo
      * @param BusinessWeekendSettingsRepo $business_weekend_settings_repo
      * @param CheckWeekend $check_weekend
-     * @param BusinessWeekendRepoInterface $business_weekend_repo
      */
-    public function __construct(BusinessHolidayRepoInterface $business_holiday_repo,
-                                BusinessWeekendSettingsRepo  $business_weekend_settings_repo,
-                                CheckWeekend                 $check_weekend,
-                                BusinessWeekendRepoInterface $business_weekend_repo)
+    public function __construct(
+        BusinessHolidayRepoInterface $business_holiday_repo,
+        BusinessWeekendSettingsRepo  $business_weekend_settings_repo,
+        CheckWeekend                 $check_weekend
+    )
     {
         $this->businessHoliday = $business_holiday_repo;
-        $this->businessWeekend = $business_weekend_repo;
         $this->businessWeekendSettingsRepo = $business_weekend_settings_repo;
         $this->checkWeekend = $check_weekend;
     }
@@ -57,7 +52,6 @@ class CommonFunctions
     public function setSelectedDate(TimeFrame $selected_date)
     {
         $this->startDate = $selected_date->start;
-        $this->endDate = $selected_date->end;
         return $this;
     }
 
@@ -66,11 +60,12 @@ class CommonFunctions
      */
     public function isWeekendHoliday()
     {
+        $date = $this->startDate ?: Carbon::now();
         $weekend_settings = $this->businessWeekendSettingsRepo->getAllByBusiness($this->business);
         $business_holiday = $this->businessHoliday->getAllByBusiness($this->business);
 
         $dates_of_holidays_formatted = [];
-        $weekend_day = $this->checkWeekend->getWeekendDays($this->startDate, $weekend_settings);
+        $weekend_day = $this->checkWeekend->getWeekendDays($date, $weekend_settings);
         foreach ($business_holiday as $holiday) {
             $start_date = Carbon::parse($holiday->start_date);
             $end_date = Carbon::parse($holiday->end_date);
@@ -79,8 +74,8 @@ class CommonFunctions
             }
         }
 
-        return $this->isWeekend($this->startDate, $weekend_day)
-            || $this->isHoliday($this->startDate, $dates_of_holidays_formatted);
+        return $this->isWeekend($date, $weekend_day)
+            || $this->isHoliday($date, $dates_of_holidays_formatted);
     }
 
     /**
@@ -101,5 +96,13 @@ class CommonFunctions
     private function isHoliday(Carbon $date, $holidays)
     {
         return in_array($date->format('Y-m-d'), $holidays);
+    }
+
+    public function getWeekendOrHolidayString()
+    {
+        $weekend_settings = $this->businessWeekendSettingsRepo->getAllByBusiness($this->business);
+        $weekend_day = $this->checkWeekend->getWeekendDays($this->startDate, $weekend_settings);
+
+        return $this->isWeekend($this->startDate, $weekend_day) ? 'weekend' : 'holiday';
     }
 }

@@ -10,6 +10,11 @@ trait HasErrorCodeAndMessage
         return !is_null($this->errorCode);
     }
 
+    public function hasNoError()
+    {
+        return !$this->hasError();
+    }
+
     public function getErrorCode()
     {
         return $this->errorCode;

@@ -327,3 +327,20 @@ if (!function_exists('banglaMonth')) {
         return getMonthsNameInBangla()[$month];
     }
 }
+
+if (!function_exists('formatMinuteToHourMinuteString')) {
+    /**
+     * @param int $minute
+     * @return string
+     */
+    function formatMinuteToHourMinuteString($minute)
+    {
+        if ($minute < 60) return "$minute min";
+        $hour = $minute / 60;
+        $intval_hr = intval($hour);
+        $text = "$intval_hr hr ";
+        if ($hour > $intval_hr) $text .= ($minute - (60 * intval($hour))) . " min";
+
+        return $text;
+    }
+}
