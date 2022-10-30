@@ -23,6 +23,8 @@ class PayStationClient
     private $password;
     private $authNumber;
     private $topupEnquiryUrl;
+    /** @var TPRequest $tpRequest */
+    private $tpRequest;
 
     /**
      * PayStationClient constructor.
@@ -81,9 +83,10 @@ class PayStationClient
     private function getHeaders(): array
     {
         return [
-            'username'    => $this->userName,
-            'password'    => $this->password,
-            'auth_number' => $this->authNumber
+            'username'     => $this->userName,
+            'password'     => $this->password,
+            'auth_number'  => $this->authNumber,
+            'Content-Type' => 'application/json'
         ];
     }
 
@@ -131,13 +134,10 @@ class PayStationClient
     public function enquiry(TopUpOrder $topup_order)
     {
         $request_data = ['refer_no' => $topup_order->getGatewayRefId()];
-        $headers = $this->getHeaders();
-        $headers['Content-Type'] = 'application/json';
-
         $this->tpRequest
             ->setMethod(TPRequest::METHOD_POST)
             ->setUrl($this->topupEnquiryUrl)
-            ->setHeaders($headers)
+            ->setHeaders($this->getHeaders())
             ->setTimeout(60)
             ->setInput($request_data);
 
