@@ -25,6 +25,7 @@ class MonthlyStat
     private $businessOfficeRepo;
     private $isShiftOn;
     private $holidayBreakdown = [];
+    private $dayWiseShifts;
 
     /**
      * @param TimeFrame $time_frame
@@ -75,21 +76,21 @@ class MonthlyStat
 
     /**
      * @param $attendances
-     * @param int $shift_count
-     * @return array
+     * @param $business_member_shifts
+     * @return array[]
      */
-    public function transform($attendances, $shift_count = 0)
+    public function transform($attendances, $business_member_shifts = null)
     {
+        $this->dayWiseShifts = $business_member_shifts;
         $check_weekend = new CheckWeekend();
         list($leaves, $leaves_date_with_half_and_full_day) = $this->formatLeaveAsDateArray();
         $leave_days = $late_days = $absent_days = [];
 
         $dates_of_holidays_formatted = $this->holidayBreakdown;
         $period = CarbonPeriod::create($this->timeFrame->start, $this->timeFrame->end);
-        $remaining_days = (($this->timeFrame->start)->diffInDays($this->timeFrame->end)) + 1;
 
         $statistics = [
-            'working_days' => $this->isShiftOn ? $shift_count : $remaining_days,
+            'working_days' => $period->count(),
             Statuses::ON_TIME => 0,
             Statuses::LATE => 0,
             Statuses::LEFT_EARLY => 0,
@@ -118,17 +119,21 @@ class MonthlyStat
                 'attendance' => null,
                 'is_absent' => 0,
             ];
+            $shift = $this->getShiftOnDate($date);
+            if ($shift) {
+                if ($shift->isUnassigned()) $statistics['working_days']--;
+            }
 
             $weekend_day = $check_weekend->getWeekendDays($date, $this->businessWeekendSettings);
             $is_weekend_or_holiday = $this->isWeekendHoliday($date, $weekend_day, $dates_of_holidays_formatted);
             $is_on_leave = $this->isLeave($date, $leaves);
             if ($is_weekend_or_holiday || $is_on_leave) {
-                if ($this->forOneEmployee) $breakdown_data['weekend_or_holiday_tag'] = $this->isWeekendHolidayLeaveTag($date, $leaves_date_with_half_and_full_day, $dates_of_holidays_formatted);
+                if ($this->forOneEmployee && !$shift || $this->forOneEmployee && !$this->isShiftOn || $this->forOneEmployee && $this->isShiftOn && $shift && $shift->isGeneral()) $breakdown_data['weekend_or_holiday_tag'] = $this->isWeekendHolidayLeaveTag($date, $leaves_date_with_half_and_full_day, $dates_of_holidays_formatted);
                 if ($breakdown_data['weekend_or_holiday_tag'] === 'holiday') {
                     $breakdown_data['holiday_name'] = $this->getHolidayName($date);
                 }
             }
-            if ($is_weekend_or_holiday & !$this->isShiftOn) {
+            if ($is_weekend_or_holiday && (!$shift || $shift->isGeneral())) {
                 if (!$this->isHalfDayLeave($date, $leaves_date_with_half_and_full_day)) $statistics['working_days']--;
             }
             // leave calculation
@@ -240,6 +245,13 @@ class MonthlyStat
         $result = ['statistics' => $statistics];
         if ($this->forOneEmployee) $result['daily_breakdown'] = $daily_breakdown;
         return $result;
+    }
+
+    private function getShiftOnDate(Carbon $date)
+    {
+        $key = $date->toDateString();
+        if(!$this->dayWiseShifts->has($key)) return null;
+        return $this->dayWiseShifts[$key];
     }
 
     /**

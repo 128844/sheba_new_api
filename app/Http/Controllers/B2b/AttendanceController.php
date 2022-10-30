@@ -17,19 +17,16 @@ use App\Sheba\Business\OfficeSetting\PolicyTransformer;
 use App\Sheba\Business\OfficeSettingChangesLogs\ChangesLogsTransformer;
 use App\Sheba\Business\OfficeSettingChangesLogs\Creator;
 use App\Sheba\Business\OfficeSettingChangesLogs\Requester;
-use App\Transformers\Business\AttendanceMonthlyListTransformer;
 use App\Transformers\CustomSerializer;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use League\Fractal\Manager;
 use League\Fractal\Resource\Collection;
-use League\Fractal\Serializer\ArraySerializer;
 use Sheba\Business\Attendance\AttendanceList;
 use Sheba\Business\Attendance\Daily\DailyExcel;
 use Sheba\Business\Attendance\Detail\DetailsExcel as DetailsExcel;
 use Sheba\Business\Attendance\HalfDaySetting\Updater as HalfDaySettingUpdater;
-use Sheba\Business\Attendance\Monthly\Excel;
 use Sheba\Business\Attendance\Monthly\MonthlyAttendanceCalculator;
 use Sheba\Business\Attendance\Setting\ActionType;
 use Sheba\Business\Attendance\Setting\AttendanceSettingTransformer;
@@ -54,6 +51,7 @@ use Sheba\Dal\BusinessWeekend\Contract as BusinessWeekendRepoInterface;
 use Sheba\Dal\BusinessWeekendSettings\BusinessWeekendSettingsRepo;
 use Sheba\Dal\OfficePolicy\Type;
 use Sheba\Dal\OfficeSettingChangesLogs\OfficeSettingChangesLogsRepository;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Helpers\TimeFrame;
 use Sheba\ModificationFields;
 use Sheba\Repositories\Interfaces\BusinessMemberRepositoryInterface;
@@ -191,18 +189,18 @@ class AttendanceController extends Controller
      * @param Request $request
      * @param BusinessHolidayRepoInterface $business_holiday_repo
      * @param BusinessWeekendSettingsRepo $business_weekend_settings_repo
-     * @param AttendanceRepoInterface $attendance_repo
-     * @param BusinessMemberRepositoryInterface $business_member_repository
      * @param AttendanceList $list
      * @param DetailsExcel $details_excel
      * @param Filter $daily_filer
-     * @return JsonResponse|void
+     * @param BusinessMemberRepositoryInterface $business_member_repository
+     * @return JsonResponse|null
      */
     public function showStat($business, $member, Request $request, BusinessHolidayRepoInterface $business_holiday_repo,
                              BusinessWeekendSettingsRepo $business_weekend_settings_repo,
                              AttendanceList $list, DetailsExcel $details_excel, Filter $daily_filer, BusinessMemberRepositoryInterface $business_member_repository)
     {
         $this->validate($request, ['month' => 'numeric|min:1|max:12']);
+        /** @var Business $business */
         $business = $request->business;
         /** @var BusinessMember $business_member */
         $business_member = $business_member_repository->where('business_id', $business->id)->where('member_id', $member)->first();
@@ -229,19 +227,17 @@ class AttendanceController extends Controller
             },
             'overrideLogs'
         ])->whereBetween('date', $time_frame->getArray())->get();
+
         $business_holiday = $business_holiday_repo->getAllByBusiness($business);
         $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business);
 
-        $shifts_counts = 0;
-        if ($business_member->isShiftEnable()) {
-            $shifts_counts = $business_member->shifts()
-                ->where('is_general', 0)
-                ->whereBetween('date', $this->timeFrame->getArray())
-                ->count();
+        $business_member_shifts = null;
+        if ($is_shift_enable = $business->isShiftEnable()) {
+            $business_member_shifts = $this->loadShifts($business_member);
         }
 
-        $employee_attendance = (new MonthlyStat($time_frame, $business, $weekend_settings, $business_member_leave, true, $business_member->isShiftEnable()))
-            ->setBusinessHolidays($business_holiday)->transform($attendances, $shifts_counts);
+        $employee_attendance = (new MonthlyStat($time_frame, $business, $weekend_settings, $business_member_leave, true, $is_shift_enable))
+            ->setBusinessHolidays($business_holiday)->transform($attendances, $business_member_shifts);
 
         $daily_breakdowns = collect($employee_attendance['daily_breakdown']);
         $daily_breakdowns = $daily_breakdowns->filter(function ($breakdown) {
@@ -275,6 +271,19 @@ class AttendanceController extends Controller
             ],
             'joining_date' => $joining_date
         ]);
+    }
+
+    private function loadShifts(BusinessMember $businessMember)
+    {
+        return $businessMember->shifts()
+            ->selectTypes()
+            ->within($this->timeFrame)
+            ->selectBusinessMember()
+            ->selectDate()
+            ->get()
+            ->toAssocFromKey(function (ShiftAssignment $assignment) {
+                return $assignment->getDate()->toDateString();
+            });
     }
 
     /**

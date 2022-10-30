@@ -4,6 +4,7 @@ use App\Models\BusinessMember;
 use App\Sheba\Business\Attendance\AttendanceBasicInfo;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Collection;
 use Sheba\Business\Attendance\CheckWeekend;
 use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\AttendanceActionLog\Model as AttendanceActionLog;
@@ -32,8 +33,8 @@ class PeriodWiseInformation
     private $attendanceRepo;
     /** @var CheckWeekend */
     private $weekends;
-    /** @var ShiftAssignment[] */
-    private $dayWiseShifts = [];
+    /** @var Collection */
+    private $dayWiseShifts;
 
     public function __construct()
     {
@@ -43,6 +44,7 @@ class PeriodWiseInformation
         $this->attendanceLogRepo = app(AttendanceActionLogRepositoryInterface::class);
         $this->result = collect();
         $this->weekends = app(CheckWeekend::class);
+        $this->dayWiseShifts = collect([]);
     }
 
     /** @var CarbonPeriod */
@@ -153,9 +155,9 @@ class PeriodWiseInformation
     {
         $key = $date->toDateString();
 
-        if(!array_key_exists($key, $this->dayWiseShifts)) return null;
+        if(!$this->dayWiseShifts->has($key)) return null;
 
-        return$this->dayWiseShifts[$key];
+        return $this->dayWiseShifts[$key];
     }
 
     private function calculateWorkingDays()
