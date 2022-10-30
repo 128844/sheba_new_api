@@ -40,7 +40,7 @@ class PayStationResponse extends TopUpResponse
      */
     public function getErrorMessage(): string
     {
-        return $this->response->Message;
+        return $this->response->message;
     }
 
     public function resolveTopUpSuccessStatus(): string
@@ -50,6 +50,7 @@ class PayStationResponse extends TopUpResponse
 
     public function isPending(): bool
     {
-        return $this->response && $this->response->Status == "REQUEST ACCEPTED";
+        return false;
+        // return $this->response && $this->response->Status == "REQUEST ACCEPTED";
     }
 }
