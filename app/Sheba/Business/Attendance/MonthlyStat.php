@@ -250,7 +250,7 @@ class MonthlyStat
     private function getShiftOnDate(Carbon $date)
     {
         $key = $date->toDateString();
-        if(!$this->dayWiseShifts->has($key)) return null;
+        if($this->dayWiseShifts && !$this->dayWiseShifts->has($key)) return null;
         return $this->dayWiseShifts[$key];
     }
 
