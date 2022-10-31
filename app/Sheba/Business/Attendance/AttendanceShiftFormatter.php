@@ -10,7 +10,11 @@ class AttendanceShiftFormatter
      */
     public static function get(Attendance $attendance)
     {
-        $shift_assignment = $attendance->shiftAssignment;
+        return self::getByShiftAssignment($attendance->shiftAssignment);
+    }
+
+    public static function getByShiftAssignment($shift_assignment)
+    {
         if (!$shift_assignment) return [
             'is_general' => 1,
             'is_unassigned' => 0,
@@ -27,4 +31,5 @@ class AttendanceShiftFormatter
             ] : null
         ];
     }
+
 }

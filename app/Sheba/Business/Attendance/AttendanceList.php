@@ -15,6 +15,8 @@ use Sheba\Dal\BusinessOffice\Contract as BusinessOffice;
 use Sheba\Dal\Leave\Contract as LeaveRepositoryInterface;
 use Sheba\Dal\Attendance\Model;
 use Sheba\Dal\Attendance\Statuses;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
+use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\Helpers\TimeFrame;
 use Sheba\Repositories\Interfaces\BusinessMemberRepositoryInterface;
 
@@ -70,6 +72,9 @@ class AttendanceList
 
     /** @var array */
     private $officeNameMemo = [];
+    private $specificDayWiseShift;
+    /*** @var ShiftAssignmentRepository */
+    private $shiftAssignmentRepo;
 
     /**
      * AttendanceList constructor.
@@ -85,7 +90,8 @@ class AttendanceList
         BusinessMemberRepositoryInterface      $business_member_repository,
         LeaveRepositoryInterface               $leave_repository_interface,
         BusinessHolidayRepoInterface           $business_holiday_repo,
-        CommonFunctions                        $common_functions
+        CommonFunctions                        $common_functions,
+        ShiftAssignmentRepository              $shift_assignment_repo
     )
     {
         $this->attendanceRepositoryInterface = $attendance_repository_interface;
@@ -98,6 +104,7 @@ class AttendanceList
         $this->businessHoliday = $business_holiday_repo;
         $this->businessOfficeRepo = app(BusinessOffice::class);
         $this->commonFunctions = $common_functions;
+        $this->shiftAssignmentRepo = $shift_assignment_repo;
     }
 
     /**
@@ -283,6 +290,9 @@ class AttendanceList
         $business_member_ids = [];
         if ($this->businessMemberId) $business_member_ids = [$this->businessMemberId];
         elseif ($this->business) $business_member_ids = $this->getBusinessMemberIds();
+
+        $this->specificDayWiseShift = $this->loadShifts($business_member_ids);
+
         $attendances = $this->attendanceRepositoryInterface->builder()
             ->select('id', 'business_member_id', 'checkin_time', 'checkout_time', 'staying_time_in_minutes', 'overtime_in_minutes', 'status', 'date', 'is_attendance_reconciled', 'shift_assignment_id')
             ->whereIn('business_member_id', $business_member_ids)
@@ -583,8 +593,12 @@ class AttendanceList
 
         $data = [];
         foreach ($business_members as $business_member) {
+            $business_member_id = $business_member->id;
+            $shift_assignment = $this->specificDayWiseShift->has($business_member_id) ? $this->specificDayWiseShift[$business_member_id] : null;
+            $shift = AttendanceShiftFormatter::getByShiftAssignment($shift_assignment);
+            if ($shift['is_unassigned']) continue;
             $data[] = $this->getBusinessMemberData($business_member) + [
-                'id' => $business_member->id,
+                'id' => $business_member_id,
                 'check_in' => null,
                 'check_out' => null,
                 'overtime_in_minutes' => 0,
@@ -597,7 +611,8 @@ class AttendanceList
                 'holiday_name' => $is_weekend_or_holiday ? $this->getHolidayName() : null,
                 'is_half_day_leave' => 0,
                 'which_half_day_leave' => null,
-                'date' => null
+                'date' => null,
+                'shift' => $shift
             ];
         }
 
@@ -775,6 +790,13 @@ class AttendanceList
         $business_office = $is_in_wifi || $is_geo ? $this->businessOfficeRepo->findWithTrashed($action->business_office_id) : null;
         $this->officeNameMemo[$action->business_office_id] = $business_office ? $business_office->name : null;
         return $this->officeNameMemo[$action->business_office_id];
+    }
+
+    private function loadShifts($business_member_ids)
+    {
+        return $this->shiftAssignmentRepo->where('date', $this->startDate)->whereIn('business_member_id', $business_member_ids)->get()->toAssocFromKey(function (ShiftAssignment $assignment) {
+            return $assignment->business_member_id;
+        });
     }
 
 }
