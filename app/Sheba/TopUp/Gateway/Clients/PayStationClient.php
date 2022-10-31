@@ -39,7 +39,8 @@ class PayStationClient
 
         $this->baseUrl = config('topup.pay_station.base_url');
         $this->topupEnquiryUrl = $this->baseUrl.'/enquiry';
-        $this->singleTopupUrl = $this->baseUrl.'/recharge';
+        // $this->singleTopupUrl = $this->baseUrl.'/recharge';
+        $this->singleTopupUrl = $this->baseUrl.'/test-request';
         $this->userName = config('topup.pay_station.user_name');
         $this->password = config('topup.pay_station.password');
         $this->authNumber = config('topup.pay_station.auth_number');
