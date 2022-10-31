@@ -5,11 +5,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
+use Sheba\Business\BusinessMember\ProfileAndDepartmentQuery;
 use Sheba\Business\CoWorker\Statuses;
 use Sheba\Dal\Announcement\Announcement;
 use Sheba\Dal\BaseModel;
 use Sheba\Dal\BusinessAttendanceTypes\AttendanceTypes;
 use Sheba\Dal\BusinessPayslip\BusinessPayslip;
+use Sheba\Dal\BusinessShift\BusinessShift;
 use Sheba\Dal\LeaveType\Model as LeaveTypeModel;
 use Sheba\Dal\LiveTrackingSettings\Contract;
 use Sheba\Dal\LiveTrackingSettings\LiveTrackingSettings;
@@ -65,6 +67,11 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
         return $this->belongsToMany(Member::class)->withTimestamps();
     }
 
+    public function businessMembers()
+    {
+        return $this->hasMany(BusinessMember::class);
+    }
+
     public function membersWithProfileAndAccessibleBusinessMember()
     {
         return $this->members()->select('members.id', 'profile_id', 'social_links')->with([
@@ -110,59 +117,19 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
 
     public function getAllBusinessMember()
     {
-        return BusinessMember::where('business_id', $this->id)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic', 'dob', 'address', 'nationality', 'nid_no', 'tin_no');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
-        ]);
+        $profile_request = (new ProfileAndDepartmentQuery())
+            ->addProfileColumns(['dob', 'address', 'nationality', 'nid_no', 'tin_no']);
+        return $this->businessMembers()->withProfileAndDepartment($profile_request);
     }
 
-    public function getActiveBusinessMember()
+    public function getActiveBusinessMember(ProfileAndDepartmentQuery $request = null)
     {
-        return BusinessMember::where('business_id', $this->id)->where('status', Statuses::ACTIVE)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
-        ]);
+        return $this->businessMembers()->onlyActive()->withProfileAndDepartment($request);
     }
 
     public function getAccessibleBusinessMember()
     {
-        return BusinessMember::where('business_id', $this->id)->where('status', '<>', Statuses::INACTIVE)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
-        ]);
+        return $this->businessMembers()->accessible()->withProfileAndDepartment();
     }
 
     /**
@@ -170,20 +137,19 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
      */
     public function getAllBusinessMemberExceptInvited()
     {
-        return BusinessMember::where('business_id', $this->id)->where('status', '<>', Statuses::INVITED)->with([
-            'member' => function ($q) {
-                $q->select('members.id', 'profile_id')->with([
-                    'profile' => function ($q) {
-                        $q->select('profiles.id', 'name', 'mobile', 'email', 'pro_pic', 'address');
-                    }
-                ]);
-            }, 'role' => function ($q) {
-                $q->select('business_roles.id', 'business_department_id', 'name')->with([
-                    'businessDepartment' => function ($q) {
-                        $q->select('business_departments.id', 'business_id', 'name');
-                    }
-                ]);
-            }
+        $profile_request = (new ProfileAndDepartmentQuery())
+            ->addProfileColumns(['address']);
+
+        return $this->businessMembers()->notInvited()->withProfileAndDepartment($profile_request)->with([
+            'leaves' => function ($q) {
+                $q
+                    ->select('id', 'title', 'business_member_id', 'leave_type_id', 'start_date', 'end_date', 'note', 'total_days', 'left_days', 'status')
+                    ->with(['leaveType' => function ($query) {
+                        $query->withTrashed()->select('id', 'business_id', 'title', 'total_days', 'deleted_at');
+                    }]);
+            }, 'attendances' => function ($q) {
+                $q->with('actions');
+            }, 'shifts'
         ]);
     }
 
@@ -399,26 +365,21 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
         return $time_frame->forAFiscalYear(Carbon::now(), $business_fiscal_start_month);
     }
 
-    public function isRemoteAttendanceEnable($business_member_id = null)
+    public function isRemoteAttendanceEnable($business_member_id = null): bool
     {
-        if ($this->isShebaTech($business_member_id)) return true;
+        if ($this->isShebaRemoteAttendanceEnable($business_member_id)) return true;
         return in_array(AttendanceTypes::REMOTE, $this->attendanceTypes->pluck('attendance_type')->toArray());
+    }
+
+    private function isShebaRemoteAttendanceEnable($business_member_id): bool
+    {
+        $sheba_employees = [674];
+        return in_array($business_member_id, $sheba_employees);
     }
 
     public function isGeoLocationAttendanceEnable()
     {
         return in_array(AttendanceTypes::GEO_LOCATION_BASED, $this->attendanceTypes->pluck('attendance_type')->toArray());
-    }
-
-    public function isShebaTech($business_member_id)
-    {
-        $sheba_tech = [574, 586, 847, 922, 1031, 4493, 6885, 7102, 2111, 585, 587, 588, 592, 593, 594, 596, 597, 600, 604,
-            606, 611, 614, 615, 616, 620, 634, 636, 641, 642, 645, 654, 687, 696, 731, 736, 816, 841, 844, 907, 910, 911, 919, 1091, 1093,
-            1826, 1838, 1858, 1859, 1860, 1861, 1862, 1961, 1963, 2030, 2031, 2032, 2033, 2034, 2108, 2109, 3122, 3128, 3130, 3171, 3368,
-            3369, 3370, 3371, 3660, 3661, 3662, 3666, 3667, 3668, 3669, 3674, 3935, 3936, 4487, 4488, 4489, 4808, 4809, 4810, 4913, 4931,
-            5089, 5125, 6886, 7105, 7360, 7540, 7543, 8301, 8899, 9278, 9635, 10053, 10054, 10581, 10986, 12032, 12034, 13371,578,648,
-            6880,10056,10591,13373,577,583,586,750,2499,2794,2795,4493,6439,6824,6832,7545,7546,8308,8897,10582,10988,11186,11652,11653,13522];
-        return in_array($business_member_id, $sheba_tech);
     }
 
     public function getBusinessHalfDayConfiguration()
@@ -528,6 +489,11 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
         return $this->policy()->where('policy_type', Type::LATE_CHECKIN_EARLY_CHECKOUT)->orderBy('from_days');
     }
 
+    public function shifts()
+    {
+        return $this->hasMany(BusinessShift::class);
+    }
+
     public function liveTrackingSettings()
     {
         return $this->hasOne(LiveTrackingSettings::class);
@@ -565,6 +531,36 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
     public function isShebaPlatform(): bool
     {
         return in_array($this->id, config('b2b.BUSINESSES_IDS_FOR_REFERRAL'));
+    }
+
+    public function isShiftEnabled(): bool
+    {
+        return (bool) $this->is_shift_enable;
+    }
+
+    public function isLiveTrackEnabled(): bool
+    {
+        return $this->liveTrackingSettings && $this->liveTrackingSettings->is_enable;
+    }
+
+    public function isShiftEnable(): bool
+    {
+        return $this->isShiftEnabled();
+    }
+
+    public function isPayrollEnabled(): bool
+    {
+        return $this->payrollSetting && $this->payrollSetting->is_enable;
+    }
+
+    public function isVisitEnabled(): bool
+    {
+        return (bool) $this->is_enable_employee_visit;
+    }
+
+    public function isManager(BusinessMember $business_member): bool
+    {
+        return $this->businessMembers()->onlyActive()->where('manager_id', $business_member->id)->count() > 0;
     }
 
 }

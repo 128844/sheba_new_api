@@ -132,5 +132,27 @@ return [
     'BUSINESSES_LUNCH_LINK' => 'https://docs.google.com/forms/d/1MeRaVlL34-n6YQHIt_l_50nDkQHnyt5h8XpqSJPUbqA/viewform?edit_requested=true',
     'BUSINESSES_IDS_FOR_REFERRAL' => [
         110, 1416, 1274
+    ],
+    'SHIFT_COLORS' => [
+        '#12B886',
+        '#4373F5',
+        '#FF8F5E',
+        '#E75050',
+        '#8A21F3',
+        '#38C8E7',
+        '#A6BF4B',
+        '#F2C53D',
+        '#027D8E',
+        '#A47F4F',
+        '#BF7069',
+        '#532559',
+        '#0F47D2',
+        '#F638AB',
+        '#31C5B4',
+        '#FFF000',
+        '#D0E0E3',
+        '#FF1100',
+        '#FFC100',
+        '#00F0FF'
     ]
 ];

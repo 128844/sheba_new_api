@@ -47,6 +47,7 @@ class BusinessRoute
                 $api->group(['prefix' => 'departments'], function ($api) {
                     $api->post('/', 'B2b\DepartmentController@store');
                     $api->get('/', 'B2b\DepartmentController@index');
+                    $api->get('/get-for-filter', 'B2b\DepartmentController@getForFilter');
                     $api->group(['prefix' => '{department}'], function ($api) {
                         $api->post('/', 'B2b\DepartmentController@update');
                         $api->delete('/', 'B2b\DepartmentController@destroy');
@@ -68,6 +69,7 @@ class BusinessRoute
                 $api->group(['prefix' => 'attendances'], function ($api) {
                     $api->get('daily', 'B2b\AttendanceController@getDailyStats');
                     $api->get('monthly', 'B2b\AttendanceController@getMonthlyStats');
+                    $api->get('monthly-list', 'B2b\AttendanceController@getMonthlyStatsV2');
                     $api->post('reconciliation', 'B2b\AttendanceReconciliationController@create');
                     $api->post('bulk-reconciliation', 'B2b\AttendanceReconciliationController@bulkReconciliation');
                 });
@@ -407,6 +409,27 @@ class BusinessRoute
                     $api->get('team-visits', 'B2b\VisitController@getTeamVisits');
                     $api->get('my-visits', 'B2b\VisitController@getMyVisits');
                     $api->get('/{id}', 'B2b\VisitController@show');
+                });
+                $api->group(['prefix' => 'shift'], function ($api) {
+                    $api->get('/', 'B2b\ShiftSettingController@index');
+                    $api->post('/', 'B2b\ShiftSettingController@create');
+                    $api->get('/color', 'B2b\ShiftSettingController@getColor');
+                    $api->group(['prefix' => '{id}'], function ($api) {
+                        $api->delete('/', 'B2b\ShiftSettingController@delete');
+                        $api->get('/', 'B2b\ShiftSettingController@details');
+                        $api->post('/color', 'B2b\ShiftSettingController@updateColor');
+                        $api->post('/update', 'B2b\ShiftSettingController@updateShift');
+                    });
+                });
+                $api->group(['prefix' => 'shift-calender'], function ($api) {
+                    $api->get('/', 'B2b\ShiftAssignmentController@index');
+                    $api->get('/dashboard', 'B2b\ShiftAssignmentController@dashboard');
+                    $api->group(['prefix' => '{id}'], function ($api) {
+                        $api->get('/', 'B2b\ShiftAssignmentController@details');
+                        $api->post('/assign-shift', 'B2b\ShiftAssignmentController@assignShift');
+                        $api->post('/assign-general-attendance', 'B2b\ShiftAssignmentController@assignGeneralAttendance');
+                        $api->post('/unassign-shift', 'B2b\ShiftAssignmentController@unassignShift');
+                    });
                 });
 
                 $api->group(['prefix' => 'live-tracking'], function ($api) {

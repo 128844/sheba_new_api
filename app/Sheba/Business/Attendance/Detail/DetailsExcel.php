@@ -7,8 +7,6 @@ class DetailsExcel
 {
     private $breakdownData;
     private $data = [];
-    private $date;
-    private $status;
     private $checkInTime;
     private $checkInStatus;
     private $checkInLocation;
@@ -87,144 +85,163 @@ class DetailsExcel
         })->export('xlsx');
     }
 
+    private function initiateRow()
+    {
+        return [
+            'date' => null,
+            'status' => null,
+            'checkInTime' => '-',
+            'checkInStatus' => '-',
+            'checkInLocation' => '-',
+            'checkInAddress' => '-',
+            'checkOutTime' => '-',
+            'checkOutStatus' => '-',
+            'checkOutLocation' => '-',
+            'checkOutAddress' => '-',
+            'totalHours' => '-',
+            'overtime' => '-',
+            'lateNote' => null,
+            'leftEarlyNote' => null,
+            'attendanceReconciled' => '-'
+        ];
+    }
+
     private function makeData()
     {
         foreach ($this->breakdownData as $attendance) {
-            $this->date = null;
-            $this->status = null;
+            $row = $this->initiateRow();
 
-            $this->checkInTime = '-';
-            $this->checkInStatus = '-';
-            $this->checkInLocation = '-';
-            $this->checkInAddress = '-';
-
-            $this->checkOutTime = '-';
-            $this->checkOutStatus = '-';
-            $this->checkOutLocation = '-';
-            $this->checkOutAddress = '-';
-
-            $this->totalHours = '-';
-            $this->overtime = '-';
-            $this->lateNote = null;
-            $this->leftEarlyNote = null;
-            $this->attendanceReconciled = '-';
             if (!$attendance['weekend_or_holiday_tag']) {
                 if ($attendance['show_attendance'] == 1) {
-                    $this->date = $attendance['date'];
-                    $this->checkInOutLogics($attendance);
-                    $this->status = 'Present';
+                    $row['date'] = $attendance['date'];
+                    $this->checkInOutLogics($attendance, $row);
+                    $row['status'] = 'Present';
                 }
                 if ($attendance['show_attendance'] == 0) {
                     if ($attendance['is_absent'] == 1) {
-                        $this->date = $attendance['date'];
-                        $this->status = 'Absent';
+                        $row['date'] = $attendance['date'];
+                        $row['status'] = 'Absent';
                     }
                 }
-            }
-            if ($attendance['weekend_or_holiday_tag']) {
-                $this->date = $attendance['date'];
+            } else {
+                $row['date'] = $attendance['date'];
                 if ($attendance['show_attendance'] == 1) {
-                    $this->checkInOutLogics($attendance);
+                    $this->checkInOutLogics($attendance, $row);
                 }
                 if ($attendance['weekend_or_holiday_tag'] === 'weekend') {
-                    $this->status = 'Weekend';
+                    $row['status'] = 'Weekend';
                 } else if ($attendance['weekend_or_holiday_tag'] === 'holiday') {
-                    $this->status = 'Holiday';
+                    $row['status'] = 'Holiday';
                 } else if ($attendance['weekend_or_holiday_tag'] === 'full_day') {
-                    $this->status = 'On leave: full day';
+                    $row['status'] = 'On leave: full day';
                 } else if ($attendance['weekend_or_holiday_tag'] === 'first_half' || $attendance['weekend_or_holiday_tag'] === 'second_half') {
-                    $this->status = "On leave: half day";
+                    $row['status'] = "On leave: half day";
                 }
             }
             $this->data[] = [
-                'date' => $this->date,
-                'status' => $this->status,
+                'date' => $row['date'],
+                'status' => $row['status'],
 
-                'check_in_time' => $this->checkInTime,
-                'check_in_status' => $this->checkInStatus,
-                'check_in_location' => $this->checkInLocation,
-                'check_in_address' => $this->checkInAddress,
+                'check_in_time' => $row['checkInTime'],
+                'check_in_status' => $row['checkInStatus'],
+                'check_in_location' => $row['checkInLocation'],
+                'check_in_address' => $row['checkInAddress'],
 
-                'check_out_time' => $this->checkOutTime,
-                'check_out_status' => $this->checkOutStatus,
-                'check_out_location' => $this->checkOutLocation,
-                'check_out_address' => $this->checkOutAddress,
+                'check_out_time' => $row['checkOutTime'],
+                'check_out_status' => $row['checkOutStatus'],
+                'check_out_location' => $row['checkOutLocation'],
+                'check_out_address' => $row['checkOutAddress'],
 
-                'total_hours' => $this->totalHours,
-                'overtime' => $this->overtime,
-                'late_check_in_note' => $this->lateNote,
-                'left_early_note' => $this->leftEarlyNote,
-                'attendance_reconciled' => $this->attendanceReconciled
+                'total_hours' => $row['totalHours'],
+                'overtime' => $row['overtime'],
+                'late_check_in_note' => $row['lateNote'],
+                'left_early_note' => $row['leftEarlyNote'],
+                'attendance_reconciled' => $row['attendanceReconciled'],
+                'shift_name' => $this->getShiftName($attendance)
             ];
         }
     }
 
     private function getHeaders()
     {
-        return ['Date', 'Status', 'Check in time', 'Check in status', 'Check in location',
+        return [
+            'Date', 'Status', 'Check in time', 'Check in status', 'Check in location',
             'Check in address', 'Check out time', 'Check out status',
-            'Check out location', 'Check out address', 'Total Hours', 'Overtime', 'Late check in note', 'Left early note', 'Attendance Reconciliation'];
+            'Check out location', 'Check out address', 'Total Hours', 'Overtime',
+            'Late check in note', 'Left early note', 'Attendance Reconciliation', 'Shift Name'
+        ];
     }
 
-    private function checkInOutLogics($attendance)
+    private function checkInOutLogics($attendance, &$row)
     {
         $attendance_check_in = $attendance['attendance']['check_in'];
         $attendance_check_out = $attendance['attendance']['check_out'];
 
-        $this->checkInTime = $attendance_check_in['time'];
+        $row['checkInTime'] = $attendance_check_in['time'];
         if ($attendance_check_in['status'] === 'late') {
-            $this->checkInStatus = 'Late';
+            $row['checkInStatus'] = 'Late';
         }
         if ($attendance_check_in['status'] === 'on_time') {
-            $this->checkInStatus = 'On time';
+            $row['checkInStatus'] = 'On time';
         }
 
         if ($attendance_check_in['is_remote']) {
-            $this->checkInLocation = "Remote";
+            $row['checkInLocation'] = "Remote";
         } else if ($attendance_check_in['is_in_wifi']) {
-            $this->checkInLocation = "Office IP";
+            $row['checkInLocation'] = "Office IP";
         } else if ($attendance_check_in['is_geo']) {
-            $this->checkInLocation = "Geo Location";
+            $row['checkInLocation'] = "Geo Location";
         }
 
         if ($attendance_check_in['address']) {
-            $this->checkInAddress = $attendance_check_in['address'];
+            $row['checkInAddress'] = $attendance_check_in['address'];
         }
 
         if (!is_null($attendance_check_out)) {
-            $this->checkOutTime = $attendance_check_out['time'];
+            $row['checkOutTime'] = $attendance_check_out['time'];
 
             if ($attendance_check_out['status'] === 'left_early') {
-                $this->checkOutStatus = 'Left early';
+                $row['checkOutStatus'] = 'Left early';
             }
 
             if ($attendance_check_out['status'] === 'left_timely') {
-                $this->checkOutStatus = 'Left timely';
+                $row['checkOutStatus'] = 'Left timely';
             }
 
             if ($attendance_check_in['is_remote']) {
-                $this->checkOutLocation = "Remote";
+                $row['checkOutLocation'] = "Remote";
             } else if ($attendance_check_in['is_in_wifi']) {
-                $this->checkOutLocation = "Office IP";
+                $row['checkOutLocation'] = "Office IP";
             } else if ($attendance_check_in['is_geo']) {
-                $this->checkOutLocation = "Geo Location";
+                $row['checkOutLocation'] = "Geo Location";
             }
 
             if ($attendance_check_out['address']) {
-                $this->checkOutAddress = $attendance_check_out['address'];
+                $row['checkOutAddress'] = $attendance_check_out['address'];
             }
         }
 
         if ($attendance['attendance']['active_hours']) {
-            $this->totalHours = $attendance['attendance']['active_hours'];
+            $row['totalHours'] = $attendance['attendance']['active_hours'];
         }
 
         if ($attendance['attendance']['overtime_in_minutes']) {
-            $this->overtime = $attendance['attendance']['overtime'];
+            $row['overtime'] = $attendance['attendance']['overtime'];
         }
 
-        $this->lateNote = $attendance['attendance']['late_note'];
-        $this->leftEarlyNote = $attendance['attendance']['left_early_note'];
-        $this->attendanceReconciled = $attendance['attendance']['is_attendance_reconciled'] ? 'Yes' : 'No';
+        $row['lateNote'] = $attendance['attendance']['late_note'];
+        $row['leftEarlyNote'] = $attendance['attendance']['left_early_note'];
+        $row['attendanceReconciled'] = $attendance['attendance']['is_attendance_reconciled'] ? 'Yes' : 'No';
+    }
+
+    private function getShiftName($attendance)
+    {
+        if (!$attendance['attendance']) return '-';
+
+        if ($attendance['attendance']['shift']['is_general'] == 1) return "General";
+
+        if ($attendance['attendance']['shift']['is_unassigned'] == 1) return "Unassigned";
+
+        return $attendance['attendance']['shift']['details']['name'];
     }
 }

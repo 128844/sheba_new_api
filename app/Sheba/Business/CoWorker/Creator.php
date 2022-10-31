@@ -2,6 +2,7 @@
 
 use Sheba\Business\BusinessMember\Requester as BusinessMemberRequester;
 use Sheba\Business\CoWorker\Email\Invite;
+use Sheba\Business\ShiftAssignment\ShiftAssignmentCreatorForNewlyActiveEmployee;
 use Sheba\Dal\Salary\SalaryRepository;
 use Sheba\Repositories\Interfaces\BusinessMemberRepositoryInterface;
 use Sheba\Business\CoWorker\Requests\Requester as CoWorkerRequester;
@@ -17,7 +18,6 @@ use Sheba\Business\Role\Updater as RoleUpdater;
 use Sheba\Repositories\ProfileRepository;
 use Sheba\Helpers\HasErrorCodeAndMessage;
 use Illuminate\Database\Eloquent\Model;
-use App\Jobs\SendBusinessRequestEmail;
 use Sheba\FileManagers\CdnFileManager;
 use App\Repositories\FileRepository;
 use Sheba\FileManagers\FileManager;
@@ -27,7 +27,6 @@ use App\Models\BusinessRole;
 use App\Models\Business;
 use App\Models\Profile;
 use App\Models\Member;
-use Throwable;
 use DB;
 
 class Creator
@@ -52,23 +51,23 @@ class Creator
     private $profile;
     /** @var BusinessRole $businessRole */
     private $businessRole;
-    /** BusinessMemberRepositoryInterface $businessMemberRepository */
+    /** @var BusinessMemberRepositoryInterface $businessMemberRepository */
     private $businessMemberRepository;
-    /** RoleRequester $roleRequester */
+    /** @var RoleRequester $roleRequester */
     private $roleRequester;
-    /** RoleCreator $roleCreator */
+    /** @var RoleCreator $roleCreator */
     private $roleCreator;
-    /** RoleUpdater $roleUpdater */
+    /** @var RoleUpdater $roleUpdater */
     private $roleUpdater;
-    /** BusinessMemberRequester $businessMemberRequester */
+    /** @var BusinessMemberRequester $businessMemberRequester */
     private $businessMemberRequester;
-    /** BusinessMemberCreator $businessMemberCreator */
+    /** @var BusinessMemberCreator $businessMemberCreator */
     private $businessMemberCreator;
-    /** BusinessMemberUpdater $businessMemberUpdater */
+    /** @var BusinessMemberUpdater $businessMemberUpdater */
     private $businessMemberUpdater;
-    /** ProfileBankInfoInterface $profileBankInfoRepository */
+    /** @var ProfileBankInfoInterface $profileBankInfoRepository */
     private $profileBankInfoRepository;
-    /** MemberRepositoryInterface $memberRepository */
+    /** @var MemberRepositoryInterface $memberRepository */
     private $memberRepository;
     /** @var BusinessRoleRepositoryInterface $businessRoleRepository */
     private $businessRoleRepository;
@@ -76,8 +75,10 @@ class Creator
     private $status;
     /** @var string $password */
     private $password;
-    /*** @var SalaryRepository */
+    /** @var SalaryRepository */
     private $salaryRepo;
+    /** @var ShiftAssignmentCreatorForNewlyActiveEmployee */
+    private $newlyActiveEmployeeShiftAssignment;
 
     /**
      * Updater constructor.
@@ -93,13 +94,18 @@ class Creator
      * @param ProfileBankInfoInterface $profile_bank_information
      * @param MemberRepositoryInterface $member_repository
      * @param BusinessRoleRepositoryInterface $business_role_repository
+     * @param ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment
+     * @param SalaryRepository $salary_repo
      */
-    public function __construct(FileRepository $file_repository, ProfileRepository $profile_repository,
-                                BusinessMemberRepositoryInterface $business_member_repository,
-                                RoleRequester $role_requester, RoleCreator $role_creator, RoleUpdater $role_updater,
-                                BusinessMemberRequester $business_member_requester, BusinessMemberCreator $business_member_creator,
-                                BusinessMemberUpdater $business_member_updater, ProfileBankInfoInterface $profile_bank_information,
-                                MemberRepositoryInterface $member_repository, BusinessRoleRepositoryInterface $business_role_repository)
+    public function __construct(
+        FileRepository $file_repository, ProfileRepository $profile_repository,
+        BusinessMemberRepositoryInterface $business_member_repository,
+        RoleRequester $role_requester, RoleCreator $role_creator, RoleUpdater $role_updater,
+        BusinessMemberRequester $business_member_requester, BusinessMemberCreator $business_member_creator,
+        BusinessMemberUpdater $business_member_updater, ProfileBankInfoInterface $profile_bank_information,
+        MemberRepositoryInterface $member_repository, BusinessRoleRepositoryInterface $business_role_repository,
+        ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment, SalaryRepository $salary_repo
+    )
     {
         $this->fileRepository = $file_repository;
         $this->profileRepository = $profile_repository;
@@ -113,7 +119,8 @@ class Creator
         $this->profileBankInfoRepository = $profile_bank_information;
         $this->memberRepository = $member_repository;
         $this->businessRoleRepository = $business_role_repository;
-        $this->salaryRepo = app(SalaryRepository::class);
+        $this->salaryRepo = $salary_repo;
+        $this->newlyActiveEmployeeShiftAssignment = $shift_assignment;
     }
 
     /**
@@ -169,6 +176,8 @@ class Creator
             $this->createBusinessMemberGrossSalary();
         }
         (new Invite($profile->fresh()))->sendMailToAddUser();
+
+        $this->newlyActiveEmployeeShiftAssignment->handle($this->business, $this->businessMember);
 
         return $this->businessMember;
     }
@@ -263,10 +272,9 @@ class Creator
 
     private function createBusinessMemberGrossSalary()
     {
-        $data = [
-          'business_member_id' => $this->businessMember->id,
+        $this->salaryRepo->create([
+            'business_member_id' => $this->businessMember->id,
             'gross_salary' => $this->basicRequest->getGrossSalary()
-        ];
-        $this->salaryRepo->create($data);
+        ]);
     }
 }
