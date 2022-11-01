@@ -11,6 +11,6 @@ class PayStationEnquirySuccessResponse extends SuccessResponse
      */
     public function getUpdatedTransactionId()
     {
-        return $this->response['Transiction_id'];
+        return $this->response['data']['trxId'];
     }
 }

@@ -2,12 +2,12 @@
 
 use App\Models\TopUpOrder;
 use Sheba\TopUp\TopUpLifecycleManager;
+use Throwable;
 
 abstract class IpnResponse
 {
     /** @var TopUpLifecycleManager */
     protected $topUp;
-
     /** @var array $response */
     protected $response;
     /** @var TopUpOrder */
@@ -52,7 +52,7 @@ abstract class IpnResponse
     abstract public function isFailed();
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      * @return void
      */
     public function handleTopUp()
@@ -62,7 +62,7 @@ abstract class IpnResponse
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      * @return void
      */
     abstract protected function _handleTopUp();
