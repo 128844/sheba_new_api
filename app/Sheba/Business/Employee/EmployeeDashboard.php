@@ -115,7 +115,7 @@ class EmployeeDashboard
 
     public function canCheckIn(): bool
     {
-        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckInForAttendance($this->attendanceOfToday);
+        if ($this->notInShift()) return $this->canCheckInForAttendance($this->attendanceOfToday);
 
         return $this->canCheckInForAttendance($this->currentAssignment->attendance);
     }
@@ -140,7 +140,7 @@ class EmployeeDashboard
 
     public function canCheckOut(): bool
     {
-        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckOutForAttendance($this->attendanceOfToday);
+        if ($this->notInShift()) return $this->canCheckOutForAttendance($this->attendanceOfToday);
 
         return $this->canCheckOutForAttendance($this->currentAssignment->attendance);
     }
@@ -178,5 +178,10 @@ class EmployeeDashboard
     public function getCurrentAssignment()
     {
         return $this->currentAssignment;
+    }
+
+    private function notInShift(): bool
+    {
+        return !$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id) || !$this->currentAssignment->attendance;
     }
 }
