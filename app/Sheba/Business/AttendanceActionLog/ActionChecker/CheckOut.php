@@ -41,6 +41,8 @@ class CheckOut extends ActionChecker
 
     protected function checkLeftEarly()
     {
+        if ($this->isAlreadyFailed()) return;
+
         if ($this->isNotInShift()) {
             $this->checkForGeneral();
         } else {
@@ -57,7 +59,6 @@ class CheckOut extends ActionChecker
         $today_last_checkout_time = $this->business->calculationTodayLastCheckOutTime($which_half_day);
 
         if (is_null($today_last_checkout_time)) return;
-        if ($this->isAlreadyFailed()) return;
 
         $today_checkout_time_without_second = Carbon::parse($date->format('Y-m-d H:i'));
         $is_full_day_leave = (new HalfDayLeaveCheck())->setBusinessMember($this->businessMember)->checkFullDayLeave();

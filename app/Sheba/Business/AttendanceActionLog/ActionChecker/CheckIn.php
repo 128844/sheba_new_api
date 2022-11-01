@@ -28,6 +28,8 @@ class CheckIn extends ActionChecker
 
     protected function checkForLateAction()
     {
+        if ($this->isAlreadyFailed()) return;
+
         if ($this->isNotInShift()) {
             $this->checkForGeneral();
         } else {
@@ -44,7 +46,6 @@ class CheckIn extends ActionChecker
         $today_last_checkin_time = $this->business->calculationTodayLastCheckInTime($which_half_day);
 
         if (is_null($today_last_checkin_time)) return;
-        if ($this->isAlreadyFailed()) return;
 
         $today_checkin_time_without_second = Carbon::parse($date->format('Y-m-d H:i'));
         $is_full_day_leave = (new HalfDayLeaveCheck())->setBusinessMember($this->businessMember)->checkFullDayLeave();
