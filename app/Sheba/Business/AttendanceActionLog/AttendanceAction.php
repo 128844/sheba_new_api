@@ -12,6 +12,7 @@ use Sheba\Dal\AttendanceActionLog\Actions;
 use Sheba\Dal\Attendance\Statuses;
 use App\Models\BusinessMember;
 use App\Models\Business;
+use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\Location\Geo;
 use Carbon\Carbon;
 use DB;
@@ -36,19 +37,26 @@ class AttendanceAction
     private $lat;
     private $lng;
     private $remoteMode;
+    private $shiftAssignmentId;
+    /*** @var ShiftAssignmentRepository */
+    private $shiftAssignmentRepository;
+    private $shiftAssignment;
 
     /**
      * AttendanceAction constructor.
      * @param EloquentImplementation $attendance_repository
      * @param AttendanceCreator $attendance_creator
      * @param Creator $attendance_action_log_creator
+     * @param ShiftAssignmentRepository $shift_assignment_repository
      */
-    public function __construct(EloquentImplementation $attendance_repository, AttendanceCreator $attendance_creator, AttendanceActionLogCreator $attendance_action_log_creator)
+    public function __construct(EloquentImplementation $attendance_repository, AttendanceCreator $attendance_creator,
+                                AttendanceActionLogCreator $attendance_action_log_creator, ShiftAssignmentRepository $shift_assignment_repository)
     {
         $this->today = Carbon::now();
         $this->attendanceRepository = $attendance_repository;
         $this->attendanceCreator = $attendance_creator;
         $this->attendanceActionLogCreator = $attendance_action_log_creator;
+        $this->shiftAssignmentRepository = $shift_assignment_repository;
     }
 
     public function setBusinessMember(BusinessMember $business_member)
@@ -123,6 +131,13 @@ class AttendanceAction
         return $this;
     }
 
+    public function setShiftAssignmentId($shift_assignment_id)
+    {
+        $this->shiftAssignmentId = $shift_assignment_id;
+        $this->shiftAssignment = $this->shiftAssignmentRepository->find($this->shiftAssignmentId);
+        return $this;
+    }
+
     /**
      * @param $remote_mode
      * @return $this
@@ -157,6 +172,7 @@ class AttendanceAction
         DB::transaction(function () use ($attendance_success) {
             if (!$this->attendance) $this->createAttendance();
             $this->attendanceActionLogCreator
+                ->setBusinessMember($this->businessMember)
                 ->setAction($this->action)
                 ->setAttendance($this->attendance)
                 ->setIp($this->getIp())
@@ -165,7 +181,8 @@ class AttendanceAction
                 ->setRemoteMode($this->remoteMode)
                 ->setAttendanceSuccess($attendance_success)
                 ->setBusiness($this->business)
-                ->setWhichHalfDay($this->checkHalfDayLeave());
+                ->setWhichHalfDay($this->checkHalfDayLeave())
+                ->setShiftAssignment($this->shiftAssignment);
 
             if ($geo = $this->getGeo()) $this->attendanceActionLogCreator->setGeo($geo);
             $attendance_action_log = $this->attendanceActionLogCreator->create();
@@ -177,8 +194,9 @@ class AttendanceAction
     private function createAttendance()
     {
         $attendance = $this->attendanceCreator
-            ->setBusinessMemberId($this->businessMember->id)
-            ->setDate(Carbon::now()->toDateString())
+            ->setBusinessMember($this->businessMember)
+            ->setDate($this->shiftAssignment ? $this->shiftAssignment->date : Carbon::now()->toDateString())
+            ->setShiftAssignment($this->shiftAssignment)
             ->create();
 
         $this->setAttendance($attendance);

@@ -1,6 +1,9 @@
 <?php namespace App\Models;
 
+use App\Sheba\Business\Attendance\HalfDaySetting\HalfDayType;
 use Jenssegers\Mongodb\Eloquent\HybridRelations;
+use Sheba\Business\AttendanceActionLog\TimeByBusiness;
+use Sheba\Business\BusinessMember\ProfileAndDepartmentQuery;
 use Sheba\Business\CoWorker\Statuses;
 use Sheba\Dal\Appreciation\Appreciation;
 use Sheba\Dal\BusinessMemberBkashInfo\BusinessMemberBkashInfo;
@@ -17,6 +20,7 @@ use Sheba\Dal\BusinessWeekend\Contract as BusinessWeekendRepoInterface;
 use Sheba\Dal\Leave\Model as Leave;
 use Sheba\Dal\BusinessMemberLeaveType\Model as BusinessMemberLeaveType;
 use Sheba\Dal\Salary\Salary;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Dal\TrackingLocation\TrackingLocation;
 use Sheba\Helpers\TimeFrame;
 use Sheba\Business\BusinessMember\Events\BusinessMemberCreated;
@@ -100,6 +104,11 @@ class BusinessMember extends Model
         return $this->hasMany(Attendance::class)->where('date', (Carbon::now())->toDateString())->first();
     }
 
+    public function attendanceOfYesterday()
+    {
+        return $this->hasMany(Attendance::class)->where('date', (Carbon::now())->subDay()->toDateString())->first();
+    }
+
     public function lastAttendance()
     {
         return $this->hasMany(Attendance::class)->orderBy('id', 'desc')->first();
@@ -143,6 +152,75 @@ class BusinessMember extends Model
     public function scopeActive($query)
     {
         return $query->whereIn('status', ['active', 'invited']);
+    }
+
+    public function scopeStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeOnlyActive($query)
+    {
+        return $query->status(Statuses::ACTIVE);
+    }
+
+    public function scopeAccessible($query)
+    {
+        return $query->notStatus(Statuses::INACTIVE);
+    }
+
+    public function scopeNotStatus($query, $status)
+    {
+        return $query->where('status', '<>', $status);
+    }
+
+    public function scopeNotInvited($query)
+    {
+        return $query->notStatus(Statuses::INVITED);
+    }
+
+    public function scopeWithProfileAndDepartment($query, ProfileAndDepartmentQuery $request = null)
+    {
+        $request = $request ?? new ProfileAndDepartmentQuery();
+
+        if (!empty($request->department)) {
+            $query->whereHas('role', function ($rq) use ($request) {
+                $rq->whereHas('businessDepartment', function ($bdq) use ($request) {
+                    $bdq->where('business_departments.id', $request->department);
+                });
+            });
+        }
+
+        if (!empty($request->searchTerm)) {
+            $query->whereHas('member.profile', function ($pq) use ($request) {
+                $pq->where('name', 'LIKE', "%$request->searchTerm%");
+            })->orWhere('employee_id', 'LIKE', "%$request->searchTerm%");
+        }
+
+        $query->with([
+            'member' => function ($mq) use ($request) {
+                $mq
+                    ->select('members.id', 'profile_id')
+                    ->with([
+                        'profile' => function ($pq) use ($request) {
+                            $pq->select('profiles.id');
+                            foreach ($request->profileColumns as $profile_column) {
+                                $pq->addSelect($profile_column);
+                            }
+                        }
+                    ]);
+            }, 'role' => function ($rq) {
+                $rq
+                    ->select('business_roles.id', 'business_department_id', 'name')
+                    ->with([
+                        'businessDepartment' => function ($bdq) {
+                            $bdq->select('business_departments.id', 'business_id', 'name');
+                        }
+                    ]);
+            }
+        ]);
+
+        return $query;
     }
 
     /**
@@ -315,8 +393,7 @@ class BusinessMember extends Model
 
     public function isBusinessMemberActive()
     {
-        if ($this->status == Statuses::ACTIVE) return true;
-        return false;
+        return $this->status == Statuses::ACTIVE;
     }
 
     /**
@@ -337,5 +414,54 @@ class BusinessMember extends Model
             $query->where('date', '<=', $to_date);
         });
         return $tracking_locations->orderBy('created_at', 'desc');
+    }
+
+    public function isShiftEnable()
+    {
+        return $this->is_shift_enable;
+    }
+
+    public function shifts()
+    {
+        return $this->hasMany(ShiftAssignment::class);
+    }
+
+    public function generalShift()
+    {
+        return $this->shifts()->where('is_general', 1);
+    }
+
+    public function calculationTodayLastCheckInTime($which_half, $shift_assignment): string
+    {
+        if ($which_half == HalfDayType::FIRST_HALF) {
+            $time_diff = Carbon::parse($shift_assignment->start_time)->diffInHours($shift_assignment->end_time);
+            # If A Employee Has Leave On First_Half, Office Start Time Will Be Second_Half Start_Time
+            $last_checkin_time = Carbon::parse($shift_assignment->start_time)->addHours($time_diff / 2);
+            if ($shift_assignment->checkin_grace_enable) return $last_checkin_time->addMinutes($shift_assignment->checkin_grace_time)->toTimeString();
+            return $last_checkin_time->toTimeString();
+        } else {
+            $last_checkin_time = Carbon::parse($shift_assignment->start_time);
+            if ($shift_assignment->checkin_grace_enable) return $last_checkin_time->addMinutes($shift_assignment->checkin_grace_time)->toTimeString();
+            return $last_checkin_time->toTimeString();
+        }
+    }
+
+    public function calculationTodayLastCheckOutTime($which_half_day, $shift_assignment): string
+    {
+        if ($which_half_day == HalfDayType::SECOND_HALF) {
+            $time_diff = Carbon::parse($shift_assignment->start_time)->diffInHours($shift_assignment->end_time);
+            $checkout_time = Carbon::parse($shift_assignment->start_time)->addHours($time_diff / 2);
+            if ($shift_assignment->checkout_grace_enable) return $checkout_time->subMinutes($shift_assignment->checkout_grace_time)->toTimeString();
+            return $checkout_time->toTimeString();
+        } else {
+            $checkout_time = Carbon::parse($shift_assignment->end_time);
+            if ($shift_assignment->checkout_grace_enable) return $checkout_time->subMinutes($shift_assignment->checkout_grace_time)->toTimeString();
+            return $checkout_time->toTimeString();
+        }
+    }
+
+    public function shiftAssignmentFromYesterdayToTomorrow()
+    {
+        return $this->shift()->whereBetween('date', [Carbon::now()->subDay()->toDateString(), Carbon::now()->addDay()->toDateString()])->get();
     }
 }

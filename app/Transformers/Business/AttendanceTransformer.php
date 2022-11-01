@@ -16,6 +16,7 @@ class AttendanceTransformer extends TransformerAbstract
     private $businessWeekendSettings;
     private $businessMemberLeave;
     private $isNewJoiner;
+    private $businessOfficeRepo;
 
     /**
      * @param TimeFrame $time_frame
@@ -23,14 +24,16 @@ class AttendanceTransformer extends TransformerAbstract
      * @param $business_holiday
      * @param $weekend_settings
      * @param $business_member_leave
+     * @param $business_office_repo
      */
-    public function __construct(TimeFrame $time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave)
+    public function __construct(TimeFrame $time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office_repo)
     {
         $this->timeFrame = $time_frame;
         $this->businessHoliday = $business_holiday;
         $this->businessWeekendSettings = $weekend_settings;
         $this->businessMemberLeave = $business_member_leave;
         $this->isNewJoiner = $is_new_joiner;
+        $this->businessOfficeRepo = $business_office_repo;
     }
 
     /**
@@ -104,18 +107,26 @@ class AttendanceTransformer extends TransformerAbstract
                 $attendance_checkin_action = $attendance->checkinAction();
                 $attendance_checkout_action = $attendance->checkoutAction();
 
+                $action = $attendance->actions[0];
+                $business_office = $attendance_checkin_action->is_in_wifi || $attendance_checkin_action->is_geo_location ?
+                    $this->businessOfficeRepo->findWithTrashed($action->business_office_id) : null;
+                $business_office_name = $business_office ? $business_office->name : null;
+
                 $breakdown_data['show_attendance'] = 1;
                 $breakdown_data['attendance'] = [
                     'id' => $attendance->id,
                     'check_in' => $attendance_checkin_action ? [
                         'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) ? null : $attendance_checkin_action->status,
                         'time' => $attendance->checkin_time,
+                        'is_in_wifi' => $attendance_checkin_action->is_in_wifi ?: 0,
                         'is_remote' => $attendance_checkin_action->is_remote ?: 0,
+                        'is_geo_location' => $attendance_checkin_action->is_geo_location ?: 0,
                         'address' => $attendance_checkin_action->is_remote ?
                             $attendance_checkin_action->location ?
                                 json_decode($attendance_checkin_action->location)->address ?: json_decode($attendance_checkin_action->location)->lat.', '.json_decode($attendance_checkin_action->location)->lng
                                 : null
                             : null,
+                        'office_name' => $business_office_name,
                         'remote_mode' => $attendance_checkin_action->remote_mode ?: null
                     ] : null,
                     'check_out' => $attendance_checkout_action ? [

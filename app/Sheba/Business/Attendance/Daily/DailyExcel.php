@@ -7,43 +7,27 @@ class DailyExcel
     private $dailyData;
     private $data = [];
     private $date;
-    private $employeeId;
-    private $employeeName;
-    private $department;
-    private $status;
-    private $checkInTime;
-    private $checkInStatus;
-    private $checkInLocation;
-    private $checkInAddress;
-    private $checkOutTime;
-    private $checkOutStatus;
-    private $checkOutLocation;
-    private $checkOutAddress;
-    private $totalHours;
-    private $lateNote;
-    private $leftEarlyNote;
-    private $overtime;
-    private $officeName;
 
     private function initializeData()
     {
-        $this->employeeId = null;
-        $this->employeeName = null;
-        $this->department = null;
-        $this->status = null;
-        $this->checkInTime = '-';
-        $this->checkInStatus = '-';
-        $this->checkInLocation = '-';
-        $this->officeName = '-';
-        $this->checkInAddress = '-';
-        $this->checkOutTime = '-';
-        $this->checkOutStatus = '-';
-        $this->checkOutLocation = '-';
-        $this->checkOutAddress = '-';
-        $this->totalHours = '-';
-        $this->overtime = '-';
-        $this->lateNote = '-';
-        $this->leftEarlyNote = '-';
+        return [
+            'employeeId' => null,
+            'employeeName' => null,
+            'department' => null,
+            'status' => null,
+            'checkInTime' => '-',
+            'checkInStatus' => '-',
+            'checkInLocation' => '-',
+            'checkInAddress' => '-',
+            'checkOutTime' => '-',
+            'checkOutStatus' => '-',
+            'checkOutLocation' => '-',
+            'checkOutAddress' => '-',
+            'totalHours' => '-',
+            'overtime' => '-',
+            'lateNote' => '-',
+            'leftEarlyNote' => '-'
+        ];
     }
 
     public function setData(array $daily_data)
@@ -67,12 +51,12 @@ class DailyExcel
                 $sheet->fromArray($this->data, null, 'A1', false, false);
                 $sheet->prependRow($this->getHeaders());
                 $sheet->freezeFirstRow();
-                $sheet->cell('A1:R1', function ($cells) {
+                $sheet->cell('A1:S1', function ($cells) {
                     $cells->setFontWeight('bold');
                 });
-                $sheet->getDefaultStyle()->getAlignment()->applyFromArray(
-                    array('horizontal' => 'left')
-                );
+                $sheet->getDefaultStyle()->getAlignment()->applyFromArray([
+                    'horizontal' => 'left'
+                ]);
                 $sheet->setAutoSize(true);
             });
         })->export('xlsx');
@@ -81,63 +65,63 @@ class DailyExcel
     private function makeData()
     {
         foreach ($this->dailyData as $attendance) {
-            $this->initializeData();
+            $row = $this->initializeData();
             if (!is_null($attendance['check_in']) && !$attendance['is_absent']) {
                 if ($attendance['is_half_day_leave']) {
-                    $this->status = "On leave: half day";
+                    $row['status'] = "On leave: half day";
                 } else {
-                    $this->status = 'Present';
+                    $row['status'] = 'Present';
                 }
 
-                $this->checkInTime = $attendance['check_in']['checkin_time'];
+                $row['checkInTime'] = $attendance['check_in']['checkin_time'];
                 if ($attendance['check_in']['status'] == 'late') {
-                    $this->checkInStatus = "Late";
+                    $row['checkInStatus'] = "Late";
                 }
                 if ($attendance['check_in']['status'] == 'on_time') {
-                    $this->checkInStatus = "On time";
+                    $row['checkInStatus'] = "On time";
                 }
                 if ($attendance['check_in']['is_remote']) {
-                    $this->checkInLocation = "Remote";
+                    $row['checkInLocation'] = "Remote";
                 } else if ($attendance['check_in']['is_in_wifi']) {
-                    $this->checkInLocation = "Office IP";
+                    $row['checkInLocation'] = "Office IP";
                 } else if ($attendance['check_in']['is_geo']) {
-                    $this->checkInLocation = "Geo Location";
+                    $row['checkInLocation'] = "Geo Location";
                 }
 
-                $this->checkInAddress = $attendance['check_in']['address'];
+                $row['checkInAddress'] = $attendance['check_in']['address'];
                 if (!is_null($attendance['check_out'])) {
-                    $this->checkOutTime = $attendance['check_out']['checkout_time'];
+                    $row['checkOutTime'] = $attendance['check_out']['checkout_time'];
 
                     if ($attendance['check_out']['status'] == 'left_early') {
-                        $this->checkOutStatus = 'Left early';
+                        $row['checkOutStatus'] = 'Left early';
                     }
                     if ($attendance['check_out']['status'] == 'left_timely') {
-                        $this->checkOutStatus = 'Left timely';
+                        $row['checkOutStatus'] = 'Left timely';
                     }
                     if ($attendance['check_out']['is_remote']) {
-                        $this->checkOutLocation = "Remote";
+                        $row['checkOutLocation'] = "Remote";
                     } else if ($attendance['check_out']['is_in_wifi']) {
-                        $this->checkOutLocation = "Office IP";
+                        $row['checkOutLocation'] = "Office IP";
                     } else if ($attendance['check_out']['is_geo']) {
-                        $this->checkOutLocation = "Geo Location";
+                        $row['checkOutLocation'] = "Geo Location";
                     }
-                    $this->checkOutAddress = $attendance['check_out']['address'];
+                    $row['checkOutAddress'] = $attendance['check_out']['address'];
                 }
 
-                $this->totalHours = $attendance['active_hours'];
-                $this->overtime = $attendance['overtime'];
-                $this->lateNote = $attendance['check_in']['note'];
-                $this->leftEarlyNote = $attendance['check_out']['note'];
+                $row['totalHours'] = $attendance['active_hours'];
+                $row['overtime'] = $attendance['overtime'];
+                $row['lateNote'] = $attendance['check_in']['note'];
+                $row['leftEarlyNote'] = $attendance['check_out']['note'];
             }
 
             if ($attendance['is_absent']) {
-                $this->status = "Absent";
+                $row['status'] = "Absent";
             }
             if ($attendance['is_on_leave']) {
                 if (!$attendance['is_half_day_leave']) {
-                    $this->status = "On leave: full day";
+                    $row['status'] = "On leave: full day";
                 } else {
-                    $this->status = "On leave: half day";
+                    $row['status'] = "On leave: half day";
                 }
             }
 
@@ -147,30 +131,50 @@ class DailyExcel
                 'employee_name' => $attendance['member']['name'],
                 'department' => $attendance['department']['name'],
 
-                'status' => $this->status,
-                'check_in_time' => $this->checkInTime,
-                'check_in_status' => $this->checkInStatus,
-                'check_in_location' => $this->checkInLocation,
-                'check_in_address' => $this->checkInAddress,
-                'check_out_time' => $this->checkOutTime,
-                'check_out_status' => $this->checkOutStatus,
-                'check_out_location' => $this->checkOutLocation,
-                'check_out_address' => $this->checkOutAddress,
+                'status' => $row['status'],
+                'check_in_time' => $row['checkInTime'],
+                'check_in_status' => $row['checkInStatus'],
+                'check_in_location' => $row['checkInLocation'],
+                'check_in_address' => $row['checkInAddress'],
+                'check_out_time' => $row['checkOutTime'],
+                'check_out_status' => $row['checkOutStatus'],
+                'check_out_location' => $row['checkOutLocation'],
+                'check_out_address' => $row['checkOutAddress'],
 
-                'total_hours' => $this->totalHours,
-                'overtime' => $this->overtime,
-                'late_check_in_note' => $this->lateNote,
-                'left_early_note' => $this->leftEarlyNote,
-                'attendance_reconciled' => !isset($attendance['is_attendance_reconciled']) ? '-' : ($attendance['is_attendance_reconciled'] ? 'Yes' : 'No')
+                'total_hours' => $row['totalHours'],
+                'overtime' => $row['overtime'],
+                'late_check_in_note' => $row['lateNote'],
+                'left_early_note' => $row['leftEarlyNote'],
+                'attendance_reconciled' => $this->getAttendanceReconciliation($attendance),
+                'shift_name' => $this->getShiftName($attendance)
             ];
         }
     }
 
     private function getHeaders()
     {
-        return ['Date', 'Employee ID', 'Employee Name', 'Department',
+        return [
+            'Date', 'Employee ID', 'Employee Name', 'Department',
             'Status', 'Check in time', 'Check in status', 'Check in location',
             'Check in address', 'Check out time', 'Check out status',
-            'Check out location', 'Check out address', 'Total Hours', 'Overtime', 'Late check in note', 'Left early note', 'Attendance Reconciliation'];
+            'Check out location', 'Check out address', 'Total Hours', 'Overtime',
+            'Late check in note', 'Left early note', 'Attendance Reconciliation', 'Shift Name'
+        ];
+    }
+
+    private function getAttendanceReconciliation($attendance)
+    {
+        if (!isset($attendance['is_attendance_reconciled'])) return '-';
+
+        return $attendance['is_attendance_reconciled'] ? 'Yes' : 'No';
+    }
+
+    private function getShiftName($attendance)
+    {
+        if ($attendance['shift']['is_general'] == 1) return "General";
+
+        if ($attendance['shift']['is_unassigned'] == 1) return "Unassigned";
+
+        return $attendance['shift']['details']['name'];
     }
 }

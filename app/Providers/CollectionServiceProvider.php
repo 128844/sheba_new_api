@@ -21,6 +21,14 @@ class CollectionServiceProvider extends ServiceProvider
             }, collect([]));
         });
 
+        Collection::macro('toAssocFromKey', function (callable $callback) {
+            return $this->reduce(function ($assoc, $value) use ($callback) {
+                $key = $callback($value);
+                $assoc[$key] = $value;
+                return $assoc;
+            }, new static);
+        });
+
         Collection::macro('mapToAssoc', function ($callback) {
             return $this->map($callback)->toAssoc();
         });

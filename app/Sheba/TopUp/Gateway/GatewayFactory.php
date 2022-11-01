@@ -27,7 +27,7 @@ class GatewayFactory
      * @param $name
      * @return HasIpn
      */
-    public static function getIpnGatewayByName($name)
+    public static function getIpnGatewayByName($name): HasIpn
     {
         if ($name == Names::SSL) return app(Ssl::class);
         if ($name == Names::BD_RECHARGE) return app(BdRecharge::class);

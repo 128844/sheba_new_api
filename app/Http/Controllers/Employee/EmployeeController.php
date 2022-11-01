@@ -142,12 +142,10 @@ class EmployeeController extends Controller
 
     /**
      * @param Request $request
-     * @param ActionProcessor $action_processor
-     * @param ProfileCompletionCalculator $completion_calculator
-     * @param VisitRepository $visit_repository
+     * @param EmployeeDashboard $employee_dashboard
      * @return JsonResponse
      */
-    public function getDashboard(Request $request, EmployeeDashboard $employee_dashboard)
+    public function getDashboard(Request $request, EmployeeDashboard $employee_dashboard): JsonResponse
     {
         $employee_dashboard->setBusinessMember($request->business_member);
         return api_response($request, $request->business_member, 200, (new EmployeeDashboardPresenter($employee_dashboard))->toArray());

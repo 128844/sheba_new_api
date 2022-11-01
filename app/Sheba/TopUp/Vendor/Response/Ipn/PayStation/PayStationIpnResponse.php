@@ -8,7 +8,7 @@ trait PayStationIpnResponse
     public function findTopUpOrder(): TopUpOrder
     {
         return TopUpOrder::gateway(Names::PAY_STATION)
-            ->where('id', TopUpOrder::getIdFromUniformGatewayRefId($this->response['yourref']))
+            ->where('id', TopUpOrder::getIdFromUniformGatewayRefId($this->response['refer_no']))
             ->first();
     }
 }

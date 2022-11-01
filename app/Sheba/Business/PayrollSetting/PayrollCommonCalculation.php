@@ -89,7 +89,7 @@ trait PayrollCommonCalculation
         $total_policy_working_days = $period->count();
         if ($working_days_type === WorkingDaysType::FIXED) return $number_of_days;
         $period_wise_information = new PeriodWiseInformation();
-        $period_wise_information = $period_wise_information->setPeriod($period)->setBusinessOffice($business_office)->setIsCalculateAttendanceInfo(0)->get();
+        $period_wise_information = $period_wise_information->setPeriod($period)->setBusinessMember($this->businessMember)->setBusinessOffice($business_office)->setIsCalculateAttendanceInfo(0)->get();
         if ($working_days_type === WorkingDaysType::AS_PER_CALENDAR && !$is_weekend_included) return ($total_policy_working_days - $period_wise_information->weekend_count);
         return $total_policy_working_days;
     }

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Sheba\Dal\Attendance\Contract as AttendanceRepoInterface;
 use Sheba\Dal\BusinessHoliday\Contract as BusinessHolidayRepoInterface;
 use Sheba\Dal\BusinessWeekendSettings\BusinessWeekendSettingsRepo;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Helpers\TimeFrame;
 
 class MonthlyAttendanceCalculator
@@ -43,7 +44,7 @@ class MonthlyAttendanceCalculator
         list($offset, $limit) = calculatePagination($request);
 
         /** @var Business $business */
-        $business = Business::where('id', (int)$business)->select('id', 'name', 'phone', 'email', 'type')->first();
+        $business = Business::where('id', (int)$business)->select('id', 'name', 'phone', 'email', 'type', 'is_shift_enable')->first();
 
         $business_members = $business->getAllBusinessMemberExceptInvited();
 
@@ -63,7 +64,6 @@ class MonthlyAttendanceCalculator
         if ($request->has('limit') && !$request->has('file')) $business_members = $business_members->splice($offset, $limit);
 
         $all_employee_attendance = [];
-        $business_holiday = $this->holidayRepo->getAllByBusiness($business);
         $weekend_settings = $this->weekendSettingsRepo->getAllByBusiness($business);
         if ($request->has('start_date') && $request->has('end_date')) {
             $start_date = $request->start_date;
@@ -73,7 +73,6 @@ class MonthlyAttendanceCalculator
             $end_date = Carbon::now()->endOfMonth()->toDateString();
         }
         foreach ($business_members as $business_member) {
-
             $member = $business_member->member;
             $profile = $member->profile;
             $member_name = $profile->name;
@@ -91,7 +90,11 @@ class MonthlyAttendanceCalculator
             $time_frame = $this->timeFrame->forDateRange($member_start_date, $end_date);
             $business_member_leave = $business_member->leaves()->accepted()->startDateBetween($time_frame)->endDateBetween($time_frame)->get();
             $attendances = $this->attendanceRepo->getAllAttendanceByBusinessMemberFilteredWithYearMonth($business_member, $time_frame);
-            $employee_attendance = (new MonthlyStat($time_frame, $business, $business_holiday, $weekend_settings, $business_member_leave, false))->transform($attendances);
+            $business_member_shifts = null;
+            if ($is_shift_enable = $business->isShiftEnable()) {
+                $business_member_shifts = $this->loadShifts($business_member);
+            }
+            $employee_attendance = (new MonthlyStat($time_frame, $business, $weekend_settings, $business_member_leave, false, $is_shift_enable))->transform($attendances, $business_member_shifts);
 
             $all_employee_attendance[] = [
                 'business_member_id' => $business_member->id,
@@ -124,6 +127,19 @@ class MonthlyAttendanceCalculator
         if ($request->has('sort_on_overtime')) $all_employee_attendance = $this->attendanceCustomSortOnOvertime($all_employee_attendance, $request->sort_on_overtime);
 
         return [$all_employee_attendance, $total_business_members_count, $start_date, $end_date];
+    }
+
+    private function loadShifts(BusinessMember $businessMember)
+    {
+        return $businessMember->shifts()
+            ->selectTypes()
+            ->within($this->timeFrame)
+            ->selectBusinessMember()
+            ->selectDate()
+            ->get()
+            ->toAssocFromKey(function (ShiftAssignment $assignment) {
+                return $assignment->getDate()->toDateString();
+            });
     }
 
 

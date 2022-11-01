@@ -41,8 +41,9 @@ class EmployeeDashboardPresenter extends Presenter
                 'department_id' => $department ? $department->id : null,
                 'notification_count' => $this->member->notifications()->unSeen()->count(),
                 'attendance' => [
-                    'can_checkin' => (int)$this->employeeDashboard->canCheckIn(),
-                    'can_checkout' => (int)$this->employeeDashboard->canCheckOut()
+                    'can_checkin' => (int) $this->employeeDashboard->canCheckIn(),
+                    'can_checkout' => (int) $this->employeeDashboard->canCheckOut(),
+                    'shift' => $this->getShiftAssignmentDetails()
                 ],
                 'note_data' => [
                     'date' => $this->employeeDashboard->hasLastAttendance() ? $this->employeeDashboard->getLastAttendanceDate()->format('jS F Y') : null,
@@ -76,6 +77,18 @@ class EmployeeDashboardPresenter extends Presenter
                 'is_live_track_enable' => $this->businessMember->is_live_track_enable,
                 'location_fetch_interval_in_minutes' => $live_tracking_settings ? $live_tracking_settings->location_fetch_interval_in_minutes : null
             ]
+        ];
+    }
+
+    private function getShiftAssignmentDetails()
+    {
+        $current_assignment = $this->employeeDashboard->getCurrentAssignment();
+        if (!$current_assignment) return null;
+        return [
+            'id' => $current_assignment->id,
+            'title' => $current_assignment->shift_title,
+            'start_time' => $current_assignment->start_time,
+            'end_time' => $current_assignment->end_time,
         ];
     }
 

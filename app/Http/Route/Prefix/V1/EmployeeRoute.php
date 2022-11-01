@@ -20,6 +20,11 @@ class EmployeeRoute
                 $api->get('checkin-checkout-policy', 'Employee\PayrollController@getCheckinCheckoutPolicy');
                 $api->get('unpaid-leave-policy', 'Employee\PayrollController@getUnpaidLeavePolicy');
             });
+
+            $api->group(['prefix' => 'shift'], function ($api) {
+                $api->get('/', 'Employee\ShiftCalenderController@index');
+            });
+
             $api->group(['prefix' => 'profile'], function ($api) {
                 $api->group(['prefix' => '{business_member}'], function ($api) {
                     $api->get('financial', 'Employee\EmployeeController@getFinancialInfo');

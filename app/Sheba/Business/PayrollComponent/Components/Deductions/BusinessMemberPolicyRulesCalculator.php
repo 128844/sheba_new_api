@@ -19,7 +19,6 @@ class BusinessMemberPolicyRulesCalculator
     private $businessMember;
     private $payrollSetting;
     private $businessPayDay;
-    private $attendanceRepositoryInterface;
     /*** @var PolicyActionTaker */
     private $policyActionTaker;
     private $additionBreakdown;
@@ -30,7 +29,6 @@ class BusinessMemberPolicyRulesCalculator
 
     public function __construct()
     {
-        $this->attendanceRepositoryInterface = app(AttendanceRepositoryInterface::class);
         $this->policyActionTaker = new PolicyActionTaker();
         $this->periodWiseInformation = new PeriodWiseInformation();
     }
@@ -76,17 +74,15 @@ class BusinessMemberPolicyRulesCalculator
         $is_for_early_checkout = $business_office->is_for_early_checkout;
         $is_unpaid_leave_policy_enable = $business_office->is_unpaid_leave_policy_enable;
         $time_frame = $this->proratedTimeFrame ? $this->proratedTimeFrame : $this->timeFrame;
-        $attendances = $this->attendanceRepositoryInterface->getAllAttendanceByBusinessMemberFilteredWithYearMonth($this->businessMember, $time_frame);
         $business_member_leave = $this->businessMember->leaves()->accepted()->between($time_frame)->get();
         list($leaves, $leaves_date_with_half_and_full_day) = $this->formatLeaveAsDateArray($business_member_leave);
         $period = $this->createPeriodByTime($time_frame->start, $this->timeFrame->end);
         $total_policy_working_days = $this->getTotalBusinessWorkingDays($this->createPeriodByTime($this->timeFrame->start, $this->timeFrame->end), $business_office);
-        $business_member_attendance = $this->getBusinessMemberAttendanceTime($attendances, $business_office);
         $period_wise_information = $this->periodWiseInformation
             ->setPeriod($period)
             ->setBusinessOffice($business_office)
             ->setBusinessMemberLeave($leaves)
-            ->setAttendance($business_member_attendance)
+            ->setBusinessMember($this->businessMember)
             ->setIsCalculateAttendanceInfo(1)
             ->get();
         $late_checkin_early_checkout_days = 0;
@@ -106,17 +102,5 @@ class BusinessMemberPolicyRulesCalculator
         if ($is_late_checkin_early_checkout_policy_enable) $attendance_adjustment += $this->policyActionTaker->setPolicyType(Type::LATE_CHECKIN_EARLY_CHECKOUT)->setPenaltyDays($late_checkin_early_checkout_days)->takeAction();
         $leave_adjustment += $this->policyActionTaker->setPolicyType(Type::UNPAID_LEAVE)->setPenaltyDays($total_absent)->setIsUnpaidLeaveEnable($is_unpaid_leave_policy_enable)->takeAction();
         return ['attendance_adjustment' => floatValFormat($attendance_adjustment), 'leave_adjustment' => floatValFormat($leave_adjustment), 'tax' => 0];
-    }
-
-    private function getBusinessMemberAttendanceTime($attendances, $business_office)
-    {
-        $business_member_attendance = [];
-        foreach ($attendances as $attendance) {
-            $business_member_attendance[$attendance->date] = [
-                'checkin_time' => Carbon::parse($attendance->checkin_time)->format('H:i:s'),
-                'checkout_time' => $attendance->checkout_time ? Carbon::parse($attendance->checkout_time)->format('H:i:s') : Carbon::parse($business_office->end_time)->format('H:i:s'),
-            ];
-        }
-        return $business_member_attendance;
     }
 }
