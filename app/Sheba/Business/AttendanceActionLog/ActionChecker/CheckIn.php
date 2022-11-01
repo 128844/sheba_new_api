@@ -1,10 +1,12 @@
 <?php namespace Sheba\Business\AttendanceActionLog\ActionChecker;
 
 use Carbon\Carbon;
+use Sheba\Business\AttendanceActionLog\StatusCalculator\ShiftCheckinStatusCalculator;
 use Sheba\Business\Leave\HalfDay\HalfDayLeaveCheck;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
 use Sheba\Business\AttendanceActionLog\WeekendHolidayByBusiness;
+use Sheba\Dal\Attendance\Statuses;
 
 class CheckIn extends ActionChecker
 {
@@ -26,10 +28,19 @@ class CheckIn extends ActionChecker
 
     protected function checkForLateAction()
     {
+        if ($this->isNotInShift()) {
+            $this->checkForGeneral();
+        } else {
+            $this->checkForShift();
+        }
+    }
+
+    protected function checkForGeneral()
+    {
         $date = Carbon::now();
         $weekendHoliday = new WeekendHolidayByBusiness();
 
-        $which_half_day = (new HalfDayLeaveCheck())->setBusinessMember($this->businessMember)->checkHalfDayLeave();
+        $which_half_day = $this->getHalfDay();
         $today_last_checkin_time = $this->business->calculationTodayLastCheckInTime($which_half_day);
 
         if (is_null($today_last_checkin_time)) return;
@@ -44,6 +55,26 @@ class CheckIn extends ActionChecker
             } else {
                 $this->setResult(ActionResult::LATE_TODAY);
             }
+        }
+    }
+
+    protected function checkForShift()
+    {
+        /** @var ShiftCheckinStatusCalculator $shiftCheckinStatusCalculator */
+        $shiftCheckinStatusCalculator = app(ShiftCheckinStatusCalculator::class);
+
+        $which_half_day = $this->getHalfDay();
+
+        $status = $shiftCheckinStatusCalculator
+            ->setBusinessMember($this->businessMember)
+            ->setShiftAssignment($this->shiftAssignment)
+            ->setWhichHalfDay($which_half_day)
+            ->calculate();
+
+        if ($status == Statuses::ON_TIME) {
+            $this->setResult(ActionResult::SUCCESSFUL);
+        } else if ($status == Statuses::LATE) {
+            $this->setResult(ActionResult::LATE_TODAY);
         }
     }
 }
