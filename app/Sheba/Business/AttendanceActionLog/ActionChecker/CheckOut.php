@@ -1,8 +1,10 @@
 <?php namespace Sheba\Business\AttendanceActionLog\ActionChecker;
 
 use Carbon\Carbon;
+use Sheba\Business\AttendanceActionLog\StatusCalculator\ShiftCheckoutStatusCalculator;
 use Sheba\Business\AttendanceActionLog\WeekendHolidayByBusiness;
 use Sheba\Business\Leave\HalfDay\HalfDayLeaveCheck;
+use Sheba\Dal\Attendance\Statuses;
 use Sheba\Dal\AttendanceActionLog\Actions;
 
 class CheckOut extends ActionChecker
@@ -39,14 +41,24 @@ class CheckOut extends ActionChecker
 
     protected function checkLeftEarly()
     {
+        if ($this->isAlreadyFailed()) return;
+
+        if ($this->isNotInShift()) {
+            $this->checkForGeneral();
+        } else {
+            $this->checkForShift();
+        }
+    }
+
+    protected function checkForGeneral()
+    {
         $date = Carbon::now();
         $weekendHoliday = new WeekendHolidayByBusiness();
 
-        $which_half_day = (new HalfDayLeaveCheck())->setBusinessMember($this->businessMember)->checkHalfDayLeave();
+        $which_half_day = $this->getHalfDay();
         $today_last_checkout_time = $this->business->calculationTodayLastCheckOutTime($which_half_day);
 
         if (is_null($today_last_checkout_time)) return;
-        if ($this->isAlreadyFailed()) return;
 
         $today_checkout_time_without_second = Carbon::parse($date->format('Y-m-d H:i'));
         $is_full_day_leave = (new HalfDayLeaveCheck())->setBusinessMember($this->businessMember)->checkFullDayLeave();
@@ -57,6 +69,26 @@ class CheckOut extends ActionChecker
             } else {
                 $this->setResult(ActionResult::LEFT_EARLY_TODAY);
             }
+        }
+    }
+
+    protected function checkForShift()
+    {
+        /** @var ShiftCheckoutStatusCalculator $shiftCheckoutStatusCalculator */
+        $shiftCheckoutStatusCalculator = app(ShiftCheckoutStatusCalculator::class);
+
+        $which_half_day = $this->getHalfDay();
+
+        $status = $shiftCheckoutStatusCalculator
+            ->setBusinessMember($this->businessMember)
+            ->setShiftAssignment($this->shiftAssignment)
+            ->setWhichHalfDay($which_half_day)
+            ->calculate();
+
+        if ($status == Statuses::LEFT_TIMELY) {
+            $this->setResult(ActionResult::SUCCESSFUL);
+        } else if ($status == Statuses::LEFT_EARLY) {
+            $this->setResult(ActionResult::LEFT_EARLY_TODAY);
         }
     }
 }

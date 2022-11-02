@@ -562,5 +562,4 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
     {
         return $this->businessMembers()->onlyActive()->where('manager_id', $business_member->id)->count() > 0;
     }
-
 }

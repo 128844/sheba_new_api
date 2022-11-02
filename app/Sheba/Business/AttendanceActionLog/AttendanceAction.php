@@ -162,7 +162,16 @@ class AttendanceAction
     {
         $processor = new ActionProcessor();
         $action = $processor->setActionName($this->action)->getAction();
-        $action->setAttendanceOfToday($this->attendance)->setIp($this->getIp())->setDeviceId($this->deviceId)->setLat($this->lat)->setLng($this->lng)->setBusiness($this->business)->setBusinessMember($this->businessMember);
+        $action
+            ->setAttendanceOfToday($this->attendance)
+            ->setShiftAssignment($this->shiftAssignment)
+            ->setIp($this->getIp())
+            ->setDeviceId($this->deviceId)
+            ->setLat($this->lat)
+            ->setLng($this->lng)
+            ->setBusiness($this->business)
+            ->setBusinessMember($this->businessMember);
+
         $action->check();
         return $action;
     }

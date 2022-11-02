@@ -4,10 +4,12 @@ use Sheba\Business\Attendance\AttendanceTypes\AttendanceSuccess;
 use Sheba\Business\Attendance\AttendanceTypes\TypeFactory;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
 use Sheba\Business\AttendanceActionLog\WeekendHolidayByBusiness;
+use Sheba\Business\Leave\HalfDay\HalfDayLeaveCheck;
 use Sheba\Dal\AttendanceActionLog\Model as AttendanceActionLog;
 use Sheba\Dal\Attendance\Model as Attendance;
 use App\Models\BusinessMember;
 use App\Models\Business;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Location\Coords;
 use Sheba\Location\Geo;
 use Carbon\Carbon;
@@ -18,6 +20,8 @@ abstract class ActionChecker
     protected $geo;
     /** @var Attendance */
     protected $attendanceOfToday;
+    /** @var ShiftAssignment */
+    protected $shiftAssignment;
     /** @var AttendanceActionLog[] */
     protected $attendanceLogsOfToday;
     /** @var Business $business */
@@ -72,6 +76,12 @@ abstract class ActionChecker
     public function setAttendanceOfToday($attendance)
     {
         $this->attendanceOfToday = $attendance;
+        return $this;
+    }
+
+    public function setShiftAssignment($assignment)
+    {
+        $this->shiftAssignment = $assignment;
         return $this;
     }
 
@@ -250,6 +260,16 @@ abstract class ActionChecker
             return $date_time->lt(Carbon::parse($checkout_time)) ? 1 : 0;
         }
         return 0;
+    }
+
+    protected function isNotInShift(): bool
+    {
+        return !$this->shiftAssignment || !$this->shiftAssignment->isInShift();
+    }
+
+    protected function getHalfDay()
+    {
+        return (new HalfDayLeaveCheck())->setBusinessMember($this->businessMember)->checkHalfDayLeave();
     }
 
     abstract protected function setAlreadyHasActionForTodayResponse();
