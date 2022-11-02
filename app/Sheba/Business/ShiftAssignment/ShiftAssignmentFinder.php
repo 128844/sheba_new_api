@@ -31,7 +31,8 @@ class ShiftAssignmentFinder
 
     public function findCurrentAssignment(): ShiftAssignment
     {
-        list($today_assignment, $tomorrow_assignment, $yesterday_assignment ) = $this->shiftAssignmentRepo->shiftAssignmentFromYesterdayToTomorrow($this->businessMember->id);
+        list($yesterday_assignment, $today_assignment, $tomorrow_assignment) = $this->shiftAssignmentRepo->shiftAssignmentFromYesterdayToTomorrow($this->businessMember->id);
+
         if ($this->isTodayInGeneral($today_assignment, $yesterday_assignment, $tomorrow_assignment)) return $today_assignment;
 
         $avg_minutes_diff_of_today_yesterday =  intval($this->getMinutesGapOfTwoAssignments($yesterday_assignment, $today_assignment) / 2);
