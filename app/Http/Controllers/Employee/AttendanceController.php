@@ -22,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use League\Fractal\Resource\Item;
 use App\Models\BusinessMember;
 use Sheba\Dal\BusinessWeekendSettings\BusinessWeekendSettingsRepo;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\ModificationFields;
 use Illuminate\Http\Request;
@@ -35,6 +36,13 @@ class AttendanceController extends Controller
     use ModificationFields, BusinessBasicInformation;
 
     const FIRST_DAY_OF_MONTH = 1;
+    /*** @var ShiftAssignmentRepository */
+    private $shiftAssignmentRepo;
+
+    public function __construct(ShiftAssignmentRepository $shiftAssignmentRepo)
+    {
+        $this->shiftAssignmentRepo = $shiftAssignmentRepo;
+    }
 
     /**
      * @param Request $request
@@ -50,7 +58,8 @@ class AttendanceController extends Controller
         $this->validate($request, ['year' => 'required|string', 'month' => 'required|string']);
         $year = $request->year;
         $month = $request->month;
-        $business_member = $this->getBusinessMember($request);
+        //$business_member = $this->getBusinessMember($request);
+        $business_member = BusinessMember::find(13938);
         if (!$business_member) return api_response($request, null, 404);
         $time_frame = $time_frame->forAMonth($month, $year);
         $business_member_created_date = $business_member->created_at;
@@ -68,10 +77,11 @@ class AttendanceController extends Controller
 
         $business_holiday = $business_holiday_repo->getAllByBusiness($business_member->business);
         $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business_member->business);
+        $dayWiseShifts = $this->loadShifts($business_member, $time_frame);
 
         $manager = new Manager();
         $manager->setSerializer(new CustomSerializer());
-        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office));
+        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office, $dayWiseShifts));
         $attendances_data = $manager->createData($resource)->toArray()['data'];
 
         return api_response($request, null, 200, [
@@ -192,6 +202,19 @@ class AttendanceController extends Controller
             ->setNote($request->note)
             ->updateNote();
         return api_response($request, null, 200);
+    }
+
+    private function loadShifts($business_member, $time_frame)
+    {
+        return $business_member->shifts()
+            ->selectTypes()
+            ->within($time_frame)
+            ->selectBusinessMember()
+            ->selectDate()
+            ->get()
+            ->toAssocFromKey(function (ShiftAssignment $assignment) {
+                return $assignment->getDate()->toDateString();
+            });
     }
 
 }

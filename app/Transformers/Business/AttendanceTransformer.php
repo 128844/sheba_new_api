@@ -6,6 +6,7 @@ use League\Fractal\TransformerAbstract;
 use Sheba\Business\Attendance\CheckWeekend;
 use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\Attendance\Statuses;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Helpers\TimeFrame;
 
 class AttendanceTransformer extends TransformerAbstract
@@ -17,6 +18,7 @@ class AttendanceTransformer extends TransformerAbstract
     private $businessMemberLeave;
     private $isNewJoiner;
     private $businessOfficeRepo;
+    private $dayWiseShifts;
 
     /**
      * @param TimeFrame $time_frame
@@ -26,7 +28,7 @@ class AttendanceTransformer extends TransformerAbstract
      * @param $business_member_leave
      * @param $business_office_repo
      */
-    public function __construct(TimeFrame $time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office_repo)
+    public function __construct(TimeFrame $time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office_repo, $dayWiseShifts)
     {
         $this->timeFrame = $time_frame;
         $this->businessHoliday = $business_holiday;
@@ -34,6 +36,7 @@ class AttendanceTransformer extends TransformerAbstract
         $this->businessMemberLeave = $business_member_leave;
         $this->isNewJoiner = $is_new_joiner;
         $this->businessOfficeRepo = $business_office_repo;
+        $this->dayWiseShifts = $dayWiseShifts;
     }
 
     /**
@@ -54,18 +57,8 @@ class AttendanceTransformer extends TransformerAbstract
         }
         $dates_of_holidays_formatted = $data;
         $period = CarbonPeriod::create($this->timeFrame->start, $this->timeFrame->end);
-        $remaining_days = (($this->timeFrame->start)->diffInDays($this->timeFrame->end)) + 1;
-        if ($this->timeFrame->start->format('Y-m') === Carbon::now()->format('Y-m')) {
-           if ($this->isNewJoiner) {
-               $start_date = $this->timeFrame->start;
-               $end_date = Carbon::now()->endOfMonth();
-               $remaining_days = (($start_date)->diffInDays($end_date)) + 1;
-           } else {
-               $remaining_days = $this->timeFrame->start->daysInMonth;
-           }
-        }
         $statistics = [
-            'working_days' => $remaining_days,
+            'working_days' => $period->count(),
             'present' => 0,
             Statuses::ON_TIME => 0,
             Statuses::LATE => 0,
@@ -78,6 +71,8 @@ class AttendanceTransformer extends TransformerAbstract
         ];
         $daily_breakdown = [];
         foreach ($period as $date) {
+            /** @var ShiftAssignment $shift */
+            $shift = $this->getShiftOnDate($date);
             $breakdown_data = [];
             $weekend_day = $check_weekend->getWeekendDays($date, $this->businessWeekendSettings);
             $is_weekend_or_holiday = $this->isWeekendHoliday($date, $weekend_day, $dates_of_holidays_formatted);
@@ -85,12 +80,13 @@ class AttendanceTransformer extends TransformerAbstract
 
             $breakdown_data['weekend_or_holiday_tag'] = null;
             $breakdown_data['is_holiday'] = null;
-            if ($is_weekend_or_holiday || $is_on_leave ) {
-                $weekend_holiday = $this->isWeekendHolidayLeaveTag($date, $leaves_date_with_half_and_full_day, $dates_of_holidays_formatted);;
+            if ($is_weekend_or_holiday || $is_on_leave || $shift && $shift->isUnassigned()) {
+                if ($shift) $weekend_holiday = "It is a Holiday!";
+                else $weekend_holiday = $this->isWeekendHolidayLeaveTag($date, $leaves_date_with_half_and_full_day, $dates_of_holidays_formatted);;
                 $breakdown_data['weekend_or_holiday_tag'] = $weekend_holiday;
                 $breakdown_data['is_holiday'] = $weekend_holiday == 'weekend' ? 0 : 1;
             }
-            if ($is_weekend_or_holiday) {
+            if ($is_weekend_or_holiday || $shift && $shift->isUnassigned()) {
                 if (!$this->isHalfDayLeave($date, $leaves_date_with_half_and_full_day)) $statistics['working_days']--;
             }
             if ($is_on_leave) {
@@ -155,8 +151,7 @@ class AttendanceTransformer extends TransformerAbstract
                 if (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance_checkin_action) $statistics[$attendance_checkin_action->status]++;
                 if (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance_checkout_action) $statistics[$attendance_checkout_action->status]++;
             }
-
-            if ($this->isAbsent($attendance, ($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)), $date)) {
+            if ($this->isAbsent($attendance, ($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) || $shift && $shift->isUnassigned()), $date)) {
                 $breakdown_data['is_absent'] = 1;
                 $statistics[Statuses::ABSENT]++;
             }
@@ -323,5 +318,14 @@ class AttendanceTransformer extends TransformerAbstract
     private function hasAttendanceButNotAbsent($attendance)
     {
         return $attendance && !($attendance->status == Statuses::ABSENT);
+    }
+
+    private function getShiftOnDate(Carbon $date)
+    {
+        $key = $date->toDateString();
+        
+        if(!$this->dayWiseShifts->has($key)) return null;
+
+        return $this->dayWiseShifts[$key];
     }
 }
