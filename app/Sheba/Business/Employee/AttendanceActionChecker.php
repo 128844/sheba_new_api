@@ -48,7 +48,7 @@ class AttendanceActionChecker
 
     public function canCheckIn(): bool
     {
-        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckInForAttendance($this->attendanceOfToday);
+        if ($this->notInShift()) return $this->canCheckInForAttendance($this->attendanceOfToday);
 
         return $this->canCheckInForAttendance($this->currentAssignment->attendance);
     }
@@ -73,7 +73,7 @@ class AttendanceActionChecker
 
     public function canCheckOut(): bool
     {
-        if (!$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id)) return $this->canCheckOutForAttendance($this->attendanceOfToday);
+        if ($this->notInShift()) return $this->canCheckOutForAttendance($this->attendanceOfToday);
 
         return $this->canCheckOutForAttendance($this->currentAssignment->attendance);
     }
@@ -142,4 +142,8 @@ class AttendanceActionChecker
     {
         return $this->lastAttendance ? Carbon::parse($this->lastAttendance['date']): null;
     }*/
+    private function notInShift(): bool
+    {
+        return !$this->business->isShiftEnabled() || !$this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id) || !$this->currentAssignment->attendance;
+    }
 }
