@@ -113,7 +113,7 @@ class AttendanceTransformer extends TransformerAbstract
                 $breakdown_data['attendance'] = [
                     'id' => $attendance->id,
                     'check_in' => $attendance_checkin_action ? [
-                        'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) || !$is_in_shift ? null : $attendance_checkin_action->status,
+                        'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) || $is_unassigned ? null : $attendance_checkin_action->status,
                         'time' => $attendance->checkin_time,
                         'is_in_wifi' => $attendance_checkin_action->is_in_wifi ?: 0,
                         'is_remote' => $attendance_checkin_action->is_remote ?: 0,
@@ -127,7 +127,7 @@ class AttendanceTransformer extends TransformerAbstract
                         'remote_mode' => $attendance_checkin_action->remote_mode ?: null
                     ] : null,
                     'check_out' => $attendance_checkout_action ? [
-                        'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) || !$is_in_shift ? null : $attendance_checkout_action->status,
+                        'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) || $is_unassigned ? null : $attendance_checkout_action->status,
                         'time' => $attendance->checkout_time,
                         'is_remote' => $attendance_checkout_action->is_remote ?: 0,
                         'address' => $attendance_checkout_action->is_remote ?
