@@ -8,12 +8,10 @@ use Sheba\Business\Attendance\AttendanceCommonInfo;
 use Sheba\Business\Employee\AttendanceActionChecker;
 use Sheba\Dal\AttendanceActionLog\RemoteMode;
 use Sheba\Dal\BusinessHoliday\Contract as BusinessHolidayRepoInterface;
-use Sheba\Business\AttendanceActionLog\ActionChecker\ActionProcessor;
 use Sheba\Dal\Attendance\Contract as AttendanceRepoInterface;
 use Sheba\Business\AttendanceActionLog\AttendanceAction;
 use App\Transformers\Business\AttendanceTransformer;
 use App\Sheba\Business\Attendance\Note\Updater as AttendanceNoteUpdater;
-use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\BusinessOffice\Contract as BusinessOffice;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use App\Transformers\CustomSerializer;
@@ -58,21 +56,18 @@ class AttendanceController extends Controller
         $this->validate($request, ['year' => 'required|string', 'month' => 'required|string']);
         $year = $request->year;
         $month = $request->month;
-        //$business_member = $this->getBusinessMember($request);
-        $business_member = BusinessMember::find(13938);
+        $business_member = $this->getBusinessMember($request);
         if (!$business_member) return api_response($request, null, 404);
         $time_frame = $time_frame->forAMonth($month, $year);
         $business_member_created_date = $business_member->created_at;
         $business_member_joining_date = $business_member->join_date;
-        $is_new_joiner = false;
+
         if ($this->checkJoiningDate($business_member_joining_date, $month, $year)){
             $start_date = $business_member_joining_date;
             $end_date = Carbon::now()->month($month)->year($year)->lastOfMonth();
             $time_frame = $time_frame->forDateRange($start_date, $end_date);
-            $is_new_joiner = true;
         }
         $business_member_leave = $business_member->leaves()->accepted()->between($time_frame)->get();
-        $time_frame->end = $this->isShowRunningMonthsAttendance($year, $month) ? Carbon::now() : $time_frame->end;
         $attendances = $attendance_repo->getAllAttendanceByBusinessMemberFilteredWithYearMonth($business_member, $time_frame);
 
         $business_holiday = $business_holiday_repo->getAllByBusiness($business_member->business);
@@ -81,7 +76,7 @@ class AttendanceController extends Controller
 
         $manager = new Manager();
         $manager->setSerializer(new CustomSerializer());
-        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office, $dayWiseShifts));
+        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $business_holiday, $weekend_settings, $business_member_leave, $business_office, $dayWiseShifts));
         $attendances_data = $manager->createData($resource)->toArray()['data'];
 
         return api_response($request, null, 200, [
@@ -146,16 +141,6 @@ class AttendanceController extends Controller
             'date' => Carbon::now()->format('jS F Y'),
             'message' => $result->getMessage($request->action)
         ]);
-    }
-
-    /**
-     * @param $month
-     * @param $year
-     * @return bool
-     */
-    private function isShowRunningMonthsAttendance($year, $month)
-    {
-        return (Carbon::now()->month == (int)$month && Carbon::now()->year == (int)$year);
     }
 
     public function getTodaysInfo(Request $request, AttendanceActionChecker $attendance_action_checker)
