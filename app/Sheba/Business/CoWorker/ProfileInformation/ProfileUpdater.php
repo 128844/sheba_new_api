@@ -1,7 +1,9 @@
 <?php namespace App\Sheba\Business\CoWorker\ProfileInformation;
 
 
+use App\Models\BusinessMember;
 use App\Sheba\Business\CoWorker\GetBusinessRole;
+use Sheba\Business\ShiftAssignment\ShiftAssignmentCreatorForNewlyActiveEmployee;
 use Sheba\Repositories\Interfaces\BusinessMemberRepositoryInterface;
 use Sheba\Repositories\Interfaces\ProfileRepositoryInterface;
 use DB;
@@ -14,11 +16,14 @@ class ProfileUpdater
     private $profileRepository;
     /*** @var BusinessMemberRepositoryInterface */
     private $businessMemberRepository;
+    /*** @var ShiftAssignmentCreatorForNewlyActiveEmployee */
+    private $newlyActiveEmployeeShiftAssignment;
 
-    public function __construct()
+    public function __construct(ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment)
     {
         $this->profileRepository = app(ProfileRepositoryInterface::class);
         $this->businessMemberRepository = app(BusinessMemberRepositoryInterface::class);
+        $this->newlyActiveEmployeeShiftAssignment = $shift_assignment;
     }
 
     public function setProfileRequester(ProfileRequester $profile_requester)
@@ -42,6 +47,7 @@ class ProfileUpdater
         $business_member_data = $this->updateBusinessMember();
         $this->profileRepository->updateRaw($profile, $profile_data);
         $this->businessMemberRepository->update($business_member, $business_member_data);
+        $this->createShiftAssignment($business_member);
     }
 
     private function getBusinessRole($department, $designation)
@@ -67,6 +73,11 @@ class ProfileUpdater
             'join_date' => $this->profileRequester->getJoiningDate(),
             'status' => 'active'
         ];
+    }
+
+    private function createShiftAssignment(BusinessMember $business_member)
+    {
+        $this->newlyActiveEmployeeShiftAssignment->handle($business_member->business, $business_member);
     }
 
 }
