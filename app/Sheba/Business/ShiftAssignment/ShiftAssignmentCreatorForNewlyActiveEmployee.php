@@ -24,7 +24,7 @@ class ShiftAssignmentCreatorForNewlyActiveEmployee
 
         $assignments = [];
 
-        $period = CarbonPeriod::create(Carbon::now()->addDay(), Carbon::now()->addMonths(3));
+        $period = CarbonPeriod::create(Carbon::now()->subDays(2), Carbon::now()->addMonths(3));
 
         foreach ($period as $date) {
             $assignments[] = (new ShiftAssignmentRequest($business_member, $date))->activateGeneral();
