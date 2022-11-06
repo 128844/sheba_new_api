@@ -8,12 +8,10 @@ use Sheba\Business\Attendance\AttendanceCommonInfo;
 use Sheba\Business\Employee\AttendanceActionChecker;
 use Sheba\Dal\AttendanceActionLog\RemoteMode;
 use Sheba\Dal\BusinessHoliday\Contract as BusinessHolidayRepoInterface;
-use Sheba\Business\AttendanceActionLog\ActionChecker\ActionProcessor;
 use Sheba\Dal\Attendance\Contract as AttendanceRepoInterface;
 use Sheba\Business\AttendanceActionLog\AttendanceAction;
 use App\Transformers\Business\AttendanceTransformer;
 use App\Sheba\Business\Attendance\Note\Updater as AttendanceNoteUpdater;
-use Sheba\Dal\Attendance\Model as Attendance;
 use Sheba\Dal\BusinessOffice\Contract as BusinessOffice;
 use Sheba\Dal\AttendanceActionLog\Actions;
 use App\Transformers\CustomSerializer;
@@ -22,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use League\Fractal\Resource\Item;
 use App\Models\BusinessMember;
 use Sheba\Dal\BusinessWeekendSettings\BusinessWeekendSettingsRepo;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\ModificationFields;
 use Illuminate\Http\Request;
@@ -35,6 +34,13 @@ class AttendanceController extends Controller
     use ModificationFields, BusinessBasicInformation;
 
     const FIRST_DAY_OF_MONTH = 1;
+    /*** @var ShiftAssignmentRepository */
+    private $shiftAssignmentRepo;
+
+    public function __construct(ShiftAssignmentRepository $shiftAssignmentRepo)
+    {
+        $this->shiftAssignmentRepo = $shiftAssignmentRepo;
+    }
 
     /**
      * @param Request $request
@@ -55,23 +61,22 @@ class AttendanceController extends Controller
         $time_frame = $time_frame->forAMonth($month, $year);
         $business_member_created_date = $business_member->created_at;
         $business_member_joining_date = $business_member->join_date;
-        $is_new_joiner = false;
+
         if ($this->checkJoiningDate($business_member_joining_date, $month, $year)){
             $start_date = $business_member_joining_date;
             $end_date = Carbon::now()->month($month)->year($year)->lastOfMonth();
             $time_frame = $time_frame->forDateRange($start_date, $end_date);
-            $is_new_joiner = true;
         }
         $business_member_leave = $business_member->leaves()->accepted()->between($time_frame)->get();
-        $time_frame->end = $this->isShowRunningMonthsAttendance($year, $month) ? Carbon::now() : $time_frame->end;
         $attendances = $attendance_repo->getAllAttendanceByBusinessMemberFilteredWithYearMonth($business_member, $time_frame);
 
         $business_holiday = $business_holiday_repo->getAllByBusiness($business_member->business);
         $weekend_settings = $business_weekend_settings_repo->getAllByBusiness($business_member->business);
+        $dayWiseShifts = $this->loadShifts($business_member, $time_frame);
 
         $manager = new Manager();
         $manager->setSerializer(new CustomSerializer());
-        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $is_new_joiner, $business_holiday, $weekend_settings, $business_member_leave, $business_office));
+        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $business_holiday, $weekend_settings, $business_member_leave, $business_office, $dayWiseShifts));
         $attendances_data = $manager->createData($resource)->toArray()['data'];
 
         return api_response($request, null, 200, [
@@ -138,16 +143,6 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /**
-     * @param $month
-     * @param $year
-     * @return bool
-     */
-    private function isShowRunningMonthsAttendance($year, $month)
-    {
-        return (Carbon::now()->month == (int)$month && Carbon::now()->year == (int)$year);
-    }
-
     public function getTodaysInfo(Request $request, AttendanceActionChecker $attendance_action_checker)
     {
         $attendance_action_checker->setBusinessMember($request->business_member);
@@ -192,6 +187,19 @@ class AttendanceController extends Controller
             ->setNote($request->note)
             ->updateNote();
         return api_response($request, null, 200);
+    }
+
+    private function loadShifts($business_member, $time_frame)
+    {
+        return $business_member->shifts()
+            ->selectTypes()
+            ->within($time_frame)
+            ->selectBusinessMember()
+            ->selectDate()
+            ->get()
+            ->toAssocFromKey(function (ShiftAssignment $assignment) {
+                return $assignment->getDate()->toDateString();
+            });
     }
 
 }

@@ -59,9 +59,20 @@ class MonthlyAttendanceCalculator
         if($request->has('status') && $request->status != 'null') {
             $business_members = $business_members->where('status', $request->status);
         }
-        $business_members = $business_members->get();
-        $total_business_members_count = $business_members->count();
-        if ($request->has('limit') && !$request->has('file')) $business_members = $business_members->splice($offset, $limit);
+
+        $final_business_members = collect();
+
+        if ($request->has('file')) {
+            $business_members->chunk(100, function ($business_member_chunk) use (&$final_business_members){
+                $final_business_members = $final_business_members->merge($business_member_chunk);
+            });
+        } else {
+            $final_business_members = $business_members->get();
+        }
+
+        $total_business_members_count = $final_business_members->count();
+
+        if ($request->has('limit') && !$request->has('file')) $final_business_members = $final_business_members->splice($offset, $limit);
 
         $all_employee_attendance = [];
         $weekend_settings = $this->weekendSettingsRepo->getAllByBusiness($business);
@@ -72,7 +83,7 @@ class MonthlyAttendanceCalculator
             $start_date = Carbon::now()->startOfMonth()->toDateString();
             $end_date = Carbon::now()->endOfMonth()->toDateString();
         }
-        foreach ($business_members as $business_member) {
+        foreach ($final_business_members as $business_member) {
             $member = $business_member->member;
             $profile = $member->profile;
             $member_name = $profile->name;
