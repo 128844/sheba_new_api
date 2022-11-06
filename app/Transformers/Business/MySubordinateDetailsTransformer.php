@@ -6,13 +6,15 @@ use App\Models\Member;
 use App\Models\Profile;
 use App\Sheba\Business\CoWorker\ProfileInformation\SocialLink;
 use Sheba\Dal\BusinessHoliday\Contract as BusinessHolidayRepoInterface;
-use Sheba\Dal\BusinessWeekend\Contract as BusinessWeekendRepoInterface;
+use Sheba\Dal\BusinessOffice\Contract as BusinessOffice;
 use Sheba\Dal\Attendance\Contract as AttendanceRepoInterface;
+use Sheba\Dal\BusinessWeekendSettings\BusinessWeekendSettingsRepo;
 use Sheba\Dal\LeaveType\Contract as LeaveTypesRepoInterface;
 use League\Fractal\TransformerAbstract;
 use App\Transformers\CustomSerializer;
 use League\Fractal\Resource\Item;
 use App\Models\BusinessMember;
+use Sheba\Dal\ShiftAssignment\ShiftAssignment;
 use Sheba\Helpers\TimeFrame;
 use League\Fractal\Manager;
 use Carbon\Carbon;
@@ -68,21 +70,22 @@ class MySubordinateDetailsTransformer extends TransformerAbstract
     public function getAttendanceSummary($business_member)
     {
         $business_holiday_repo = app(BusinessHolidayRepoInterface::class);
-        $business_weekend_repo = app(BusinessWeekendRepoInterface::class);
+        $business_weekend_repo = app(BusinessWeekendSettingsRepo::class);
         $attendance_repo = app(AttendanceRepoInterface::class);
+        $business_office_repo = app(BusinessOffice::class);
         $time_frame = app(TimeFrame::class);
 
         $time_frame = $time_frame->forAMonth($this->month, $this->year);
         $business_member_leave = $business_member->leaves()->accepted()->between($time_frame)->get();
-        $time_frame->end = $this->isShowRunningMonthsAttendance() ? Carbon::now() : $time_frame->end;
         $attendances = $attendance_repo->getAllAttendanceByBusinessMemberFilteredWithYearMonth($business_member, $time_frame);
 
         $business_holiday = $business_holiday_repo->getAllByBusiness($business_member->business);
         $business_weekend = $business_weekend_repo->getAllByBusiness($business_member->business);
+        $dayWiseShifts = $this->loadShifts($business_member, $time_frame);
 
         $manager = new Manager();
         $manager->setSerializer(new CustomSerializer());
-        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $business_holiday, $business_weekend, $business_member_leave));
+        $resource = new Item($attendances, new AttendanceTransformer($time_frame, $business_holiday, $business_weekend, $business_member_leave, $business_office_repo, $dayWiseShifts));
         $attendances_data = $manager->createData($resource)->toArray()['data'];
 
         return $attendances_data['statistics'];
@@ -102,11 +105,16 @@ class MySubordinateDetailsTransformer extends TransformerAbstract
         return $leave_types;
     }
 
-    /**
-     * @return bool
-     */
-    private function isShowRunningMonthsAttendance()
+    private function loadShifts($business_member, $time_frame)
     {
-        return (Carbon::now()->month == (int)$this->month && Carbon::now()->year == (int)$this->year);
+        return $business_member->shifts()
+            ->selectTypes()
+            ->within($time_frame)
+            ->selectBusinessMember()
+            ->selectDate()
+            ->get()
+            ->toAssocFromKey(function (ShiftAssignment $assignment) {
+                return $assignment->getDate()->toDateString();
+            });
     }
 }
