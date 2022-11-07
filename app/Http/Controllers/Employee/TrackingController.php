@@ -113,13 +113,23 @@ class TrackingController extends Controller
 
         $data = [];
         $business_member_ids = $business_members->pluck('id')->toArray();
-        $business_members_last_location = $tracking_location_repository
-            ->getBusinessMembersLastLocationByBusinessForLastNDays($business_member_ids, $business->id, 7);
+        $business_members_last_location = [];
+
+        $tracking_location_repository->getBusinessMembersLastLocationByBusinessForLastNDaysByRaw($business->id, $business_member_ids, 7)
+            ->each(function ($last_location) use (&$business_members_last_location) {
+                $business_members_last_location[$last_location->business_member_id] = collect([
+                    "business_member_id" => $last_location->business_member_id,
+                    "business_id"        => $last_location->business_id,
+                    "location"           => $last_location->location,
+                    "time"               => $last_location->time,
+                    "created_at"         => $last_location->created_at
+                ]);
+            });
 
         foreach ($business_members->get() as $business_member) {
             if (!array_key_exists($business_member->id, $business_members_last_location)) continue;
             $tracking_location = $business_members_last_location[$business_member->id];
-            $location = $tracking_location->location;
+            $location = $tracking_location['location'];
 
             $profile = $business_member->member->profile;
             /** @var BusinessRole $role */
@@ -127,7 +137,7 @@ class TrackingController extends Controller
             $data[] = [
                 'business_member_id' => $business_member->id,
                 'employee_id' => $business_member->employee_id,
-                'business_id' => $tracking_location->business_id,
+                'business_id' => $tracking_location['business_id'],
                 'department_id' => $role ? $role->businessDepartment->id : null,
                 'department' => $role ? $role->businessDepartment->name : null,
                 'designation' => $role ? $role->name : null,
@@ -136,13 +146,13 @@ class TrackingController extends Controller
                     'name' => $profile->name ?: null,
                     'pro_pic' => $profile->pro_pic
                 ],
-                'time' => Carbon::parse($tracking_location->time)->format('h:i a'),
+                'time' => Carbon::parse($tracking_location['time'])->format('h:i a'),
                 'location' => $location ? [
                     'lat' => $location->lat,
                     'lng' => $location->lng,
                     'address' => $location->address,
                 ] : null,
-                'last_activity_raw' => $tracking_location->created_at
+                'last_activity_raw' => $tracking_location['created_at']
             ];
         }
 
