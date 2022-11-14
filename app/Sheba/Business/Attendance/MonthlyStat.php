@@ -120,6 +120,8 @@ class MonthlyStat
                 'is_absent' => 0,
             ];
             $shift = $this->getShiftOnDate($date);
+            $is_unassigned = $shift && $shift->isUnassigned() ? 1 : 0;
+            $is_general = $shift && $shift->isGeneral() ? 1 : 0;
             if ($shift) {
                 if ($shift->isUnassigned()) $statistics['working_days']--;
             }
@@ -128,12 +130,12 @@ class MonthlyStat
             $is_weekend_or_holiday = $this->isWeekendHoliday($date, $weekend_day, $dates_of_holidays_formatted);
             $is_on_leave = $this->isLeave($date, $leaves);
             if ($is_weekend_or_holiday || $is_on_leave) {
-                if ($this->forOneEmployee && !$shift || $this->forOneEmployee && !$this->isShiftOn || $this->forOneEmployee && $this->isShiftOn && $shift && $shift->isGeneral()) $breakdown_data['weekend_or_holiday_tag'] = $this->isWeekendHolidayLeaveTag($date, $leaves_date_with_half_and_full_day, $dates_of_holidays_formatted);
+                if ($this->forOneEmployee && !$shift || $this->forOneEmployee && !$this->isShiftOn || $this->forOneEmployee && $this->isShiftOn && $is_general) $breakdown_data['weekend_or_holiday_tag'] = $this->isWeekendHolidayLeaveTag($date, $leaves_date_with_half_and_full_day, $dates_of_holidays_formatted);
                 if ($breakdown_data['weekend_or_holiday_tag'] === 'holiday') {
                     $breakdown_data['holiday_name'] = $this->getHolidayName($date);
                 }
             }
-            if ($is_weekend_or_holiday && (!$shift || $shift->isGeneral())) {
+            if ($is_weekend_or_holiday && (!$shift || $is_general)) {
                 if (!$this->isHalfDayLeave($date, $leaves_date_with_half_and_full_day)) $statistics['working_days']--;
             }
             // leave calculation
@@ -169,7 +171,7 @@ class MonthlyStat
                     $breakdown_data['attendance'] = [
                         'id' => $attendance->id,
                         'check_in' => $attendance_checkin_action ? [
-                            'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) ? null : $attendance_checkin_action->status,
+                            'status' => $is_unassigned || (!$shift || $is_general) && $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) ? null : $attendance_checkin_action->status,
                             'time' => Carbon::parse($attendance->checkin_time)->format('h:i a'),
                             'is_remote' => $attendance_checkin_action->is_remote ?: 0,
                             'is_geo' => $is_geo,
@@ -182,7 +184,7 @@ class MonthlyStat
                                 : $business_office_name,
                         ] : null,
                         'check_out' => $attendance_checkout_action ? [
-                            'status' => $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) ? null : $attendance_checkout_action->status,
+                            'status' => $is_unassigned || (!$shift || $is_general) && $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day) ? null : $attendance_checkout_action->status,
                             'time' => Carbon::parse($attendance->checkout_time)->format('h:i a'),
                             'is_remote' => $attendance_checkout_action->is_remote ?: 0,
                             'is_geo' => $checkout_is_geo,
@@ -210,7 +212,7 @@ class MonthlyStat
                     }
                 }
 
-                if (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasLateCheckin()) $late_days[] = $date->toDateString();
+                if (!($is_unassigned || (!$shift || $is_general) && $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance->hasLateCheckin()) $late_days[] = $date->toDateString();
 
                 if (!($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) && $attendance_checkin_action) $statistics[$attendance_checkin_action->status]++;
 
@@ -224,7 +226,7 @@ class MonthlyStat
                 if ($checkout_business_office) $statistics['office_checkout'] = $statistics['office_checkout'] + 1;
             }
 
-            if ($this->isAbsent($attendance, ($is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)), $date)) {
+            if ($this->isAbsent($attendance, ($is_unassigned || (!$shift || $is_general) && $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)), $date)) {
                 if ($this->forOneEmployee) $breakdown_data['is_absent'] = 1;
                 $statistics[Statuses::ABSENT]++;
                 $absent_days[] = $date->toDateString();
