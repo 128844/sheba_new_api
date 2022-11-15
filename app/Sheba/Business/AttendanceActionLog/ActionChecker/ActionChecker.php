@@ -5,6 +5,7 @@ use Sheba\Business\Attendance\AttendanceTypes\TypeFactory;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
 use Sheba\Business\AttendanceActionLog\WeekendHolidayByBusiness;
 use Sheba\Business\Leave\HalfDay\HalfDayLeaveCheck;
+use Sheba\Dal\Attendance\Statuses;
 use Sheba\Dal\AttendanceActionLog\Model as AttendanceActionLog;
 use Sheba\Dal\Attendance\Model as Attendance;
 use App\Models\BusinessMember;
@@ -232,33 +233,17 @@ abstract class ActionChecker
         return 0;
     }
 
-    public function isLateNoteRequiredForSpecificDate($date, $time)
+    public function isLateNoteRequiredForSpecificDate(Attendance $last_attendance)
     {
-        $date_time = $date.' '.$time;
-        $date_time = Carbon::parse($date_time);
-        $business_time = new TimeByBusiness();
-        $weekendHoliday = new WeekendHolidayByBusiness();
-        $checkin_time = $date.' '.$business_time->getOfficeStartTimeByBusiness();
-
-        if (is_null($checkin_time)) return 0;
-        if (!$weekendHoliday->isWeekendByBusiness($date_time) && !$weekendHoliday->isHolidayByBusiness($date_time)) {
-            return $date_time->gt(Carbon::parse($checkin_time)) ? 1 : 0;
-        }
+        $checkin_action = $last_attendance->checkinAction();
+        if (!$last_attendance->is_off_day) return $checkin_action->status == Statuses::LATE;
         return 0;
     }
 
-    public function isLeftEarlyNoteRequiredForSpecificDate($date, $time)
+    public function isLeftEarlyNoteRequiredForSpecificDate(Attendance $last_attendance)
     {
-        $date_time = $date.' '.$time;
-        $date_time = Carbon::parse($date_time);
-        $business_time = new TimeByBusiness();
-        $weekendHoliday = new WeekendHolidayByBusiness();
-        $checkout_time = $date.' '.$business_time->getOfficeEndTimeByBusiness();
-
-        if (is_null($checkout_time)) return 0;
-        if (!$weekendHoliday->isWeekendByBusiness($date_time) && !$weekendHoliday->isHolidayByBusiness($date_time)) {
-            return $date_time->lt(Carbon::parse($checkout_time)) ? 1 : 0;
-        }
+        $checkin_action = $last_attendance->checkoutAction();
+        if (!$last_attendance->is_off_day) return $checkin_action->status == Statuses::LATE;
         return 0;
     }
 
