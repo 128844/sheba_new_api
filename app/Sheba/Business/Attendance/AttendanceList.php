@@ -527,6 +527,7 @@ class AttendanceList
         }
 
         $present_and_on_leave_business_members = array_merge($data, $business_members_in_leave);
+
         if ($this->statusFilter == self::ABSENT || $this->statusFilter == self::ALL) {
             $business_members_in_absence = $this->getBusinessMemberWhoAreAbsence($present_and_on_leave_business_members);
             if ($this->statusFilter == self::ABSENT) $present_and_on_leave_business_members = [];
@@ -666,9 +667,11 @@ class AttendanceList
         $data = [];
         foreach ($leaves as $leave) {
             $this->usersWhoOnLeave[] = $leave->businessMember->member->id;
-            $this->usersLeaveIds[$leave->businessMember->member->id] = [
-                'member_id' => $leave->businessMember->member->id,
-                'business_member_id' => $leave->businessMember->id,
+            $business_member = $leave->businessMember;
+            $member_id = $business_member->member->id;
+            $this->usersLeaveIds[$member_id] = [
+                'member_id' => $member_id,
+                'business_member_id' => $business_member->id,
                 'leave' => [
                     'id' => $leave->id,
                     'type' => $leave->leaveType->title,
@@ -678,6 +681,8 @@ class AttendanceList
             ];
             if (!($this->statusFilter == self::ON_LEAVE || $this->statusFilter == self::ABSENT || $this->statusFilter == self::ALL)) continue;
             if (!!$this->checkinStatus || !!$this->checkoutStatus) continue;
+            $shift_assignment = $this->specificDayWiseShift->has($business_member->id) ? $this->specificDayWiseShift[$business_member->id] : null;
+            $shift = AttendanceShiftFormatter::getByShiftAssignment($shift_assignment);
             $data[] = $this->getBusinessMemberData($leave->businessMember) + [
                 'id' => $leave->id,
                 'check_in' => null,
@@ -692,7 +697,8 @@ class AttendanceList
                 'leave_type' => $leave->leaveType->title,
                 'weekend_or_holiday' => null,
                 'is_half_day_leave' => $leave->is_half_day ? 1 : 0,
-                'which_half_day_leave' => $leave->is_half_day ? $leave->half_day_configuration : null
+                'which_half_day_leave' => $leave->is_half_day ? $leave->half_day_configuration : null,
+                'shift' => $shift
             ];
         }
 
