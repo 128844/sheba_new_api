@@ -166,8 +166,8 @@ class EmployeeDashboard
         $checkin = $this->actionProcessor->setActionName(Actions::CHECKIN)->getAction();
         $checkout = $this->actionProcessor->setActionName(Actions::CHECKOUT)->getAction();
 
-        if ($last_attendance_log['action'] == Actions::CHECKIN && $checkin->isLateNoteRequiredForSpecificDate($this->lastAttendance['date'], $this->lastAttendance['checkin_time'])) return Actions::CHECKIN;
-        if ($last_attendance_log['action'] == Actions::CHECKOUT && $checkout->isLeftEarlyNoteRequiredForSpecificDate($this->lastAttendance['date'], $this->lastAttendance['checkout_time'])) return Actions::CHECKOUT;
+        if ($last_attendance_log['action'] == Actions::CHECKIN && $checkin->isLateNoteRequiredForSpecificDate($this->lastAttendance)) return ['action' => Actions::CHECKIN, 'date' => Carbon::parse($this->lastAttendance->date)];
+        if ($last_attendance_log['action'] == Actions::CHECKOUT && $checkout->isLeftEarlyNoteRequiredForSpecificDate($this->lastAttendance)) return ['action' => Actions::CHECKOUT, 'date' => Carbon::parse($this->lastAttendance->date)];
 
         return null;
     }

@@ -46,9 +46,9 @@ class EmployeeDashboardPresenter extends Presenter
                     'shift' => $this->getShiftAssignmentDetails()
                 ],
                 'note_data' => [
-                    'date' => $this->employeeDashboard->hasLastAttendance() ? $this->employeeDashboard->getLastAttendanceDate()->format('jS F Y') : null,
+                    'date' => !is_null($note_action) ? $note_action['date']->format('jS F Y') : null,
                     'is_note_required' => is_null($note_action) ? 0 : 1,
-                    'note_action' => $note_action
+                    'note_action' => $note_action['action']
                 ],
                 'is_remote_enable' => $this->business->isRemoteAttendanceEnable($this->businessMember->id),
                 'is_approval_request_required' => $this->employeeDashboard->isApprovalRequestRequired() ? 1 : 0,
