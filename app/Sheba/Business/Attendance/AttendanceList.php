@@ -455,7 +455,7 @@ class AttendanceList
                     $business_office_name = $this->getOfficeName($action);
                     if ($action->action == Actions::CHECKIN) {
                         $checkin_data = collect([
-                            'status' => $this->getStatusBasedOnLeaveAction($action, $is_weekend_or_holiday, $is_on_leave, $is_on_half_day_leave),
+                            'status' => $attendance->shift_assignment_id ? $action->status : $this->getStatusBasedOnLeaveAction($action, $is_weekend_or_holiday, $is_on_leave, $is_on_half_day_leave),
                             'is_remote' => $action->is_remote ?: 0,
                             'is_geo' => $action->is_geo_location,
                             'is_in_wifi' => $action->is_in_wifi,
@@ -471,7 +471,7 @@ class AttendanceList
                     }
                     if ($action->action == Actions::CHECKOUT) {
                         $checkout_data = collect([
-                            'status' => $this->getStatusBasedOnLeaveAction($action, $is_weekend_or_holiday, $is_on_leave, $is_on_half_day_leave),
+                            'status' => $attendance->shift_assignment_id ? $action->status : $this->getStatusBasedOnLeaveAction($action, $is_weekend_or_holiday, $is_on_leave, $is_on_half_day_leave),
                             'is_remote' => $action->is_remote ?: 0,
                             'is_geo' => $action->is_geo_location,
                             'is_in_wifi' => $action->is_in_wifi,
@@ -504,8 +504,8 @@ class AttendanceList
                     'date' => $attendance->date,
                     'is_absent' => $attendance->status == Statuses::ABSENT ? 1 : 0,
                     'is_on_leave' => $is_on_leave ? 1 : 0,
-                    'is_holiday' => $is_weekend_or_holiday ? 1 : 0,
-                    'weekend_or_holiday' => $is_weekend_or_holiday ? $this->commonFunctions->getWeekendOrHolidayString() : null,
+                    'is_holiday' => !$attendance->shift_assignment_id && $is_weekend_or_holiday ? 1 : 0,
+                    'weekend_or_holiday' => !$attendance->shift_assignment_id && $is_weekend_or_holiday ? $this->commonFunctions->getWeekendOrHolidayString() : null,
                     'is_half_day_leave' => $is_on_half_day_leave,
                     'is_attendance_reconciled' => $attendance->is_attendance_reconciled,
                     'which_half_day_leave' => $which_half_day,
