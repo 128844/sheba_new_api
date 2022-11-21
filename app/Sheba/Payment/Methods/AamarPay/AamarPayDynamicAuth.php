@@ -6,6 +6,7 @@ class AamarPayDynamicAuth
 {
     private $storeId;
     private $signatureKey;
+    private $apiKey;
 
     public function setStoreId($storeId)
     {
@@ -19,11 +20,18 @@ class AamarPayDynamicAuth
         return $this;
     }
 
+    public function setApiKey($apiKey)
+    {
+        $this->apiKey = $apiKey;
+        return $this;
+    }
+
     public function getConfigurationsArray()
     {
         return [
             'storeId' => $this->storeId,
-            'signatureKey' => $this->signatureKey
+            'signatureKey' => $this->signatureKey,
+            'apiKey' => $this->apiKey,
         ];
     }
 }
