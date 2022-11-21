@@ -20,7 +20,7 @@ class DynamicAamarPayStoreConfigurations
         $configurations = json_decode($configurations);
         $this->storeId = $configurations->storeId;
         $this->signatureKey = $configurations->signatureKey;
-        $this->apiKey = $configurations->apiKey;
+        $this->apiKey = $configurations->apiKey ?? null;
         return $this;
     }
 
