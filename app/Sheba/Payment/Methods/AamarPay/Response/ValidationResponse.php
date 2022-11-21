@@ -12,7 +12,7 @@ class ValidationResponse extends \Sheba\Payment\Methods\Response\PaymentMethodRe
     public function hasSuccess()
     {
         return $this->response
-            && $this->response->pg_txnid === $this->payment->gateway_transaction_id
+            && $this->response->mer_txnid === $this->payment->transaction_id
             && $this->response->status_code == self::SUCCESS_CODE;
     }
 

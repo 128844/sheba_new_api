@@ -78,6 +78,7 @@ class AamarPay extends PaymentMethod
                 'from' => $payment->status,
                 'transaction_details' => $payment->transaction_details
             ]);
+            $payment->gateway_transaction_id = $success->id;
             $payment->status = Statuses::VALIDATED;
             $payment->transaction_details = json_encode($success->details);
         } else {
@@ -87,6 +88,9 @@ class AamarPay extends PaymentMethod
                 'from' => $payment->status,
                 'transaction_details' => $payment->transaction_details
             ]);
+            if ($error->id) {
+                $payment->gateway_transaction_id = $error->id;
+            }
             $payment->status = Statuses::VALIDATION_FAILED;
             $payment->transaction_details = json_encode($error->details);
         }
