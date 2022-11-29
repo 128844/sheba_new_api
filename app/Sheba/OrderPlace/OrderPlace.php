@@ -10,9 +10,11 @@ use App\Exceptions\RentACar\OutsideCityPickUpAddressNotFoundException;
 use App\Models\Affiliation;
 use App\Models\CarRentalJobDetail;
 use App\Models\Voucher;
+use App\Sheba\OrderPlace\Exceptions\CategoryLocationNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Sheba\Dal\Category\Category;
+use Sheba\Dal\CategoryLocation\CategoryLocation;
 use Sheba\Dal\CategoryPartner\CategoryPartner;
 use App\Models\Customer;
 use App\Models\CustomerDeliveryAddress;
@@ -476,6 +478,10 @@ class OrderPlace
      */
     private function createJobService()
     {
+        $category_location = CategoryLocation::where('category_id', $this->category->id)->where('location_id', $this->location->id)->first();
+        if (! $category_location) {
+            throw new CategoryLocationNotFoundException('Category #' . $this->category->id . ' is not available at this location #' . $this->location->id);
+        }
         $job_services = collect();
         foreach ($this->serviceRequestObject as $selected_service) {
             $service = $selected_service->getService();
