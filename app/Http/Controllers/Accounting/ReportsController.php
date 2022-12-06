@@ -121,10 +121,7 @@ class ReportsController extends Controller
 
         if (in_array($reportType, $report_types)) {
             $response = $this->accountingReportRepository->getAccountingReport($reportType, $request->partner->id, $start_date, $end_date, $account_id, $request->account_type);
-
-            if ($reportType == AccountingReport::JOURNAL_REPORT) {
-                $response = array_slice($response, $offset, $limit);
-            }
+            $response = array_slice($response, $offset, $limit);
 
             (new Usage())->setUser($request->partner)->setType(Usage::Partner()::REPORT_DOWNLOAD)->create($request->auth_user);
             return api_response($request, $response, 200, ['data' => $response]);
