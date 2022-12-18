@@ -397,7 +397,8 @@ class PaymentService
 
     public function getPgwStatusForHomePage(): PaymentService
     {
-        $pgw_store_accounts = GatewayAccount::where('user_type', get_class($this->partner))->where('user_id', $this->partner->id)->get();
+        $user_type = strtolower(class_basename($this->partner));
+        $pgw_store_accounts = GatewayAccount::where('user_type', $user_type)->where('user_id', $this->partner->id)->get();
 
         if (!$pgw_store_accounts->isEmpty()) {
             foreach ($pgw_store_accounts as $pgw_store_account) {
