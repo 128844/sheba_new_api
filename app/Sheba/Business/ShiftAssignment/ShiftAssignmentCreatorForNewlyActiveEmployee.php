@@ -21,6 +21,7 @@ class ShiftAssignmentCreatorForNewlyActiveEmployee
     {
         if (!$business->isShiftEnabled()) return;
         if (!$business_member->isBusinessMemberActive()) return;
+        if ($this->isShiftAssignmentExist($business_member)) return;
 
         $assignments = [];
 
@@ -31,5 +32,10 @@ class ShiftAssignmentCreatorForNewlyActiveEmployee
         }
 
         $this->shiftAssignmentRepo->insertWithRequest($assignments);
+    }
+
+    private function isShiftAssignmentExist(BusinessMember $business_member)
+    {
+        return $this->shiftAssignmentRepo->where('business_member_id', $business_member->id)->count();
     }
 }
