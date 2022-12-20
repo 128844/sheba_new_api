@@ -278,9 +278,16 @@ class ExternalPayments
     public function getPaymentGatewayStatus($partner): array
     {
         $pgw_status = (new PaymentService())->setPartner($partner)->getPgwStatusForHomePage()->getPgwStatusForStatusCheck();
+
         $regular_payment_link = $this->getPaymentLinkStatus($partner);
         $emi_payment_link = $this->getPaymentLinkStatus($partner, 1);
-        return ["regular_payment_link" => $regular_payment_link, "pgw_status" => $pgw_status,
-            "emi_payment_link" => $emi_payment_link, "message" => "Successful", "code" => 200];
+
+        return [
+            "regular_payment_link" => $regular_payment_link,
+            "pgw_status" => $pgw_status,
+            "emi_payment_link" => $emi_payment_link,
+            "message" => "Successful",
+            "code" => 200
+        ];
     }
 }

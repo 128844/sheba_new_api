@@ -1153,7 +1153,7 @@ class PartnerController extends Controller
      */
     public function setQRCodeV2(Request $request, OrderService $orderService)
     {
-        $this->saveQRCodeData($request,$orderService);
+        $this->saveQRCodeData($request, $orderService);
         return http_response($request, null, 200);
     }
 
@@ -1163,9 +1163,9 @@ class PartnerController extends Controller
         return api_response($request, null, 200, ['data' => $data]);
     }
 
-    public function getQRCodeV2(Request $request,OrderService $orderService)
+    public function getQRCodeV2(Request $request, OrderService $orderService)
     {
-        $data = $this->getQRCodeData($request,$orderService);
+        $data = $this->getQRCodeData($request, $orderService);
         return http_response($request, null, 200, ['data' => $data]);
     }
 
