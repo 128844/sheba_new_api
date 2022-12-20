@@ -113,10 +113,10 @@ class TopUpController extends Controller
 
         if ($this->isBusiness($agent) && $this->isPrepaid($request->connection_type)) {
             $validation_data['amount'] = 'required|numeric|min:10|max:' . $agent->topup_prepaid_max_limit;
-        } elseif ($this->isBusiness($agent) && $this->isPostpaid($request->connection_type)) {
+        } elseif ($this->isPostpaid($request->connection_type)) {
             $validation_data['amount'] = 'required|numeric|min:10';
         } else {
-            $validation_data['amount'] = 'required|min:10|max:1000|numeric';
+            $validation_data['amount'] = 'required|numeric|min:10|max:1000';
         }
 
         $this->validate($request, $validation_data);

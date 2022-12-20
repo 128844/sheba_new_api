@@ -1,12 +1,11 @@
 <?php namespace Sheba\Business\CoWorker;
 
 use App\Sheba\Business\BusinessMemberBkashAccount\Requester as CoWorkerBkashAccountRequester;
-use Carbon\CarbonPeriod;
+use App\Sheba\Business\ShiftAssignment\ShiftAssignmentRemover;
 use Exception;
 use Sheba\Business\BusinessMemberStatusChangeLog\Creator as BusinessMemberStatusChangeLogCreator;
 use Sheba\Business\BusinessMember\Requester as BusinessMemberRequester;
 use Sheba\Business\CoWorker\Requests\Requester as CoWorkerRequester;
-use Sheba\Business\Shift\ShiftAssignmentRequest;
 use Sheba\Business\ShiftAssignment\ShiftAssignmentCreatorForNewlyActiveEmployee;
 use Sheba\Dal\Salary\SalaryRepository;
 use Sheba\Repositories\Interfaces\BusinessMemberRepositoryInterface;
@@ -104,6 +103,8 @@ class Updater
     private $salaryRepo;
     /** @var ShiftAssignmentCreatorForNewlyActiveEmployee */
     private $newlyActiveEmployeeShiftAssignment;
+    /*** @var ShiftAssignmentRemover */
+    private $shiftAssignmentRemover;
 
     /**
      * Updater constructor.
@@ -133,7 +134,8 @@ class Updater
         MemberRepositoryInterface $member_repository, BusinessRoleRepositoryInterface $business_role_repository,
         BusinessMemberStatusChangeLogCreator $business_member_status_change_log_creator,
         CoWorkerBkashAccountRequester $co_worker_bkash_acc_requester,
-        ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment, SalaryRepository $salary_repo
+        ShiftAssignmentCreatorForNewlyActiveEmployee $shift_assignment, SalaryRepository $salary_repo,
+        ShiftAssignmentRemover $shift_assignment_remover
     )
     {
         $this->fileRepository = $file_repository;
@@ -152,6 +154,7 @@ class Updater
         $this->coWorkerBkashAccRequester = $co_worker_bkash_acc_requester;
         $this->salaryRepo = $salary_repo;
         $this->newlyActiveEmployeeShiftAssignment = $shift_assignment;
+        $this->shiftAssignmentRemover = $shift_assignment_remover;
     }
 
     /**
@@ -506,13 +509,14 @@ class Updater
         try {
             $business_member_data['status'] = $this->coWorkerRequester->getStatus();
             if ($this->coWorkerRequester->getStatus() == Statuses::INACTIVE) {
+                $this->shiftAssignmentRemover->deleteAllAfterToday([$this->businessMember]);
                 $business_member_data['is_super'] = 0;
                 $business_member_data['is_payroll_enable'] = 0;
                 (new InvalidToken())->invalidTheTokens($this->profile->email);
             }
             $this->businessMember = $this->businessMemberUpdater->setBusinessMember($this->businessMember)->update($business_member_data);
 
-            $this->newlyActiveEmployeeShiftAssignment->handle($this->business, $this->businessMember);
+            if ($this->coWorkerRequester->getStatus() == Statuses::ACTIVE) $this->newlyActiveEmployeeShiftAssignment->handle($this->business, $this->businessMember);
 
             DB::commit();
             return $this->businessMember;

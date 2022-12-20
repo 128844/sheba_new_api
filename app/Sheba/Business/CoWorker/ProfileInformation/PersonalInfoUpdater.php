@@ -51,6 +51,7 @@ class PersonalInfoUpdater
         $member_data = $this->makeMemberData();
         $business_member_data = $this->makeBusinessMemberData();
         $image_data = $this->storeImage($profile);
+
         if ($image_data) $profile_data = array_merge($profile_data, $image_data);
         if ($member_data) $this->memberRepository->update($member, $member_data);
         if ($profile_data) $this->profileRepository->update($profile, $profile_data);
@@ -83,29 +84,23 @@ class PersonalInfoUpdater
 
     private function storeImage($profile)
     {
-        $nid_image_front_name = $nid_image_front = $nid_image_back_name = $nid_image_back = $passport_image_name = $passport_image = null;
         $nid_front = $this->profileRequester->getNidFrontImage();
         $nid_back = $this->profileRequester->getNidBackImage();
         $passport_image = $this->profileRequester->getPassportImage();
 
+        $image_data = [];
+
         if ($nid_front) {
-            $nid_image_front_name = $nid_front->getClientOriginalName();
-            $nid_image_front = $this->getPicture($profile, $nid_front, 'nid_image_front');
+            $image_data['nid_image_front'] = $this->getPicture($profile, $nid_front, 'nid_image_front');
         }
         if ($nid_back) {
-            $nid_image_back_name = $nid_back->getClientOriginalName();
-            $nid_image_back = $this->getPicture($profile, $nid_back, 'nid_image_back');
+            $image_data['nid_image_back'] = $this->getPicture($profile, $nid_back, 'nid_image_back');
         }
         if ($passport_image) {
-            $passport_image_name = $passport_image->getClientOriginalName();
-            $passport_image = $this->getPicture($profile, $passport_image, 'passport');
+            $image_data['passport_image'] = $this->getPicture($profile, $passport_image, 'passport');
         }
 
-        return [
-          'nid_image_front' => $nid_image_front,
-          'nid_image_back' => $nid_image_back,
-          'passport_image' => $passport_image,
-        ];
+        return $image_data;
     }
 
     private function getPicture($profile, $photo, $image_for = 'pro_pic')
