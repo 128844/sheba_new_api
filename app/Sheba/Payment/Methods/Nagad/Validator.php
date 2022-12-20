@@ -73,8 +73,20 @@ class Validator
     {
         $order_id = $this->getOrderID();
         if (!empty($order_id)) {
-            $this->payment = Payment::where('gateway_transaction_id', $order_id)->first();
-            if (empty($this->payment)) throw new InvalidOrderId();
+            $payment = Payment::where('gateway_transaction_id', $order_id)->first();
+
+            $payment_transaction_details = json_decode($payment->transaction_details);
+            $saved_payment_ref_id = $payment_transaction_details->paymentRefId;
+            $request_payment_ref_id = $this->getPaymentRefId();
+            if ($saved_payment_ref_id != $request_payment_ref_id) {
+                throw new InvalidOrderId();
+            }
+            
+            $this->payment = $payment;
+            if (empty($this->payment)) {
+                throw new InvalidOrderId();
+            }
+
             $this->payable = $this->payment->payable;
         }
     }
