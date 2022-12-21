@@ -367,13 +367,13 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
 
     public function isRemoteAttendanceEnable($business_member_id = null): bool
     {
-        if ($this->isShebaRemoteAttendanceEnable($business_member_id)) return true;
+        if ($this->isForceRemoteAttendanceEnable($business_member_id)) return true;
         return in_array(AttendanceTypes::REMOTE, $this->attendanceTypes->pluck('attendance_type')->toArray());
     }
 
-    private function isShebaRemoteAttendanceEnable($business_member_id): bool
+    private function isForceRemoteAttendanceEnable($business_member_id): bool
     {
-        $sheba_employees = [574, 674, 2041, 6895, 13529];
+        $sheba_employees = [574, 674, 2041, 6895, 13529, 16460];
         return in_array($business_member_id, $sheba_employees);
     }
 
