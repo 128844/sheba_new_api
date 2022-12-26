@@ -12,7 +12,6 @@ class AamarpayController extends Controller
 {
     public function validatePayment(Request $request, PaymentManager $payment_manager)
     {
-//        dd($request->all());
         $redirect_url = config('sheba.front_url');
         /** @var Payment $payment */
         $payment = Payment::where('transaction_id', $request->mer_txnid)->first();

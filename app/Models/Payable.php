@@ -6,6 +6,7 @@ use App\Sheba\QRPayment\Complete\PosOrderComplete;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use InvalidArgumentException;
+use Sheba\Dal\EmiBank\EmiBank;
 use Sheba\Dal\Payable\Types;
 use Sheba\Payment\Complete\PaymentComplete;
 use Sheba\Payment\PayableType;
@@ -180,6 +181,11 @@ class Payable extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function emiBank()
+    {
+        return $this->belongsTo(EmiBank::class);
     }
 
     public function qrPayable()

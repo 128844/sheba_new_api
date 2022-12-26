@@ -55,14 +55,19 @@ class PaymentLinkBillController extends Controller
             if (!empty($payment_link->getEmiMonth()) && (double)$payment_link->getAmount() < config('emi.manager.minimum_emi_amount'))
                 return api_response($request, null, 400, ['message' => 'Amount must be greater then or equal BDT ' . config('emi.manager.minimum_emi_amount')]);
 
+            $bank = null;
+            if ($payment_link->isEmi()) {
+                $bank = $payment_manager->getEmibank($request->bank_id);
+            }
+
             $payable = $payment_adapter->setPayableUser($user)->setPaymentLink($payment_link)
                 ->setAmount($request->amount)->setDescription($request->purpose)
+                ->setEmiBankId($bank->id)
                 ->getPayable();
             if ($payment_method == 'wallet' && $user->shebaCredit() < $payable->amount)
                 return api_response($request, null, 403, ['message' => "You don't have sufficient balance"]);
-        if ($payment_method === 'online') $payment_method = PaymentStrategy::SSL;
+            if ($payment_method === 'online') $payment_method = PaymentStrategy::SSL;
             if ($payment_link->isEmi()) {
-                $bank = $payment_manager->getEmibank($request->bank_id);
                 if (!$bank) return response()->json(['code' => 404, 'message' => 'Bank not found']);
                 $payment_method = $bank->paymentGateway->method_name ?? PaymentStrategy::SSL;
             }
@@ -95,9 +100,6 @@ class PaymentLinkBillController extends Controller
         } catch (StoreNotFoundException $e) {
             logError($e);
             return api_response($request, null, $e->getCode(),['message'=>$e->getMessage()]);
-        } catch (\Throwable $e) {
-            logError($e);
-            return api_response($request, null, 500);
         }
     }
 }
