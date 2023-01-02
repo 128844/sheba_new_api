@@ -33,6 +33,7 @@ class PaymentLinkBillController extends Controller
                               Creator $customer_creator, PaymentLinkRepositoryInterface $repo)
     {
         try {
+            $availableMethods = AvailableMethods::getPaymentLinkPayments($request->identifier);
             $rules = [
                 'amount'     => 'numeric',
                 'purpose'    => 'string',
@@ -44,7 +45,7 @@ class PaymentLinkBillController extends Controller
             if ($request->has('emi_month')) {
                 $rules['bank_id'] = 'required|integer';
             } else {
-                $rules['payment_method'] = 'required|in:' . implode(',', AvailableMethods::getPaymentLinkPayments($request->identifier));
+                $rules['payment_method'] = 'required|in:' . implode(',', $availableMethods);
             }
             $this->validate($request, $rules);
 
@@ -69,7 +70,9 @@ class PaymentLinkBillController extends Controller
             if ($payment_method === 'online') $payment_method = PaymentStrategy::SSL;
             if ($payment_link->isEmi()) {
                 if (!$bank) return response()->json(['code' => 404, 'message' => 'Bank not found']);
-                $payment_method = $bank->paymentGateway->method_name ?? PaymentStrategy::SSL;
+                $methodName = $bank->paymentGateway->method_name;
+                if (! array_search($methodName, $availableMethods)) $methodName = PaymentStrategy::SSL;
+                $payment_method = $methodName ?? PaymentStrategy::SSL;
             }
             try {
                 $payment = $payment_manager->setMethodName($payment_method)->setPayable($payable)->init();
