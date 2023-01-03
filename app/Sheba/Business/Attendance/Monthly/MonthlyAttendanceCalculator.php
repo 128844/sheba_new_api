@@ -26,10 +26,12 @@ class MonthlyAttendanceCalculator
     /** @var BusinessWeekendSettingsRepo */
     private $weekendSettingsRepo;
 
-    public function __construct(AttendanceRepoInterface $attendance_repo,
-                                TimeFrame $time_frame, BusinessHolidayRepoInterface $business_holiday_repo,
-                                BusinessWeekendSettingsRepo $business_weekend_settings_repo)
-    {
+    public function __construct(
+        AttendanceRepoInterface $attendance_repo,
+        TimeFrame $time_frame,
+        BusinessHolidayRepoInterface $business_holiday_repo,
+        BusinessWeekendSettingsRepo $business_weekend_settings_repo
+    ) {
         $this->attendanceRepo = $attendance_repo;
         $this->timeFrame = $time_frame;
         $this->holidayRepo = $business_holiday_repo;
@@ -45,6 +47,8 @@ class MonthlyAttendanceCalculator
 
         $business_members = $business->getAllBusinessMemberExceptInvited();
 
+        $business_holiday = $this->holidayRepo->getAllByBusiness($business);
+
         if ($request->has('department_id') && $request->department_id != 'null') {
             $business_members = $business_members->whereHas('role', function ($q) use ($request) {
                 $q->whereHas('businessDepartment', function ($q) use ($request) {
@@ -53,14 +57,14 @@ class MonthlyAttendanceCalculator
             });
         }
 
-        if($request->has('status') && $request->status != 'null') {
+        if ($request->has('status') && $request->status != 'null') {
             $business_members = $business_members->where('status', $request->status);
         }
 
         $final_business_members = collect();
 
         if ($request->has('file')) {
-            $business_members->chunk(100, function ($business_member_chunk) use (&$final_business_members){
+            $business_members->chunk(100, function ($business_member_chunk) use (&$final_business_members) {
                 $final_business_members = $final_business_members->merge($business_member_chunk);
             });
         } else {
@@ -102,7 +106,8 @@ class MonthlyAttendanceCalculator
             if ($is_shift_enable = $business->isShiftEnable()) {
                 $business_member_shifts = $this->loadShifts($business_member);
             }
-            $employee_attendance = (new MonthlyStat($time_frame, $business, $weekend_settings, $business_member_leave, false, $is_shift_enable))->transform($attendances, $business_member_shifts);
+            $employee_attendance = (new MonthlyStat($time_frame, $business, $weekend_settings, $business_member_leave, false, $is_shift_enable))
+                ->setBusinessHolidays($business_holiday)->transform($attendances, $business_member_shifts);
 
             $all_employee_attendance[] = [
                 'business_member_id' => $business_member->id,
@@ -120,7 +125,6 @@ class MonthlyAttendanceCalculator
                 'attendance' => $employee_attendance['statistics'],
                 'joining_prorated' => $joining_prorated ? 'Yes' : 'No'
             ];
-
         }
 
         $all_employee_attendance = collect($all_employee_attendance);
