@@ -103,6 +103,9 @@ class PaymentLinkBillController extends Controller
         } catch (StoreNotFoundException $e) {
             logError($e);
             return api_response($request, null, $e->getCode(),['message'=>$e->getMessage()]);
+        } catch (\Throwable $e) {
+            logError($e);
+            return api_response($request, null, 500);
         }
     }
 }
