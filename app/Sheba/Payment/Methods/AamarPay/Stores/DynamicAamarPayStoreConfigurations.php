@@ -9,6 +9,7 @@ class DynamicAamarPayStoreConfigurations
 {
     private $storeId;
     private $signatureKey;
+    private $apiKey;
 
     public function decryptAndSetConfigurations($encryptedConfigurations): self
     {
@@ -19,6 +20,7 @@ class DynamicAamarPayStoreConfigurations
         $configurations = json_decode($configurations);
         $this->storeId = $configurations->storeId;
         $this->signatureKey = $configurations->signatureKey;
+        $this->apiKey = $configurations->apiKey ?? null;
         return $this;
     }
 
@@ -30,5 +32,10 @@ class DynamicAamarPayStoreConfigurations
     public function getSignatureKey()
     {
         return $this->signatureKey;
+    }
+
+    public function getApiKey()
+    {
+        return $this->apiKey;
     }
 }

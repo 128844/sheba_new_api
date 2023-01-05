@@ -18,6 +18,7 @@ use League\Fractal\Resource\Collection;
 use Sheba\ModificationFields;
 use Sheba\Partner\PartnerStatuses;
 use Sheba\Payment\AvailableMethods;
+use Sheba\Payment\Factory\PaymentStrategy;
 use Sheba\PaymentLink\Creator;
 use Sheba\PaymentLink\PaymentLink;
 use Sheba\PaymentLink\PaymentLinkClient;
@@ -163,7 +164,12 @@ class PaymentLinkController extends Controller
 
             if (!$request->user) return api_response($request, null, 404, ['message' => 'User not found']);
             if ($request->user instanceof Partner) {
-                $available_methods = (new AvailableMethods())->getPublishedPartnerPaymentGateways($request->user);
+                $availableMethodsObject = new AvailableMethods();
+                $available_methods = $availableMethodsObject->getPublishedPartnerPaymentGateways($request->user);
+
+                if (in_array(PaymentStrategy::AAMARPAY, $available_methods) && ! $availableMethodsObject->hasAllAamarpayCredentials()){
+                    return api_response($request, null, 401, ['message' => "Aamarpay gateway isn't fully configured."]);
+                }
                 if (!count($available_methods))
                     return api_response($request, null, 404, ['message' => "No active payment method found"]);
             }

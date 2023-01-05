@@ -1,7 +1,9 @@
 <?php namespace Sheba\Payment;
 
 use App\Models\Partner;
+use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
 use Exception;
+use Sheba\Payment\Exceptions\InvalidStoreConfiguration;
 use Sheba\Payment\Factory\PaymentStrategy;
 use Sheba\Payment\Presenter\PaymentMethodDetails;
 use Sheba\PaymentLink\Exceptions\InvalidPaymentLinkIdentifierException;
@@ -18,6 +20,8 @@ class AvailableMethods
      * @return PaymentMethodDetails[]
      * @throws Exception
      */
+
+    private $aamarPayConfigs;
     public static function getDetails($payable_type, $payable_type_id, $version_code, $platform_name, $user_type)
     {
         $methods = self::getMethods($payable_type, $payable_type_id, $user_type);
@@ -197,10 +201,25 @@ class AvailableMethods
         foreach ($partnerStoreAccounts as $storeAccount) {
             $name = $storeAccount->gateway->key;
             $payment_methods[] = $name;
+            if ($name === PaymentStrategy::AAMARPAY) {
+                $this->aamarPayConfigs = $storeAccount->configuration;
+            }
         }
         return $payment_methods;
     }
 
+    /**
+     * @throws InvalidStoreConfiguration
+     */
+    public function hasAllAamarpayCredentials(): bool
+    {
+        $configs = (new DynamicAamarPayStoreConfigurations())->decryptAndSetConfigurations($this->aamarPayConfigs);
+        if (empty($configs->getApiKey()) || empty($configs->getSignatureKey()) || empty($configs->getStoreId())) {
+            return false;
+        }
+
+        return true;
+    }
 
     public static function getLoanRepaymentPayments()
     {

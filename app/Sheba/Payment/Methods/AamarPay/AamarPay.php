@@ -8,6 +8,8 @@ use App\Sheba\Payment\Methods\AamarPay\Response\InitResponse;
 use App\Sheba\Payment\Methods\AamarPay\Response\ValidationResponse;
 use App\Sheba\Payment\Methods\AamarPay\Stores\AamarPayDynamicStore;
 use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
+use Illuminate\Support\Facades\Log;
+use Sheba\Payment\Exceptions\FailedToInitiate;
 use Sheba\Payment\Factory\PaymentStrategy;
 use Sheba\Payment\Methods\PaymentMethod;
 use Sheba\Payment\Statuses;
@@ -40,6 +42,9 @@ class AamarPay extends PaymentMethod
     {
         if (!$payable->isPaymentLink()) throw  new \Exception('Only Payment Link payment will work');
         $this->setConfiguration($this->getCredentials($payable));
+        if ($payable->emi_month > 0 && $this->configuration->getApiKey() === null) {
+            throw new FailedToInitiate('Api key not found');
+        }
         $payment = $this->createPayment($payable, $this->name);
         $response = $this->createAamarpaySession($payment);
         $init_response = new InitResponse();
@@ -66,7 +71,8 @@ class AamarPay extends PaymentMethod
 
     public function validate(Payment $payment): Payment
     {
-        $this->setConfiguration($this->getCredentials($payment->payable));
+        $payable = $payment->payable;
+        $this->setConfiguration($this->getCredentials($payable));
         $response = $this->getPaymentStatusFromAamarpay($payment->transaction_id);
         $validation_response = new ValidationResponse();
         $validation_response->setResponse($response)->setPayment($payment);
@@ -81,6 +87,10 @@ class AamarPay extends PaymentMethod
             $payment->gateway_transaction_id = $success->id;
             $payment->status = Statuses::VALIDATED;
             $payment->transaction_details = json_encode($success->details);
+
+            if ($payable->emi_month > 0) {
+                $this->sendEmiRequest($payment);
+            }
         } else {
             $error = $validation_response->getError();
             $this->paymentLogRepo->create([
@@ -136,6 +146,39 @@ class AamarPay extends PaymentMethod
         $request = (new TPRequest())->setUrl($this->baseUrl . "/api/v1/trxcheck/request.php?request_id={$transactionId}&store_id={$this->configuration->getStoreId()}&signature_key={$this->configuration->getSignatureKey()}&type=json")
             ->setMethod(TPRequest::METHOD_GET);
         return $this->tpClient->call($request);
+    }
+
+    public function sendEmiRequest(Payment $payment)
+    {
+        /** @var Payable $payable */
+        $payable = $payment->payable;
+
+        $bank = $payable->emiBank;
+
+        $monthlyAmount = $payable->amount / $payable->emi_month;
+        $this->setConfiguration($this->getCredentials($payable));
+
+        $data = [
+            'api_key' => $this->configuration->getApiKey(),
+            'store_id' => $this->configuration->getStoreId(),
+            'pg_trxnid' => $payment->gateway_transaction_id,
+            'amount' => $payable->amount,
+            'tenure' => $payable->emi_month,
+            'monthly_amount' => $monthlyAmount,
+            'trxn_date' => date('Y-m-d H:i:s'),
+            'bank_name' => $bank->name,
+            'emi_details' => "{$payable->emi_month} months - BDT {$monthlyAmount} | EMI Charges Payable @ 1.6%",
+        ];
+
+        $request = (new TPRequest())->setUrl(config('payment.aamarpay.emi_process_url'))
+            ->setMethod(TPRequest::METHOD_POST)
+            ->setHeaders(['Content-Type:application/json'])
+            ->setInput($data);
+        $response = $this->tpClient->call($request);
+        if ($response[0]->code != 200) {
+            $response = json_encode($response);
+            Log::info("aamarpay emi response: pg_id: {$payment->gateway_transaction_id} payment_id: {$payment->id} response: {$response}");
+        }
     }
 
     private function getReceiver(Payable $payable): HasWalletTransaction

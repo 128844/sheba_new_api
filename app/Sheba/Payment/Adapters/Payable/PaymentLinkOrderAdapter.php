@@ -15,6 +15,7 @@ class PaymentLinkOrderAdapter implements PayableAdapter
     private $amount;
     private $payableUser;
     private $description;
+    private $emiBankId = null;
 
 
     public function setPaymentLink(PaymentLinkTransformer $paymentLinkTransformer)
@@ -45,6 +46,13 @@ class PaymentLinkOrderAdapter implements PayableAdapter
         return $this;
     }
 
+    public function setEmiBankId($emiBankId)
+    {
+        $this->emiBankId = $emiBankId;
+
+        return $this;
+    }
+
     /**
      * @return Payable
      */
@@ -64,6 +72,7 @@ class PaymentLinkOrderAdapter implements PayableAdapter
         $payable->fail_url        = $this->resolveSuccessOrFailUrl();
         $payable->created_at      = Carbon::now();
         $payable->emi_month       = $this->paymentLink->getEmiMonth();
+        $payable->emi_bank_id     = $this->emiBankId;
         $payable->created_by      = $receiver ? $receiver->id : 0;
         $payable->created_by_name = $receiver ? class_basename($receiver) : "";
         $payable->payee_id        = $receiver ? $receiver->id : null;
