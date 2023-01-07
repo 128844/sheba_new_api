@@ -42,6 +42,7 @@ class ExpenseRepo
     public function filterMonth($year, $month, $request)
     {
         try {
+            if(!$year) $year = Carbon::now()->year;
             $date = Carbon::createFromFormat('Y-m', $year.'-'.$month);
             $start_date = $date->startOfMonth()->toDateTimeString();
             $end_date = $date->endOfMonth()->toDateTimeString();
