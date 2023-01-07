@@ -199,7 +199,8 @@ class ExpenseController extends Controller
             $business_member = $request->business_member;
             if (!$business_member) return api_response($request, null, 401);
             $month = $request->month;
-            $expenses = $this->expense_repo->filterMonth($month, $request);
+            $year = $request->year;
+            $expenses = $this->expense_repo->filterMonth($year, $month, $request);
             $totalExpenseCount = $expenses->count();
             $totalExpenseSum = $expenses->sum('amount');
             return api_response($request, $expenses, 200, ['expenses' => $expenses, 'total_expenses_count' => $totalExpenseCount, 'total_expenses_sum' => $totalExpenseSum]);

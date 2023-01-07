@@ -39,10 +39,10 @@ class ExpenseRepo
         }
     }
 
-    public function filterMonth($month, $request)
+    public function filterMonth($year, $month, $request)
     {
         try {
-            $date = Carbon::createFromFormat('m', $month);
+            $date = Carbon::createFromFormat('Y-m', $year.'-'.$month);
             $start_date = $date->startOfMonth()->toDateTimeString();
             $end_date = $date->endOfMonth()->toDateTimeString();
             $expenses = Expense::where('business_member_id', $request->business_member_id)
