@@ -36,6 +36,10 @@ class EmployeeRoute
                     $api->get('personal', 'Employee\EmployeeController@getPersonalInfo');
                     $api->post('personal', 'Employee\EmployeeController@updatePersonalInfo');
                 });
+                $api->group(['prefix' => 'additional'], function ($api) {
+                    $api->get('/tabs', 'Employee\AdditionalInformationController@getTabs');
+                    $api->get('/', 'Employee\AdditionalInformationController@index');
+                });
             });
             $api->get('subordinate-employee-list', 'Employee\VisitController@getManagerSubordinateEmployeeList');
             $api->group(['prefix' => 'employee-visit'], function ($api) {
