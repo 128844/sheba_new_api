@@ -1,4 +1,6 @@
-<?php namespace App\Models;
+<?php
+
+namespace App\Models;
 
 use App\Sheba\Business\Attendance\HalfDaySetting\HalfDayType;
 use Carbon\Carbon;
@@ -32,6 +34,7 @@ use Sheba\TopUp\TopUpTransaction;
 use Sheba\Transactions\Wallet\HasWalletTransaction;
 use Sheba\Transactions\Wallet\WalletTransactionHandler;
 use Sheba\Dal\BusinessAttendanceTypes\Model as BusinessAttendanceType;
+use Sheba\Dal\BusinessMemberAdditionalSection\BusinessMemberAdditionalSection;
 use Sheba\Dal\BusinessOffice\Model as BusinessOffice;
 use Sheba\Dal\BusinessOfficeHours\Model as BusinessOfficeHour;
 
@@ -96,8 +99,13 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
      */
     public function membersWithProfile()
     {
-        return $this->members()->select('members.id', 'profile_id',
-            'emergency_contract_person_name', 'emergency_contract_person_number', 'emergency_contract_person_relationship')->with([
+        return $this->members()->select(
+            'members.id',
+            'profile_id',
+            'emergency_contract_person_name',
+            'emergency_contract_person_number',
+            'emergency_contract_person_relationship'
+        )->with([
             'profile' => function ($q) {
                 $q->select('profiles.id', 'name', 'mobile', 'email', 'dob', 'address', 'nationality', 'nid_no', 'tin_no')->with('banks');
             },
@@ -253,7 +261,7 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
 
     public function shebaBonusCredit()
     {
-        return (double)$this->bonuses()->where('status', 'valid')->sum('amount');
+        return (float)$this->bonuses()->where('status', 'valid')->sum('amount');
     }
 
     public function bonuses()
@@ -497,6 +505,11 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
     public function liveTrackingSettings()
     {
         return $this->hasOne(LiveTrackingSettings::class);
+    }
+
+    public function memberAdditionalSections()
+    {
+        return $this->hasMany(BusinessMemberAdditionalSection::class);
     }
 
     public function getTrackLocationActiveBusinessMember()

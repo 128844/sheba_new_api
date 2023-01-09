@@ -1,4 +1,6 @@
-<?php namespace App\Http\Route\Prefix\V1;
+<?php
+
+namespace App\Http\Route\Prefix\V1;
 
 class EmployeeRoute
 {
@@ -6,7 +8,8 @@ class EmployeeRoute
     {
         $api->get('employee/business-sign-up', 'B2b\BusinessesController@getSignUpPage');
         $api->post('employee/login', 'Employee\EmployeeController@login');
-        $api->group(['prefix' => 'employee', 'middleware' => ['employee.auth']], function ($api) {
+        // $api->group(['prefix' => 'employee', 'middleware' => ['employee.auth']], function ($api) {
+        $api->group(['prefix' => 'employee'], function ($api) {
 
             $api->group(['prefix' => 'me'], function ($api) {
                 $api->get('/', 'Employee\EmployeeController@me');
@@ -37,8 +40,13 @@ class EmployeeRoute
                     $api->post('personal', 'Employee\EmployeeController@updatePersonalInfo');
                 });
                 $api->group(['prefix' => 'additional'], function ($api) {
-                    $api->get('/tabs', 'Employee\AdditionalInformationController@getTabs');
-                    $api->get('/', 'Employee\AdditionalInformationController@index');
+                    $api->group(['prefix' => 'tabs'], function ($api) {
+                        $api->get('/', 'Employee\AdditionalInformationController@index');
+                        $api->group(['prefix' => '{section_id}'], function ($api) {
+                            $api->get('/', 'Employee\AdditionalInformationController@show');
+                            $api->post('/', 'Employee\AdditionalInformationController@update');
+                        });
+                    });
                 });
             });
             $api->get('subordinate-employee-list', 'Employee\VisitController@getManagerSubordinateEmployeeList');
