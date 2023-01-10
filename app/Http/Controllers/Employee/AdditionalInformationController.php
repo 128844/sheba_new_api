@@ -66,8 +66,8 @@ class AdditionalInformationController extends Controller
                     'type' => $field->type,
                     'key' => $field->name,
                     'label' => $field->label,
-                    'rules' => $field->getRules(),
-                    'value' => $field->getValue()
+                    'rules' => $field->getRulesWithCheckedBox(),
+                    'value' => $field->isCheckbox() ? null : $field->value
                 ];
             })->toArray();
 
