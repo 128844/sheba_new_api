@@ -8,9 +8,7 @@ class EmployeeRoute
     {
         $api->get('employee/business-sign-up', 'B2b\BusinessesController@getSignUpPage');
         $api->post('employee/login', 'Employee\EmployeeController@login');
-        // $api->group(['prefix' => 'employee', 'middleware' => ['employee.auth']], function ($api) {
-        $api->group(['prefix' => 'employee'], function ($api) {
-
+        $api->group(['prefix' => 'employee', 'middleware' => ['employee.auth']], function ($api) {
             $api->group(['prefix' => 'me'], function ($api) {
                 $api->get('/', 'Employee\EmployeeController@me');
                 $api->post('/', 'Employee\EmployeeController@updateMe');
