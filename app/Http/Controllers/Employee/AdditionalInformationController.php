@@ -9,12 +9,21 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Sheba\Business\BusinessBasicInformation;
 use Sheba\Dal\BusinessMemberAdditionalField\BusinessMemberAdditionalField;
-use Sheba\Dal\BusinessMemberAdditionalField\BusinessMemberAdditionalFieldRepository;
 use Sheba\Dal\BusinessMemberAdditionalSection\BusinessMemberAdditionalSection;
+use Sheba\Business\BusinessMember\AdditionalInformation\AdditionalInformationManager;
+use Sheba\ModificationFields;
 
 class AdditionalInformationController extends Controller
 {
-    use BusinessBasicInformation;
+    use ModificationFields, BusinessBasicInformation;
+
+    /** @var AdditionalInformationManager */
+    private $additionalInfo;
+
+    public function __construct(AdditionalInformationManager $additionalInfoManager)
+    {
+        $this->additionalInfo = $additionalInfoManager;
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -35,7 +44,7 @@ class AdditionalInformationController extends Controller
         ]);
     }
 
-    public function show(Request $request, $section_id, BusinessMemberAdditionalFieldRepository $repo)
+    public function show(Request $request, $section_id)
     {
         /** @var Business $business */
         $business = $this->getBusiness($request);
@@ -50,15 +59,15 @@ class AdditionalInformationController extends Controller
 
         if ($section->business_id != $business->id)  return api_response($request, null, 404);
 
-        $fields = $repo->getBySectionWithValuesOfBusinessMember($section, $businessMember)
+        $fields = $this->additionalInfo->getFields($section, $businessMember)
             ->map(function (BusinessMemberAdditionalField $field) {
                 return [
                     'id' => $field->id,
                     'type' => $field->type,
                     'key' => $field->name,
                     'label' => $field->label,
-                    'rules' => $field->rules ? json_decode($field->rules, 1) : null,
-                    'value' => $field->value
+                    'rules' => $field->getRules(),
+                    'value' => $field->getValue()
                 ];
             })->toArray();
 
@@ -67,7 +76,7 @@ class AdditionalInformationController extends Controller
         ]);
     }
 
-    public function update(Request $request, $section_id, BusinessMemberAdditionalFieldRepository $repo)
+    public function update(Request $request, $section_id)
     {
         /** @var Business $business */
         $business = $this->getBusiness($request);
@@ -77,11 +86,13 @@ class AdditionalInformationController extends Controller
         $businessMember = $this->getBusinessMember($request);
         if (!$businessMember) return api_response($request, null, 404);
 
+        $this->setModifier($businessMember->member);
+
         $section = BusinessMemberAdditionalSection::find($section_id);
         if (!$section) return api_response($request, null, 404);
         if ($section->business_id != $business->id)  return api_response($request, null, 404);
 
-        $repo->updateValuesOfBusinessMemberBySection($section, $businessMember, $request->data);
+        $this->additionalInfo->update($section, $businessMember, $request->all());
 
         return api_response($request, null, 200, [
             'message' => "Data updated successfully"
