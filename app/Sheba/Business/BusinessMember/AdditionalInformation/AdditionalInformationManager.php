@@ -2,8 +2,10 @@
 
 namespace Sheba\Business\BusinessMember\AdditionalInformation;
 
+use App\Models\Business;
 use App\Models\BusinessMember;
 use Illuminate\Http\UploadedFile;
+use Sheba\Dal\BusinessMemberAdditionalSection\BusinessMemberAdditionalSectionRepository;
 use Sheba\Dal\BusinessMemberAdditionalField\BusinessMemberAdditionalFieldRepository;
 use Sheba\Dal\BusinessMemberAdditionalSection\BusinessMemberAdditionalSection as Section;
 use Sheba\Dal\BusinessMemberAdditionalField\BusinessMemberAdditionalField as Field;
@@ -14,22 +16,105 @@ class AdditionalInformationManager
 {
     use CdnFileManager, FileManager;
 
-    /** @var BusinessMemberAdditionalFieldRepository $repo */
-    private $repo;
+    /** @var BusinessMemberAdditionalSectionRepository $sectionRepo */
+    private $sectionRepo;
 
-    public function __construct(BusinessMemberAdditionalFieldRepository $repo)
+    /** @var BusinessMemberAdditionalFieldRepository $fieldRepo */
+    private $fieldRepo;
+
+    public function __construct(BusinessMemberAdditionalSectionRepository $sectionRepo, BusinessMemberAdditionalFieldRepository $fieldRepo)
     {
-        $this->repo = $repo;
+        $this->sectionRepo = $sectionRepo;
+        $this->fieldRepo = $fieldRepo;
     }
 
-    public function getFields(Section $section, BusinessMember $businessMember)
+    public function getAdditionalSectionFieldsOfBusiness(Business $business)
     {
-        return $this->repo->getBySectionWithValuesOfBusinessMember($section, $businessMember);
+        $section = $this->getFirstSectionOfBusiness($business);
+        if (!$section) return collect([]);
+
+        return $this->fieldRepo->getBySection($section);
+    }
+
+    private function getFirstSectionOfBusiness(Business $business)
+    {
+        $availableSection = $this->sectionRepo->getByBusiness($business);
+        if (count($availableSection) == 0) return null;
+        return $availableSection[0];
+    }
+
+    private function getOrCreateAdditionalSectionOfBusiness(Business $business)
+    {
+        $section = $this->getFirstSectionOfBusiness($business);
+        if ($section) return $section;
+
+        return $this->sectionRepo->saveForBusiness($business, [
+            "name" => "additional",
+            "label" => "Additional Information"
+        ]);
+    }
+
+    public function upsertAdditionalSectionOfBusiness(Business $business, $data)
+    {
+        $section = $this->getOrCreateAdditionalSectionOfBusiness($business);
+        $fields = $this->fieldRepo->getBySection($section)->toAssocFromKey(function (Field $field) {
+            return $field->id;
+        });
+        foreach ($data as $datum) {
+            if ($datum['id'] != null && $fields->has($datum['id'])) {
+                $this->updateField($fields->get($datum['id']), $datum);
+            } else {
+                $this->createField($section, $datum);
+            }
+        }
+    }
+
+    private function createField(Section $section, $data)
+    {
+        $createData = $this->formatDataForDB($data);
+        $createData['section_id'] = $section->id;
+        $this->fieldRepo->create($createData);
+    }
+
+    private function formatDataForDB($data)
+    {
+        $rules = [];
+
+        if ($data['possible_values'] != null) {
+            $rules['possible_values'] = array_map(function ($possible_value) {
+                return [
+                    "key" => str_slug($possible_value, '_'),
+                    "label" => $possible_value
+                ];
+            }, $data['possible_values']);
+        }
+
+        if ($data['type'] == "file") {
+            $rules['extensions'] = ["png", "jpeg", "jpg", "docx", "pdf"];
+        }
+
+        return [
+            'type' => $data['type'],
+            'label' => $data['label'],
+            'name' => str_slug($data['label'], '_'),
+            'rules' => count($rules) ? json_encode($rules) : null
+        ];
+    }
+
+    private function updateField(Field $field, $data)
+    {
+        $updateData = $this->formatDataForDB($data);
+        $this->fieldRepo->update($field, $updateData);
+    }
+
+    public function getFieldsForBusinessMember(Section $section, BusinessMember $businessMember)
+    {
+        return $this->fieldRepo->getBySectionWithValuesOfBusinessMember($section, $businessMember);
     }
 
     public function update(Section $section, BusinessMember $businessMember, $data)
     {
-        $fields = $this->getFields($section, $businessMember);
+        $fields = $this->getFieldsForBusinessMember($section, $businessMember);
 
         $errors = $this->validate($fields, $data);
         if (count($errors)) throw new AdditionalInformationValidationException($errors);
@@ -117,9 +202,9 @@ class AdditionalInformationManager
     private function upsert(Field $field, $value, BusinessMember $businessMember)
     {
         if ($field->data_id) {
-            $this->repo->updateData($field, $field->data_id, $value);
+            $this->fieldRepo->updateData($field, $field->data_id, $value);
         } else {
-            $this->repo->createData($field, $businessMember, $value);
+            $this->fieldRepo->createData($field, $businessMember, $value);
         }
     }
 }

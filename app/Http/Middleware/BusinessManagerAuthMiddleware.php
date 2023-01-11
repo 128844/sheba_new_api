@@ -1,4 +1,6 @@
-<?php namespace App\Http\Middleware;
+<?php
+
+namespace App\Http\Middleware;
 
 use App\Exceptions\NotFoundException;
 use App\Models\Business;
@@ -24,5 +26,4 @@ class BusinessManagerAuthMiddleware extends AccessTokenMiddleware
 
         $request->merge(['manager_member' => $member, 'business' => $business, 'business_member' => $business_member]);
     }
-
 }

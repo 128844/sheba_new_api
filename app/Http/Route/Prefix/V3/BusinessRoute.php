@@ -1,4 +1,6 @@
-<?php namespace App\Http\Route\Prefix\V3;
+<?php
+
+namespace App\Http\Route\Prefix\V3;
 
 class BusinessRoute
 {

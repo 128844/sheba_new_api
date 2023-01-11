@@ -1,4 +1,6 @@
-<?php namespace App\Http\Middleware;
+<?php
+
+namespace App\Http\Middleware;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -99,7 +101,6 @@ class AccessTokenMiddleware
 
     protected function setExtraDataToRequest($request)
     {
-
     }
 
     protected function formApiResponse($request, $internal, $code, array $data)

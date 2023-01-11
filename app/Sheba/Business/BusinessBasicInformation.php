@@ -1,4 +1,6 @@
-<?php namespace App\Sheba\Business;
+<?php
+
+namespace App\Sheba\Business;
 
 use App\Models\Business;
 use App\Models\BusinessMember;

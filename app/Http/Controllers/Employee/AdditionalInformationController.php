@@ -59,7 +59,7 @@ class AdditionalInformationController extends Controller
 
         if ($section->business_id != $business->id)  return api_response($request, null, 404);
 
-        $fields = $this->additionalInfo->getFields($section, $businessMember)
+        $fields = $this->additionalInfo->getFieldsForBusinessMember($section, $businessMember)
             ->map(function (BusinessMemberAdditionalField $field) {
                 return [
                     'id' => $field->id,

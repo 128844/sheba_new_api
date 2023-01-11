@@ -1,4 +1,6 @@
-<?php namespace App\Http\Route\Prefix\V2;
+<?php
+
+namespace App\Http\Route\Prefix\V2;
 
 class BusinessRoute
 {
@@ -105,6 +107,12 @@ class BusinessRoute
                     $api->post('/gross-salary-upload', 'B2b\CoWorkerGrossSalaryController@bulkGrossSalaryUpload');
                     $api->get('/bkash-number-report', 'B2b\CoWorkerBkashController@bulkBakshInfoReport');
                     $api->post('/bkash-number-upload', 'B2b\CoWorkerBkashController@bulkBakshInfoUpload');
+
+                    $api->group(['prefix' => 'additional'], function ($api) {
+                        $api->get('/', 'B2b\AdditionalInformationController@index');
+                        $api->post('/', 'B2b\AdditionalInformationController@upsert');
+                    });
+
                     $api->group(['prefix' => '{employee}'], function ($api) {
                         $api->post('/basic-info', 'B2b\CoWorkerController@basicInfoEdit');
                         $api->post('/official-info', 'B2b\CoWorkerController@officialInfoEdit');
@@ -165,7 +173,6 @@ class BusinessRoute
                         $api->group(['prefix' => '{prorate}'], function ($api) {
                             $api->post('/', 'B2b\ProrateController@edit');
                         });
-
                     });
                 });
                 $api->group(['prefix' => 'orders'], function ($api) {
@@ -383,7 +390,6 @@ class BusinessRoute
                     $api->get('/bkash-salary-report/{id}', 'B2b\PayReportController@bkashSalaryReport');
                     $api->get('/last-disbursed-month', 'B2b\PayReportController@lastDisbursedMonth');
                     $api->get('/{id}', 'B2b\PayReportController@show');
-
                 });
                 $api->group(['prefix' => 'payroll'], function ($api) {
                     $api->get('/components', 'B2b\PayrollController@getPayrollComponents');
