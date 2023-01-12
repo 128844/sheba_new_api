@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Http\Presenters\BusinessMemberAdditionalSectionsPresenter as SectionsPresenter;
+use App\Http\Presenters\BusinessMemberAdditionalFieldsPresenter as FieldsPresenter;
 use App\Models\Business;
 use App\Models\BusinessMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Sheba\Business\BusinessBasicInformation;
-use Sheba\Dal\BusinessMemberAdditionalField\BusinessMemberAdditionalField;
-use Sheba\Dal\BusinessMemberAdditionalSection\BusinessMemberAdditionalSection;
+use Sheba\Dal\BusinessMemberAdditionalSection\BusinessMemberAdditionalSection as Section;
 use Sheba\Business\BusinessMember\AdditionalInformation\AdditionalInformationManager;
 use Sheba\ModificationFields;
 
@@ -31,16 +32,8 @@ class AdditionalInformationController extends Controller
         $business = $this->getBusiness($request);
         if (!$business) return api_response($request, null, 404);
 
-        $tabs = $business->memberAdditionalSections->map(function (BusinessMemberAdditionalSection $section) {
-            return [
-                'id' => $section->id,
-                'key' => $section->name,
-                'label' => $section->label
-            ];
-        })->toArray();
-
         return api_response($request, null, 200, [
-            'tabs' => $tabs
+            'tabs' => (new SectionsPresenter($business->memberAdditionalSections))->toArray()
         ]);
     }
 
@@ -54,25 +47,13 @@ class AdditionalInformationController extends Controller
         $businessMember = $this->getBusinessMember($request);
         if (!$businessMember) return api_response($request, null, 404);
 
-        $section = BusinessMemberAdditionalSection::find($section_id);
-        if (!$section) return api_response($request, null, 404);
+        $section = Section::find($section_id);
+        if (!$section || !$section->isOfBusiness($business)) return api_response($request, null, 404);
 
-        if ($section->business_id != $business->id)  return api_response($request, null, 404);
-
-        $fields = $this->additionalInfo->getFieldsForBusinessMember($section, $businessMember)
-            ->map(function (BusinessMemberAdditionalField $field) {
-                return [
-                    'id' => $field->id,
-                    'type' => $field->type,
-                    'key' => $field->name,
-                    'label' => $field->label,
-                    'rules' => $field->getRulesWithCheckedBox(),
-                    'value' => $field->isCheckbox() ? null : $field->value
-                ];
-            })->toArray();
+        $fields = $this->additionalInfo->getFieldsForBusinessMember($section, $businessMember);
 
         return api_response($request, null, 200, [
-            'data' => $fields
+            'data' => (new FieldsPresenter($fields))->toArray()
         ]);
     }
 
@@ -88,11 +69,10 @@ class AdditionalInformationController extends Controller
 
         $this->setModifier($businessMember->member);
 
-        $section = BusinessMemberAdditionalSection::find($section_id);
-        if (!$section) return api_response($request, null, 404);
-        if ($section->business_id != $business->id)  return api_response($request, null, 404);
+        $section = Section::find($section_id);
+        if (!$section || !$section->isOfBusiness($business)) return api_response($request, null, 404);
 
-        $this->additionalInfo->update($section, $businessMember, $request->all());
+        $this->additionalInfo->updateDataForBusinessMember($section, $businessMember, $request->all());
 
         return api_response($request, null, 200, [
             'message' => "Data updated successfully"

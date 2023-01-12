@@ -126,6 +126,13 @@ class BusinessRoute
                         $api->post('/', 'B2b\CoWorkerController@update');
                         $api->get('/expense/pdf', 'B2b\CoWorkerController@show');
                         $api->get('/salary-certificate/pdf', 'B2b\CoWorkerController@salaryCertificatePdf');
+                        $api->group(['prefix' => 'additional-sections'], function ($api) {
+                            $api->get('/', 'B2b\AdditionalInformationController@sections');
+                            $api->group(['prefix' => '{section_id}'], function ($api) {
+                                $api->get('/', 'B2b\AdditionalInformationController@sectionDetails');
+                                $api->post('/', 'B2b\AdditionalInformationController@updateData');
+                            });
+                        });
                     });
                 });
                 $api->group(['prefix' => 'leaves'], function ($api) {
