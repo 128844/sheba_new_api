@@ -23,7 +23,8 @@ class BusinessMemberAdditionalFieldsPresenter extends Presenter
                 'key' => $field->name,
                 'label' => $field->label,
                 'rules' => $field->getRulesWithCheckedBox(),
-                'value' => $field->getValue()
+                'value' => $field->value,
+                'display_value' => $field->getValueLabel()
             ];
         })->toArray();
     }
