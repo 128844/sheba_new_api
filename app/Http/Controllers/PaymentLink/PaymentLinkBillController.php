@@ -35,11 +35,11 @@ class PaymentLinkBillController extends Controller
         try {
             $availableMethods = AvailableMethods::getPaymentLinkPayments($request->identifier);
             $rules = [
-                'amount'     => 'numeric',
-                'purpose'    => 'string',
+                'amount' => 'numeric',
+                'purpose' => 'string',
                 'identifier' => 'required',
-                'name'       => 'required',
-                'mobile'     => 'required|string',
+                'name' => 'required',
+                'mobile' => 'required|string',
             ];
 
             if ($request->has('emi_month')) {
@@ -50,28 +50,29 @@ class PaymentLinkBillController extends Controller
             $this->validate($request, $rules);
 
             $payment_method = $request->payment_method;
-            $user           = $customer_creator->setMobile($request->mobile)->setName($request->name)->create();
-            $payment_link   = $repo->findByIdentifier($request->identifier);
+            $user = $customer_creator->setMobile($request->mobile)->setName($request->name)->create();
+            $payment_link = $repo->findByIdentifier($request->identifier);
 
             if (!empty($payment_link->getEmiMonth()) && (double)$payment_link->getAmount() < config('emi.manager.minimum_emi_amount'))
                 return api_response($request, null, 400, ['message' => 'Amount must be greater then or equal BDT ' . config('emi.manager.minimum_emi_amount')]);
 
+            $payable_base_query = $payment_adapter->setPayableUser($user)->setPaymentLink($payment_link)
+                ->setAmount($request->amount)->setDescription($request->purpose);
+
             $bank = null;
             if ($payment_link->isEmi()) {
                 $bank = $payment_manager->getEmibank($request->bank_id);
+                $payable_base_query->setEmiBankId($bank->id);
             }
 
-            $payable = $payment_adapter->setPayableUser($user)->setPaymentLink($payment_link)
-                ->setAmount($request->amount)->setDescription($request->purpose)
-                ->setEmiBankId($bank->id)
-                ->getPayable();
+            $payable = $payable_base_query->getPayable();
             if ($payment_method == 'wallet' && $user->shebaCredit() < $payable->amount)
                 return api_response($request, null, 403, ['message' => "You don't have sufficient balance"]);
             if ($payment_method === 'online') $payment_method = PaymentStrategy::SSL;
             if ($payment_link->isEmi()) {
                 if (!$bank) return response()->json(['code' => 404, 'message' => 'Bank not found']);
                 $methodName = $bank->paymentGateway->method_name;
-                if (! array_search($methodName, $availableMethods)) $methodName = PaymentStrategy::SSL;
+                if (!array_search($methodName, $availableMethods)) $methodName = PaymentStrategy::SSL;
                 $payment_method = $methodName ?? PaymentStrategy::SSL;
             }
             try {
@@ -79,7 +80,7 @@ class PaymentLinkBillController extends Controller
             } catch (FailedToInitiate $e) {
                 if ($payment_link->isEmi()) {
                     $payment = $payment_manager->setMethodName(PaymentStrategy::SSL)->setPayable($payable)->init(true);
-                }else{
+                } else {
                     throw $e;
                 }
             }
@@ -90,7 +91,7 @@ class PaymentLinkBillController extends Controller
                 $target->update();
             }
             return response()->json([
-                'code'    => 200,
+                'code' => 200,
                 'message' => 'Successful',
                 'payment' => $payment->getFormattedPayment()
             ]);
@@ -99,10 +100,10 @@ class PaymentLinkBillController extends Controller
             return api_response($request, $message, 400, ['message' => $message]);
         } catch (InitiateFailedException $e) {
             logError($e);
-            return api_response($request, null, $e->getCode(),['message'=>$e->getMessage()]);
+            return api_response($request, null, $e->getCode(), ['message' => $e->getMessage()]);
         } catch (StoreNotFoundException $e) {
             logError($e);
-            return api_response($request, null, $e->getCode(),['message'=>$e->getMessage()]);
+            return api_response($request, null, $e->getCode(), ['message' => $e->getMessage()]);
         } catch (\Throwable $e) {
             logError($e);
             return api_response($request, null, 500);
