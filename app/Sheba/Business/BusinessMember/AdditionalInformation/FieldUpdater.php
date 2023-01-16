@@ -33,7 +33,7 @@ class FieldUpdater
             }
         }
 
-        $removedIds = array_diff($fields->keys(), $dataIds);
+        $removedIds = array_diff($fields->keys()->toArray(), $dataIds);
         $this->fieldRepo->deleteByIds($removedIds);
     }
 
@@ -87,7 +87,7 @@ class FieldUpdater
 
         $newPossibleValues = array_map(function ($possibleValue) {
             return $possibleValue['key'];
-        }, $data['possible_values']);
+        }, json_decode($data['rules'], 1)['possible_values']);
         $removePossibleValues = array_diff($field->getPossibleValueKeys(), $newPossibleValues);
         $this->fieldRepo->deleteAllDataWithValues($field, $removePossibleValues);
     }
