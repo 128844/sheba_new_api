@@ -1,4 +1,6 @@
-<?php namespace App\Models;
+<?php
+
+namespace App\Models;
 
 use App\Sheba\Business\Attendance\HalfDaySetting\HalfDayType;
 use Jenssegers\Mongodb\Eloquent\HybridRelations;
@@ -92,6 +94,11 @@ class BusinessMember extends Model
     public function isSuperAdmin()
     {
         return $this->is_super;
+    }
+
+    public function isWithBusiness(Business $business)
+    {
+        return $this->business_id == $business->id;
     }
 
     public function attendances()
@@ -409,7 +416,7 @@ class BusinessMember extends Model
 
     public function liveLocationForADateRange($from_date, $to_date)
     {
-        $tracking_locations = $this->trackingLocations()->where(function ($query) use ($from_date, $to_date){
+        $tracking_locations = $this->trackingLocations()->where(function ($query) use ($from_date, $to_date) {
             $query->where('date', '>=', $from_date);
             $query->where('date', '<=', $to_date);
         });

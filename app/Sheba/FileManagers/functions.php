@@ -1228,7 +1228,6 @@ if (!function_exists('getCoWorkerInviteErrorFolder')) {
 
         return $url . 'co_worker_invite_error/';
     }
-
 }
 
 if (!function_exists('getCoWorkerStatusChangeErrorFolder')) {
@@ -1246,7 +1245,6 @@ if (!function_exists('getCoWorkerStatusChangeErrorFolder')) {
 
         return $url . 'co_worker_status_change_error/';
     }
-
 }
 
 if (!function_exists('getPartnerProofOfBusinessFolder')) {
@@ -1621,5 +1619,22 @@ if (!function_exists('getBkashExcelFolder')) {
         if ($with_base_url) $url = env('S3_URL');
 
         return $url . 'bkash_excel/';
+    }
+}
+
+if (!function_exists('getBusinessMemberAdditionalFileFolder')) {
+
+    /**
+     * Get Business Member Additional Data File Folder.
+     *
+     * @param bool $with_base_url
+     * @return string
+     */
+    function getBusinessMemberAdditionalFileFolder($with_base_url = false)
+    {
+        $url = '';
+        if ($with_base_url) $url = env('S3_URL');
+
+        return $url . 'uploads/business/member/additional/';
     }
 }

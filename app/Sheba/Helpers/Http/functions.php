@@ -78,11 +78,11 @@ if (!function_exists('getValidationErrorMessage')) {
      * @param $errors
      * @return string
      */
-    function getValidationErrorMessage($errors)
+    function getValidationErrorMessage($errors, $glue = '')
     {
         $msg = '';
         foreach ($errors as $error) {
-            $msg .= $error;
+            $msg .= $error . $glue;
         }
         return $msg;
     }
@@ -181,7 +181,7 @@ if (!function_exists('getLocationFromRequest')) {
         if ($request->has('location')) return Location::find($request->location);
 
         if ($request->has('lat')) {
-            $hyperLocation = HyperLocal::insidePolygon((double)$request->lat, (double)$request->lng)->with('location')->first();
+            $hyperLocation = HyperLocal::insidePolygon((float)$request->lat, (float)$request->lng)->with('location')->first();
             if (!is_null($hyperLocation)) return $hyperLocation->location;
         }
 

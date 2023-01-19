@@ -1,4 +1,6 @@
-<?php namespace Sheba\Exceptions;
+<?php
+
+namespace Sheba\Exceptions;
 
 use App\Exceptions\HttpException;
 use App\Exceptions\DoNotReportException;
@@ -6,6 +8,8 @@ use App\Exceptions\WalletTransaction\WalletDebitTransactionForbiddenHandler;
 use Exception as BaseException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Sheba\Business\BusinessMember\AdditionalInformation\AdditionalInformationValidationException;
+use Sheba\Business\BusinessMember\AdditionalInformation\AdditionalInformationValidationExceptionHandler;
 use Sheba\Exceptions\Exceptions\ExceptionForClient;
 use Sheba\Exceptions\Handlers\HttpExceptionHandler;
 use Sheba\Exceptions\Handlers\ApiValidationExceptionHandler;
@@ -53,6 +57,7 @@ class HandlerFactory
     private static function getHandler(BaseException $e)
     {
         if ($e instanceof ValidationException) return app(ValidationExceptionHandler::class);
+        if ($e instanceof AdditionalInformationValidationException) return app(AdditionalInformationValidationExceptionHandler::class);
         if ($e instanceof WrongPinError) return app(WrongPinErrorHandler::class);
         if ($e instanceof PinMismatchException) return app(PinMismatchExceptionHandler::class);
         if ($e instanceof InvalidTotalAmount) return app(InvalidTotalAmountHandler::class);
