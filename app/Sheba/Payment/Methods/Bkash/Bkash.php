@@ -240,7 +240,7 @@ class Bkash extends PaymentMethod
             $info = curl_getinfo($url);
             Log::info("BKASH VALIDATE API - gateway_transaction_id: {$payment->gateway_transaction_id} response_time: {$info['total_time']}");
         } catch (Exception $e) {
-            
+            Log::error($e->getMessage());
         }
 
         curl_close($url);
