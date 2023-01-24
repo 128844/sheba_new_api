@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use DB;
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use InvalidArgumentException;
 use Sheba\Bkash\Modules\BkashAuthBuilder;
@@ -234,6 +235,14 @@ class Bkash extends PaymentMethod
             $error->paymentId = $payment->gateway_transaction_id;
             throw  $error;
         }
+
+        try {
+            $info = curl_getinfo($url);
+            Log::info("BKASH VALIDATE API - gateway_transaction_id: {$payment->gateway_transaction_id} response_time: {$info['total_time']}");
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+        }
+
         curl_close($url);
         return $result_data;
     }
