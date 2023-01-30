@@ -207,7 +207,7 @@ class BusinessMember extends Model
         $query->with([
             'member' => function ($mq) use ($request) {
                 $mq
-                    ->select('members.id', 'profile_id')
+                    ->select('members.id', 'profile_id', 'members.emergency_contract_person_name', 'members.emergency_contract_person_number', 'members.emergency_contract_person_relationship')
                     ->with([
                         'profile' => function ($pq) use ($request) {
                             $pq->select('profiles.id');
