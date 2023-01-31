@@ -638,8 +638,9 @@ class CoWorkerController extends Controller
 
     /**
      * @param $business
-     * @param Request $request
-     * @param EmployeeExcel $employee_report
+     * @param  Request  $request
+     * @param  EmployeeExcel  $employee_report
+     * @return null
      */
     public function downloadEmployeesReport($business, Request $request, EmployeeExcel $employee_report)
     {
@@ -649,7 +650,7 @@ class CoWorkerController extends Controller
 
         if ($request->has('department')) $business_members = $this->coWorkerInfoFilter->filterByDepartment($business_members, $request);
         if ($request->has('status')) $business_members = $this->coWorkerInfoFilter->filterByStatus($business_members, $request);
-
+        
         $manager = new Manager();
         $manager->setSerializer(new ArraySerializer());
         $employees = new Collection($business_members->get(), new CoWorkerReportDetailsTransformer());
