@@ -34,9 +34,10 @@ class Excel
         $this->makeReport()->download('xlsx');
     }
 
-    public function save()
+    public function save($type)
     {
-        $this->makeReport()->save();
+        if ($type == "email") $this->makeReport()->save();
+        return $this->makeReport()->download();
     }
 
     private function makeReport()

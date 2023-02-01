@@ -151,7 +151,7 @@ class MemberController extends Controller
             "area" => $location ? $location->name : null,
             "geo_informations" => $geo_information,
             "wallet" => (double)$business->wallet,
-            "employee_size" => $business->employee_size
+            "employee_size" => $business->getActiveBusinessMember()->count()
         ];
 
         return api_response($request, null, 200, ['info' => $info]);
