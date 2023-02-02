@@ -29,7 +29,7 @@ class SendMonthlyAttendanceReportEmail extends BusinessEmailQueue
         $request = new Request($this->request);
         list($all_employee_attendance, , $start_date, $end_date) = $calculator->calculate($this->business, $request);
 
-        $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($start_date)->setEndDate($end_date)->save();
+        $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($start_date)->setEndDate($end_date)->save("email");
         $file_path = storage_path('exports') . '/Custom_attendance_report.xls';
 
         $subject = 'Monthly Attendance Report from ' . $start_date . ' to ' . $end_date;

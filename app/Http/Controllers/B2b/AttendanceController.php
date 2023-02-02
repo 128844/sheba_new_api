@@ -27,6 +27,7 @@ use Sheba\Business\Attendance\AttendanceList;
 use Sheba\Business\Attendance\Daily\DailyExcel;
 use Sheba\Business\Attendance\Detail\DetailsExcel as DetailsExcel;
 use Sheba\Business\Attendance\HalfDaySetting\Updater as HalfDaySettingUpdater;
+use Sheba\Business\Attendance\Monthly\Excel;
 use Sheba\Business\Attendance\Monthly\MonthlyAttendanceCalculator;
 use Sheba\Business\Attendance\Setting\ActionType;
 use Sheba\Business\Attendance\Setting\AttendanceSettingTransformer;
@@ -164,18 +165,22 @@ class AttendanceController extends Controller
      * @param MonthlyAttendanceCalculator $calculator
      * @return JsonResponse
      */
-    public function getMonthlyStats($business, Request $request, MonthlyAttendanceCalculator $calculator)
+    public function getMonthlyStats($business, Request $request, MonthlyAttendanceCalculator $calculator, Excel $monthly_excel)
     {
         $this->validate($request, ['file' => 'string|in:excel']);
 
-        if ($request->file == 'excel') {
+        if ($request->file == 'excel' && $request->report_download_type == 'email') {
             dispatch(new SendMonthlyAttendanceReportEmail($business, $request->all()));
             return api_response($request, null, 200, [
                 'message' => "Your report will be sent to your email. Please check a few moments later."
             ]);
         }
 
-        list($all_employee_attendance, $total_business_members_count, , ) = $calculator->calculate($business, $request);
+        list($all_employee_attendance, $total_business_members_count, $start_date, $end_date) = $calculator->calculate($business, $request);
+
+        if ($request->file == 'excel') {
+            $monthly_excel->setMonthlyData($all_employee_attendance->toArray())->setStartDate($start_date)->setEndDate($end_date)->save($request->report_download_type);
+        }
 
         return api_response($request, $all_employee_attendance, 200, [
             'all_employee_attendance' => $all_employee_attendance,
