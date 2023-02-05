@@ -36,7 +36,7 @@ class Excel
 
     public function save($type)
     {
-        if ($type == "email") $this->makeReport()->save();
+        if ($type == "email") return $this->makeReport()->save();
         return $this->makeReport()->download();
     }
 
