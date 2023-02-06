@@ -167,6 +167,9 @@ class AttendanceController extends Controller
      */
     public function getMonthlyStats($business, Request $request, MonthlyAttendanceCalculator $calculator, Excel $monthly_excel)
     {
+        ini_set('memory_limit', '6096M');
+        ini_set('max_execution_time', 480);
+        
         $this->validate($request, ['file' => 'string|in:excel']);
 
         if ($request->file == 'excel' && $request->report_download_type == 'email') {
