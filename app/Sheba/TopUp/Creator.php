@@ -40,7 +40,7 @@ class Creator
         $top_up_order = new TopUpOrder();
         $agent = $this->topUpRequest->getAgent();
         if ($this->checkIfAgentDidTopup($agent)) throw new Exception("You' are not authorized to do topup", 403);
-        //freeze money amount check
+        // freeze money amount check
         if ($agent instanceof Partner) {
             WalletTransactionHandler::isDebitTransactionAllowed($agent, $this->topUpRequest->getAmount(), 'টপ আপ করার');
         }
