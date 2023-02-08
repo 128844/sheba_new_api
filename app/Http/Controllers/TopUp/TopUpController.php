@@ -1,5 +1,6 @@
 <?php namespace App\Http\Controllers\TopUp;
 
+use App\Exceptions\DoNotReportException;
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
 use App\Models\Business;
@@ -16,6 +17,9 @@ use Sheba\Dal\TopUpBulkRequestNumber\TopUpBulkRequestNumber;
 
 use Sheba\Dal\TopupOrder\TopUpOrderRepository;
 use Sheba\ModificationFields;
+use Sheba\OAuth2\AccountServerAuthenticationError;
+use Sheba\OAuth2\AccountServerNotWorking;
+use Sheba\OAuth2\WrongPinError;
 use Sheba\TopUp\Bulk\RequestStatus;
 use Sheba\TopUp\Bulk\Validator\DataFormatValidator;
 use Sheba\TopUp\Bulk\Validator\ExtensionValidator;
@@ -24,6 +28,8 @@ use Sheba\TopUp\Bulk\Validator\SheetNameValidator;
 use Sheba\TopUp\ConnectionType;
 use Sheba\OAuth2\AuthUser;
 use Sheba\TopUp\Exception\InvalidTopUpTokenException;
+use Sheba\TopUp\Exception\PinMismatchException;
+use Sheba\TopUp\Exception\UnauthorizedTokenCreationException;
 use Sheba\TopUp\History\RequestBuilder;
 use Sheba\TopUp\OTF\OtfAmount;
 use Sheba\TopUp\TopUpAgent;
@@ -87,19 +93,20 @@ class TopUpController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @param $user
-     * @param TopUpRequest $top_up_request
-     * @param Creator $creator
-     * @param UserAgentInformation $userAgentInformation
-     * @param VerifyPin $verifyPin
-     * @param TopUpAgentBlocker $agent_blocker
+     * @param  TopUpRequest  $top_up_request
+     * @param  Creator  $creator
+     * @param  UserAgentInformation  $userAgentInformation
+     * @param  VerifyPin  $verifyPin
+     * @param  TopUpAgentBlocker  $agent_blocker
      * @return JsonResponse
-     * @throws \App\Exceptions\DoNotReportException
-     * @throws \Sheba\OAuth2\AccountServerAuthenticationError
-     * @throws \Sheba\OAuth2\AccountServerNotWorking
-     * @throws \Sheba\OAuth2\WrongPinError
-     * @throws \Sheba\TopUp\Exception\PinMismatchException
+     * @throws DoNotReportException
+     * @throws AccountServerAuthenticationError
+     * @throws AccountServerNotWorking
+     * @throws WrongPinError
+     * @throws PinMismatchException
+     * @throws Exception
      */
     public function topUp(Request $request, $user, TopUpRequest $top_up_request, Creator $creator, UserAgentInformation $userAgentInformation, VerifyPin $verifyPin, TopUpAgentBlocker $agent_blocker)
     {
@@ -431,7 +438,7 @@ class TopUpController extends Controller
     }
 
     /**
-     * @throws \Sheba\TopUp\Exception\UnauthorizedTokenCreationException
+     * @throws UnauthorizedTokenCreationException
      */
     public function generateJwt(Request $request)
     {

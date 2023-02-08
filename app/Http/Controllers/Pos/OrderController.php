@@ -406,10 +406,9 @@ class OrderController extends Controller
     /**
      * SMS TO CUSTOMER ABOUT POS ORDER BILLS
      *
-     * @param Request $request
-     * @param Updater $updater
+     * @param  Request  $request
+     * @param  Updater  $updater
      * @return JsonResponse
-     * @throws WalletDebitForbiddenException
      */
     public function sendSms(Request $request, Updater $updater)
     {

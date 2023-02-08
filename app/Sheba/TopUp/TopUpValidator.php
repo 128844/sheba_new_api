@@ -1,6 +1,7 @@
 <?php namespace Sheba\TopUp;
 
 use App\Http\Validators\MobileNumberValidator;
+use App\Models\Partner;
 use App\Models\TopUpOrder;
 use Sheba\TopUp\Vendor\Response\TopUpErrorResponse;
 use Sheba\TopUp\Vendor\Response\TopUpWalletErrorResponse;
@@ -58,6 +59,7 @@ class TopUpValidator
     public function validate()
     {
         $this->agent->reload();
+
         if (!$this->vendor->isPublished()) {
             $this->error = new TopUpErrorResponse();
             $this->error->errorCode = 421;
@@ -70,6 +72,13 @@ class TopUpValidator
             $this->error = new TopUpWalletErrorResponse();
         } elseif (!$this->topUpOrder->isRobiWalletTopUp() && $this->agent->wallet < $this->topUpOrder->amount) {
             $this->error = new TopUpWalletErrorResponse();
+        } elseif ($this->agent instanceof Partner) {
+            $withdrawalRequests = $this->agent->walletSetting->pending_withdrawal_amount;
+            $remainingAmount = $this->agent->wallet - (float) $withdrawalRequests;
+
+            if ($withdrawalRequests > 0 && $this->topUpOrder->amount > $remainingAmount) {
+                $this->error = new TopUpWalletErrorResponse();
+            }
         }
 
         return $this;

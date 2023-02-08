@@ -12,6 +12,7 @@ use Sheba\TopUp\TopUpRechargeManager;
 use Sheba\TopUp\TopUpAgent;
 use Sheba\TopUp\TopUpCompletedEvent;
 use Sheba\Usage\Usage;
+use Throwable;
 
 class TopUpJob extends MonitoredJob implements ShouldQueue
 {
@@ -42,7 +43,7 @@ class TopUpJob extends MonitoredJob implements ShouldQueue
      * @param TopUpRechargeManager $top_up
      * @param FailedJobProviderInterface|null $logger
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function handle(TopUpRechargeManager $top_up, FailedJobProviderInterface $logger = null)
     {
@@ -59,7 +60,7 @@ class TopUpJob extends MonitoredJob implements ShouldQueue
     }
 
     /**
-     * @throws Exception|\Throwable
+     * @throws Exception|Throwable
      */
     private function _handle()
     {

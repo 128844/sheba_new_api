@@ -4,6 +4,7 @@ use App\Models\Partner;
 use App\Models\Resource;
 use App\Models\WithdrawalRequest;
 use App\Sheba\DueTracker\Exceptions\InsufficientBalance;
+use App\Sheba\Transactions\Wallet\WalletUnexpectedException;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
@@ -15,8 +16,8 @@ use Sheba\RequestIdentification;
 use Sheba\Transactions\Types;
 use Sheba\Transactions\UserThirdPartyTransaction;
 use Sheba\Transactions\Wallet\Jobs\FraudTransactionJob;
-use Sheba\Transactions\Wallet\Jobs\WalletTransactionJob;
 use Sheba\Wallet\WalletUpdateEvent;
+use Throwable;
 
 class WalletTransactionHandler extends WalletTransaction
 {
@@ -42,10 +43,11 @@ class WalletTransactionHandler extends WalletTransaction
     }
 
     /**
-     * @param array $extras
-     * @param bool $isJob
+     * @param  array  $extras
+     * @param  bool  $isJob
      * @return Model
      * @throws WalletDebitForbiddenException
+     * @throws WalletUnexpectedException
      */
     public function store($extras = [], $isJob = false)
     {
@@ -59,16 +61,14 @@ class WalletTransactionHandler extends WalletTransaction
             if ($this->type == Types::debit() && !$this->isNegativeDebitAllowed && $this->model instanceof Partner) {
                 self::isDebitTransactionAllowed($this->model, $this->amount);
             }
-            return $this->storeTransaction($extras);
 
-        }
-        catch (WalletDebitForbiddenException $e) {
+            return $this->storeTransaction($extras);
+        } catch (WalletDebitForbiddenException $e) {
             throw new WalletDebitForbiddenException($e->getMessage(), $e->getCode());
+        } catch (Throwable $e) {
+            // WalletTransaction::throwException($e);
+            throw new WalletUnexpectedException($e->getMessage(), $e->getCode());
         }
-        catch (\Throwable $e) {
-            WalletTransaction::throwException($e);
-        }
-        return null;
     }
 
     /**
@@ -242,7 +242,9 @@ class WalletTransactionHandler extends WalletTransaction
 
     /**
      * DISPATCH TRANSACTION STORE JOB
-     * @param array $extras
+     * @param  array  $extras
+     * @throws WalletDebitForbiddenException
+     * @throws WalletUnexpectedException
      */
     public function dispatch($extras = [])
     {
