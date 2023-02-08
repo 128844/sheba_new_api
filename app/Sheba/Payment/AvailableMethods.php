@@ -91,11 +91,11 @@ class AvailableMethods
     public static function getRegularPayments()
     {
         return [
-//            PaymentStrategy::WALLET,
-//            PaymentStrategy::BKASH,
-//            // PaymentStrategy::NAGAD,
-//            PaymentStrategy::ONLINE,
-//            PaymentStrategy::CBL,
+            PaymentStrategy::WALLET,
+            PaymentStrategy::BKASH,
+            // PaymentStrategy::NAGAD,
+            PaymentStrategy::ONLINE,
+            PaymentStrategy::CBL,
         ];
     }
 
