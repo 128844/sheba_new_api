@@ -35,7 +35,7 @@ class ShiftCalenderController extends Controller
         $month = $request->month;
         $year = $request->year;
         $time_frame = $time_frame->forAMonth($month, $year);
-        $shift_calender = $this->shiftAssignmentRepository->builder()->with('shift')->where('business_member_id', $business_member->id)->whereBetween('date', [$time_frame->start, $time_frame->end])->get();
+        $shift_calender = $this->shiftAssignmentRepository->builder()->with('shift')->where('business_member_id', $business_member->id)->whereBetween('date', [$time_frame->start, $time_frame->end])->orderBy('date')->get();
         $employee_attendances = $attendanceRepository->builder()->where('business_member_id', $business_member->id)->whereBetween('date', [$time_frame->start, $time_frame->end])->pluck('checkin_time', 'date')->toArray();
         $shift_data = new ShiftCalender($business, $shift_calender, $employee_attendances);
         $shift_data = $shift_data->employee_shift_calender();
