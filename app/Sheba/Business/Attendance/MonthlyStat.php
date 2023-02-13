@@ -143,6 +143,7 @@ class MonthlyStat
                 if ($this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)) {
                     $statistics['full_day_leave']++;
                     $breakdown_data['leave_type'] = $this->getLeaveType($date, $leaves_date_with_half_and_full_day);
+                    $breakdown_data['weekend_or_holiday_tag'] = "full_day";
                 }
                 if ($this->isHalfDayLeave($date, $leaves_date_with_half_and_full_day)) $statistics['half_day_leave'] += 0.5;
                 if (!$this->isHalfDayLeave($date, $leaves_date_with_half_and_full_day)) $statistics['working_days']--;
