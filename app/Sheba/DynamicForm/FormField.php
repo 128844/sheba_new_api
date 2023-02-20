@@ -4,7 +4,6 @@ namespace App\Sheba\DynamicForm;
 
 use Illuminate\Contracts\Support\Arrayable;
 use Sheba\Helpers\BasicGetter;
-use Sheba\NeoBanking\PrivateGetterTrait;
 
 class FormField implements Arrayable
 {
@@ -27,8 +26,11 @@ class FormField implements Arrayable
 
     public function setFormInput($input): FormField
     {
-        foreach ($input as $key => $value)
-            if (isset($this->$key)) $this->$key = $value;
+        foreach ($input as $key => $value) {
+            if (isset($this->$key)) {
+                $this->$key = $value;
+            }
+        }
 
         return $this;
     }
@@ -46,19 +48,18 @@ class FormField implements Arrayable
     public function toArray(): array
     {
         return [
-            "input_type" => $this->input_type,
-            "label" => $this->label,
-            "message" => $this->message,
-            "hint" => $this->hint,
-            "id" => $this->id,
-            "error" => $this->error,
-            "data" => $this->data,
-            "min_length" => $this->min_length,
-            "max_length" => $this->max_length,
+            "input_type"  => $this->input_type,
+            "label"       => $this->label,
+            "message"     => $this->message,
+            "hint"        => $this->hint,
+            "id"          => $this->id,
+            "error"       => $this->error,
+            "data"        => $this->data,
+            "min_length"  => $this->min_length,
+            "max_length"  => $this->max_length,
             "is_editable" => $this->is_editable,
-            "mandatory" => $this->mandatory,
-            "regex"=> json_decode($this->regex),
+            "mandatory"   => $this->mandatory,
+            "regex"       => json_decode($this->regex),
         ];
     }
-
 }

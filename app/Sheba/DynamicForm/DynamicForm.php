@@ -17,13 +17,10 @@ class DynamicForm
 {
     /*** @var MefForm */
     private $form;
-
     /*** @var MefSection */
     private $section;
-
     /*** @var Partner */
     private $partner;
-
     private $requestData;
     private $type;
     private $formKey;
@@ -49,22 +46,29 @@ class DynamicForm
         $categories = $this->sectionDetails();
         $finalCompletion = (new CompletionCalculation())->getFinalCompletion($categories);
 
-        return (new SectionListResponse())->setCategories($categories)->setPartner($this->partner)
+        return (new SectionListResponse())
+            ->setCategories($categories)
+            ->setPartner($this->partner)
             ->setMessage(PaymentMethodStatics::dynamicCompletionPageMessage($this->formKey))
-            ->setOverallCompletion($finalCompletion)->setCanApply($finalCompletion)->toArray();
+            ->setOverallCompletion($finalCompletion)
+            ->setCanApply($finalCompletion)
+            ->toArray();
     }
 
     private function sectionDetails(): array
     {
-        $categories = array();
+        $categories = [];
         foreach ($this->form->sections as $section) {
             $this->setSection($section->id);
             $fields = $this->getSectionFields();
             $completion = (new CompletionCalculation())->setFields($fields)->calculate();
 
-            $categories[] = (new CategoryDetails())->setCategoryCode($section->key)
-                ->setCompletionPercentage($completion)->setCategoryId($section->id)
-                ->setTitle($section->name, $section->bn_name)->toArray();
+            $categories[] = (new CategoryDetails())
+                ->setCategoryCode($section->key)
+                ->setCompletionPercentage($completion)
+                ->setCategoryId($section->id)
+                ->setTitle($section->name, $section->bn_name)
+                ->toArray();
 
         }
         return $categories;
@@ -112,11 +116,12 @@ class DynamicForm
 
     public function getSectionFields(): array
     {
-        $fields = array();
+        $fields = [];
         $form_builder = (new FormFieldBuilder())->setPartner($this->partner);
 
-        foreach ($this->section->fields as $field)
+        foreach ($this->section->fields as $field) {
             $fields[] = $form_builder->setField($field)->build()->toArray();
+        }
         return $fields;
     }
 
@@ -301,7 +306,6 @@ class DynamicForm
             return config('mtb_nominee_relation');
         }
     }
-
 
     public function uploadDocumentData($document, $document_id)
     {

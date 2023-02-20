@@ -54,9 +54,11 @@ class PartnerMefInformation implements Arrayable
 
     public function setProperty($input): PartnerMefInformation
     {
-        foreach ($input as $key => $value)
-            if(property_exists($this, $key))
+        foreach ($input as $key => $value) {
+            if (property_exists($this, $key)) {
                 $this->$key = $value;
+            }
+        }
 
         return $this;
     }
@@ -80,9 +82,11 @@ class PartnerMefInformation implements Arrayable
     {
         $reflection_class = new ReflectionClass($this);
         $data = [];
-        foreach ($reflection_class->getProperties() as $item)
-            if (isset($this->{$item->name}))
+        foreach ($reflection_class->getProperties() as $item) {
+            if (isset($this->{$item->name})) {
                 $data[$item->name] = $this->{$item->name};
+            }
+        }
 
         return $data;
     }
