@@ -122,6 +122,7 @@ class DynamicForm
         foreach ($this->section->fields as $field) {
             $fields[] = $form_builder->setField($field)->build()->toArray();
         }
+
         return $fields;
     }
 

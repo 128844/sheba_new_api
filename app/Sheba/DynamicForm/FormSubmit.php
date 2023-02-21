@@ -53,6 +53,7 @@ class FormSubmit
             if (($fieldData->data_source) !== "") {
                 $source = $fieldData->data_source;
                 $source_id = $fieldData->data_source_id;
+
                 if (!isset($this->$source)) {
                     $setter = "set".ucfirst($source);
                     $this->$setter();

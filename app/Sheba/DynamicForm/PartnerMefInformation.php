@@ -52,6 +52,17 @@ class PartnerMefInformation implements Arrayable
     private $businessVisitingCard;
     private $spouseName;
 
+    private $businessRegisteredName;
+    private $tradingName;
+    private $mobile;
+    private $email;
+    private $natureOfBusiness;
+    private $salesItems;
+    private $legalIdentity;
+
+    private $accountsContactName;
+    private $businessDesignation;
+
     public function setProperty($input): PartnerMefInformation
     {
         foreach ($input as $key => $value) {

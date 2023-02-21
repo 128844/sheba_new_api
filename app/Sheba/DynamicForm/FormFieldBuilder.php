@@ -3,6 +3,7 @@
 namespace App\Sheba\DynamicForm;
 
 use App\Models\Partner;
+use App\Sheba\DynamicForm\DataSources\AccountType;
 use App\Sheba\DynamicForm\DataSources\BanksList;
 use Sheba\Dal\PartnerMefInformation\Contract as PartnerMefInformationRepo;
 
@@ -15,6 +16,7 @@ class FormFieldBuilder
     private $firstAdminProfile;
     private $basicInformation;
     private $bankInformation;
+    private $accountType;
 
     /**
      * @param  mixed  $field
@@ -54,6 +56,8 @@ class FormFieldBuilder
     public function build(): FormField
     {
         $this->bankInformation = app(BanksList::class);
+        $this->accountType = app(AccountType::class);
+
         $form_field = (new FormField())->setFormInput(json_decode($this->field->data));
 
         if (($form_field->data_source) !== "") {

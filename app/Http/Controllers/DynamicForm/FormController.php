@@ -58,6 +58,7 @@ class FormController extends Controller
     {
         $this->validate($request, ["data" => "required|json", "key" => "required", "category_code" => "required"]);
         $partner = $request->auth_user->getPartner();
+
         $this->dynamicForm
             ->setFormKey($request->key)
             ->setRequestData($request->data)
