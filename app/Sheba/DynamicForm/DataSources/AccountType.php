@@ -11,10 +11,27 @@ class AccountType
     const single_signatory = "Single Signatory";
     const joint_signatory = "Joint Signatory";
 
-    public $typeName;
+//    public $typeName;
+//
+//    public function __construct()
+//    {
+//        $this->typeName = $this->getWithKeys();
+//    }
 
-    public function __construct()
+    public static function getGeneratedKeyNameValue(): array
     {
-        $this->typeName = $this->getWithKeys();
+        $types_name = self::getWithKeys();
+        $types_name_by_key_name_value_pair = [];
+        $index = 1;
+
+        foreach ($types_name as $key => $type_name) {
+            $types_name_by_key_name_value_pair[] = [
+                "key" => $index++,
+                "name" => $key,
+                "value" => $type_name
+            ];
+        }
+
+        return $types_name_by_key_name_value_pair;
     }
 }
