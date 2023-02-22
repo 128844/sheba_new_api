@@ -6,6 +6,7 @@ use App\Models\District;
 use App\Models\Division;
 use App\Models\Partner;
 use App\Models\Thana;
+use App\Sheba\DynamicForm\DataSources\BanksList;
 use Illuminate\Support\Facades\DB;
 use Sheba\Dal\MefForm\Model as MefForm;
 use Sheba\Dal\MefSections\Model as MefSection;
@@ -305,6 +306,10 @@ class DynamicForm
         }
         if ($this->type == "nomineeRelation") {
             return config('mtb_nominee_relation');
+        }
+
+        if ($this->type == "bankName") {
+            return BanksList::getGeneratedKeyNameValue();
         }
     }
 

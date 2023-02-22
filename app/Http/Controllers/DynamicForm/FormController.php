@@ -77,6 +77,7 @@ class FormController extends Controller
     {
         $this->validate($request, ["type" => "required"]);
         $data = $this->dynamicForm->setType($request->type)->typeData($request);
+
         return http_response($request, null, 200, ['message' => 'Successful', 'data' => $data]);
     }
 

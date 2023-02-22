@@ -71,10 +71,27 @@ class BanksList
     const uttara_bank_bangladesh = "Uttara Bank Bangladesh";
     const woori_bank_bangladesh = "Woori Bank Bangladesh";
 
-    public $bankName;
+//    public $bankName;
+//
+//    public function __construct()
+//    {
+//        $this->bankName = $this->getWithKeys();
+//    }
 
-    public function __construct()
+    public static function getGeneratedKeyNameValue(): array
     {
-        $this->bankName = $this->getWithKeys();
+        $banks_name = self::getWithKeys();
+        $banks_name_by_key_name_value_pair = [];
+        $index = 1;
+
+        foreach ($banks_name as $key => $bank_name) {
+            $banks_name_by_key_name_value_pair[] = [
+                "key" => $index++,
+                "name" => $key,
+                "value" => $bank_name
+            ];
+        }
+
+        return $banks_name_by_key_name_value_pair;
     }
 }
