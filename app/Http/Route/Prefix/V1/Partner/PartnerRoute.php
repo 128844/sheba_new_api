@@ -1,5 +1,8 @@
-<?php namespace App\Http\Route\Prefix\V1\Partner;
+<?php
 
+namespace App\Http\Route\Prefix\V1\Partner;
+
+use App\Http\Route\Prefix\V1\Partner\ID\Auth\AamarpayRoute;
 use App\Http\Route\Prefix\V1\Partner\ID\Auth\DynamicFormRoute;
 use App\Http\Route\Prefix\V1\Partner\ID\Auth\IndexRoute as IDAuthRoute;
 use App\Http\Route\Prefix\V1\Partner\ID\Auth\ExternalPaymentLinkRoute;
@@ -22,5 +25,6 @@ class PartnerRoute
         (new ResellerPaymentRoute())->set($api);
         (new QRPaymentRoute())->set($api);
         (new MtbRoute())->set($api);
+        (new AamarpayRoute())->set($api);
     }
 }

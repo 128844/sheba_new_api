@@ -1,64 +1,42 @@
 <?php
 
-namespace App\Http\Controllers\Mtb;
+namespace App\Http\Controllers\Aamarpay;
 
+use App\Exceptions\NotFoundAndDoNotReportException;
 use App\Http\Controllers\Controller;
 use App\Sheba\MTB\Exceptions\MtbServiceServerError;
-use App\Sheba\MtbOnboarding\MtbSavePrimaryInformation;
-use App\Sheba\MtbOnboarding\MtbSendOtp;
+use App\Sheba\AamarpayOnboarding\AamarpaySavePrimaryInformation;
+use App\Sheba\ResellerPayment\Exceptions\MORServiceServerError;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Sheba\TPProxy\TPProxyServerError;
 
-class MtbController extends Controller
+class AamarpayController extends Controller
 {
-    /**
-     * @var MtbSavePrimaryInformation
-     */
-    private $mtbSavePrimaryInformation;
-    /**
-     * @var MtbSendOtp
-     */
-    private $mtbSendOtp;
+    /** @var AamarpaySavePrimaryInformation $aamarpaySavePrimaryInformation */
+    private $aamarpaySavePrimaryInformation;
 
-    public function __construct(MtbSavePrimaryInformation $mtbSavePrimaryInformation, MtbSendOtp $mtbSendOtp)
+    /**
+     * @param  AamarpaySavePrimaryInformation  $aamarpaySavePrimaryInformation
+     */
+    public function __construct(AamarpaySavePrimaryInformation $aamarpaySavePrimaryInformation)
     {
-        $this->mtbSavePrimaryInformation = $mtbSavePrimaryInformation;
-        $this->mtbSendOtp = $mtbSendOtp;
+        $this->aamarpaySavePrimaryInformation = $aamarpaySavePrimaryInformation;
     }
 
     /**
      * @param  Request  $request
      * @return JsonResponse
      * @throws MtbServiceServerError
+     * @throws NotFoundAndDoNotReportException
+     * @throws MORServiceServerError
+     * @throws TPProxyServerError
      */
     public function apply(Request $request): JsonResponse
     {
         $partner = $request->auth_user->getPartner();
-        return $this->mtbSavePrimaryInformation->setPartner($partner)->storePrimaryInformationToMtb($request);
-    }
-
-    /**
-     * @param  Request  $request
-     * @return JsonResponse
-     */
-    public function sendOtp(Request $request): JsonResponse
-    {
-        $partner = $request->auth_user->getPartner();
-        $data = $this->mtbSendOtp->setPartner($partner)->sendOtp($request);
-        return http_response($request, null, 200, ['message' => 'Successful', 'data' => $data]);
-    }
-
-    public function getPartnerMobileNumber(Request $request): JsonResponse
-    {
-        $partner = $request->auth_user->getPartner();
-        $mobile = $partner->getFirstAdminResource()->profile->mobile;
-        return http_response($request, null, 200, ['message' => 'Successful', 'mobile' => $mobile]);
-    }
-
-    public function statusValidate(Request $request)
-    {
-        $this->validate($request, ['merchant_id' => 'required|string']);
-        $this->mtbSavePrimaryInformation->validateMtbAccountStatus($request->merchant_id);
-        return http_response($request, null, 200, ['message' => 'Successful']);
+        return $this->aamarpaySavePrimaryInformation
+            ->setPartner($partner)
+            ->storePrimaryInformationToAamarpay($request);
     }
 }
