@@ -8,7 +8,6 @@ use App\Sheba\MTB\AuthTypes;
 use App\Sheba\MTB\MtbConstants;
 use App\Sheba\MTB\MtbServerClient;
 use App\Sheba\QRPayment\QRPaymentStatics;
-use Cassandra\Date;
 use Sheba\Reports\PdfHandler;
 
 class AamarpayDocumentUpload

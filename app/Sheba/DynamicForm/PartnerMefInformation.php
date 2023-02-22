@@ -44,8 +44,10 @@ class PartnerMefInformation implements Arrayable
     private $accountHolderName;
     private $bankName;
     private $branchName;
+
     private $bankAccountNumber;
     private $bankRoutingNumber;
+
     private $branchCode;
     private $userRecentPhoto;
     private $bankChequePhoto;
@@ -62,6 +64,21 @@ class PartnerMefInformation implements Arrayable
 
     private $accountsContactName;
     private $businessDesignation;
+
+    private $accountAuthorizationType;
+    private $accountName;
+
+    private $nidOrPassport;
+    private $dob;
+
+    private $presentNoOfTransactions;
+    private $presentValueOfMaximumSingleTransaction;
+    private $presentValueOfTotalMonthlyTransaction;
+
+    private $projectedNoOfTransactions;
+    private $projectedValueOfMaximumSingleTransaction;
+    private $projectedVolumeOfTotalMonthlyTransaction;
+
 
     public function setProperty($input): PartnerMefInformation
     {

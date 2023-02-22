@@ -1,4 +1,6 @@
-<?php namespace App\Sheba\ResellerPayment;
+<?php
+
+namespace App\Sheba\ResellerPayment;
 
 use App\Exceptions\NotFoundAndDoNotReportException;
 use App\Models\Partner;
@@ -9,6 +11,7 @@ use App\Sheba\MTB\MtbMappedAccountStatus;
 use App\Sheba\MTB\MtbServerClient;
 use App\Sheba\MTB\Validation\ApplyValidation;
 use App\Sheba\QRPayment\QRPaymentStatics;
+use App\Sheba\ResellerPayment\Exceptions\MORServiceServerError;
 use App\Sheba\ResellerPayment\Exceptions\UnauthorizedRequestFromMORException;
 use Illuminate\Support\Facades\App;
 use Sheba\Dal\DigitalCollectionSetting\Model as DigitalCollectionSetting;
@@ -49,9 +52,8 @@ class PaymentService
     private $type;
     private $mtbStatus;
 
-
     /**
-     * @param mixed $partner
+     * @param  mixed  $partner
      * @return PaymentService
      */
     public function setPartner($partner): PaymentService
@@ -61,7 +63,7 @@ class PaymentService
     }
 
     /**
-     * @param mixed $status
+     * @param  mixed  $status
      * @return PaymentService
      */
     public function setNewStatus($status): PaymentService
@@ -75,7 +77,7 @@ class PaymentService
      */
 
     /**
-     * @param mixed $key
+     * @param  mixed  $key
      */
     public function setKey($key): PaymentService
     {
@@ -95,57 +97,59 @@ class PaymentService
             $mtb_information = $this->partner->partnerMefInformation::where('partner_id', $this->partner->id)->first();
             if ($mtb_information->mtb_ticket_id) {
                 $mtb_status = $this->getMtbAccountStatus($mtb_information);
-                if ($mtb_status) $this->status = $mtb_status['status'];
+                if ($mtb_status) {
+                    $this->status = $mtb_status['status'];
+                }
             }
         }
         $qr_gateway = QRGateway::where('method_name', $this->key)->first();
-        if (!$qr_gateway) throw new InvalidQRKeyException();
+        if (!$qr_gateway) {
+            throw new InvalidQRKeyException();
+        }
         $this->getResellerPaymentStatus(true);
         $account_details = json_decode($this->partner->partnerMefInformation->mtb_account_status);
         if (isset(json_decode($this->partner->partnerMefInformation->mtb_account_status)->Status)) {
             if (json_decode($this->partner->partnerMefInformation->mtb_account_status)->Status == 19) {
                 return [
-                    'banner' => PaymentMethodStatics::getMtbBannerURL(),
-                    'faq' => PaymentMethodStatics::detailsFAQ(),
-                    'status' => 'completed' ?? null,
-                    'disclaimer_message' => isset($mtb_status) ? $mtb_status['description'] . $account_details->Description : 'আবেদন সফল হয়েছে !',
-                    'how_to_use_link' => PaymentLinkStatics::how_to_use_webview(),
+                    'banner'                    => PaymentMethodStatics::getMtbBannerURL(),
+                    'faq'                       => PaymentMethodStatics::detailsFAQ(),
+                    'status'                    => 'completed' ?? null,
+                    'disclaimer_message'        => isset($mtb_status) ? $mtb_status['description'].$account_details->Description : 'আবেদন সফল হয়েছে !',
+                    'how_to_use_link'           => PaymentLinkStatics::how_to_use_webview(),
                     'payment_service_info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
-                    'details' => [
-                        'id' => $qr_gateway->id,
-                        'key' => $qr_gateway->key,
-                        'name_bn' => $qr_gateway->name_bn,
-                        'icon' => $qr_gateway->icon,
-                        'mid' => $account_details->Mid,
-                        'account_number' => $account_details->AccountNum,
+                    'details'                   => [
+                        'id'              => $qr_gateway->id,
+                        'key'             => $qr_gateway->key,
+                        'name_bn'         => $qr_gateway->name_bn,
+                        'icon'            => $qr_gateway->icon,
+                        'mid'             => $account_details->Mid,
+                        'account_number'  => $account_details->AccountNum,
                         'customer_number' => $account_details->CustomerNum,
-                        'name' => $this->partner->getFirstAdminResource()->profile->name,
-                        'description' => $account_details->Description
+                        'name'            => $this->partner->getFirstAdminResource()->profile->name,
+                        'description'     => $account_details->Description
                     ]
                 ];
             }
         }
         return [
-            'banner' => PaymentMethodStatics::getMtbBannerURL(),
-            'faq' => PaymentMethodStatics::detailsFAQ(),
-            'status' => $this->status ?? null,
-            'disclaimer_message' => isset($mtb_status) ? $mtb_status['description'] . $account_details->Description : '',
-            'how_to_use_link' => PaymentLinkStatics::how_to_use_webview(),
+            'banner'                    => PaymentMethodStatics::getMtbBannerURL(),
+            'faq'                       => PaymentMethodStatics::detailsFAQ(),
+            'status'                    => $this->status ?? null,
+            'disclaimer_message'        => isset($mtb_status) ? $mtb_status['description'].$account_details->Description : '',
+            'how_to_use_link'           => PaymentLinkStatics::how_to_use_webview(),
             'payment_service_info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
-            'details' => [
-                'id' => $qr_gateway->id,
-                'key' => $qr_gateway->key,
-                'name_bn' => $qr_gateway->name_bn,
-                'icon' => $qr_gateway->icon,
-                'mid' => $account_details->Mid ?? null,
-                'account_number' => $account_details->AccountNum ?? null,
+            'details'                   => [
+                'id'              => $qr_gateway->id,
+                'key'             => $qr_gateway->key,
+                'name_bn'         => $qr_gateway->name_bn,
+                'icon'            => $qr_gateway->icon,
+                'mid'             => $account_details->Mid ?? null,
+                'account_number'  => $account_details->AccountNum ?? null,
                 'customer_number' => $account_details->CustomerNum ?? null,
-                'name' => $this->partner->getFirstAdminResource()->profile->name
+                'name'            => $this->partner->getFirstAdminResource()->profile->name
             ]
         ];
-
     }
-
 
     /**
      * @throws NotFoundAndDoNotReportException
@@ -158,7 +162,7 @@ class PaymentService
             if (json_decode($mtb_status->mtb_account_status)->Status != '19') {
                 /** @var MtbServerClient $client */
                 $client = App::make(MtbServerClient::class);
-                $response = $client->get(QRPaymentStatics::MTB_ACCOUNT_STATUS . $mtb_status->mtb_ticket_id, AuthTypes::BARER_TOKEN);
+                $response = $client->get(QRPaymentStatics::MTB_ACCOUNT_STATUS.$mtb_status->mtb_ticket_id, AuthTypes::BARER_TOKEN);
                 $this->mtbStatus = $response["Status"];
                 if (json_decode($mtb_status->mtb_account_status)->Status != $response["Status"]) {
                     $this->storeMtbAccountStatus($response);
@@ -174,7 +178,7 @@ class PaymentService
             try {
                 /** @var MORServiceClient $morClient */
                 $morClient = app(MORServiceClient::class);
-                $morClient->put("api/v1/application/users/" . $this->partner->id . "/key=mtb&new_status=" . $mapped_status['status'], null);
+                $morClient->put("api/v1/application/users/".$this->partner->id."/key=mtb&new_status=".$mapped_status['status'], null);
             } catch (\Exception $e) {
                 return $mapped_status;
             }
@@ -196,7 +200,10 @@ class PaymentService
 
     private function storeGatewayAccounts()
     {
-        $partnerGatewayAccounts = GatewayAccount::where('user_id', $this->partner->id)->where('gateway_type', 'qr')->where('gateway_type_id', 1)->where('name', 'mtb')->where('status', 1)->first();
+        $partnerGatewayAccounts = GatewayAccount::where('user_id', $this->partner->id)->where('gateway_type', 'qr')->where('gateway_type_id', 1)->where(
+            'name',
+            'mtb'
+        )->where('status', 1)->first();
         if (!$partnerGatewayAccounts) {
             $partnerGatewayAccounts = new GatewayAccount();
             $partnerGatewayAccounts->user_id = $this->partner->id;
@@ -241,29 +248,32 @@ class PaymentService
         $this->getResellerPaymentStatus();
         $this->getPgwStatus();
         $pgw_store = PgwStore::where('key', $this->key)->first();
-        if (!$pgw_store) throw new InvalidQRKeyException();
-        $status_wise_message = in_array($this->status, ['pending', 'processing', 'verified']) ? config('reseller_payment.mor_status_wise_text')[$this->key][$this->status] : null;
+        if (!$pgw_store) {
+            throw new InvalidQRKeyException();
+        }
+        $status_wise_message = in_array($this->status, ['pending', 'processing', 'verified']) ? config(
+                                                                                                    'reseller_payment.mor_status_wise_text'
+                                                                                                )[$this->key][$this->status] : null;
         if ($this->status === "rejected") {
-            $status_wise_message = config('reseller_payment.mor_status_wise_text')[$this->key]["rejected_start"] .
-                $this->rejectReason . config('reseller_payment.mor_status_wise_text')[$this->key]["rejected_end"];
+            $status_wise_message = config('reseller_payment.mor_status_wise_text')[$this->key]["rejected_start"].
+                $this->rejectReason.config('reseller_payment.mor_status_wise_text')[$this->key]["rejected_end"];
         }
         return [
-            'banner' => PaymentMethodStatics::getSslBannerURL(),
-            'faq' => PaymentMethodStatics::detailsFAQ(),
-            'status' => $this->status ?? null,
+            'banner'                     => PaymentMethodStatics::getSslBannerURL(),
+            'faq'                        => PaymentMethodStatics::detailsFAQ(),
+            'status'                     => $this->status ?? null,
             'mor_status_wise_disclaimer' => $status_wise_message,
-            'pgw_status' => $this->pgwStatus ?? null,
-            'pgw_merchant_id' => $this->pgwMerchantId,
-            'how_to_use_link' => PaymentLinkStatics::how_to_use_webview(),
-            'payment_service_info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
-            'details' => [
-                'id' => $pgw_store->id,
-                'key' => $pgw_store->key,
+            'pgw_status'                 => $this->pgwStatus ?? null,
+            'pgw_merchant_id'            => $this->pgwMerchantId,
+            'how_to_use_link'            => PaymentLinkStatics::how_to_use_webview(),
+            'payment_service_info_link'  => PaymentLinkStatics::payment_setup_faq_webview(),
+            'details'                    => [
+                'id'      => $pgw_store->id,
+                'key'     => $pgw_store->key,
                 'name_bn' => $pgw_store->name_bn,
-                'icon' => $pgw_store->icon
+                'icon'    => $pgw_store->icon
             ]
         ];
-
     }
 
     /**
@@ -277,48 +287,49 @@ class PaymentService
         $this->getPgwStatusForHomePage();
 
         return [
-            'status' => $this->status ?? null,
+            'status'     => $this->status ?? null,
             'pgw_status' => $this->pgwStatus ?? null,
-            'banner' => $this->getBanner(),
-            'info_link' => PaymentLinkStatics::payment_setup_faq_webview()
+            'banner'     => $this->getBanner(),
+            'info_link'  => PaymentLinkStatics::payment_setup_faq_webview()
         ];
     }
-
 
     /**
      * @return array
      */
     public function getBannerForMtb(): array
     {
-        $description = (new MtbMappedAccountStatus())->setStatus(json_decode($this->partner->partnerMefinformation->mtb_account_status)->Status)->mapMtbAccountStatus();
+        $description = (new MtbMappedAccountStatus())->setStatus(
+            json_decode($this->partner->partnerMefinformation->mtb_account_status)->Status
+        )->mapMtbAccountStatus();
         return [
-            'banner' => $this->getBanner(),
+            'banner'    => $this->getBanner(),
             'info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
-            "title" => "আবেদন সফল হয়েছে!",
-            "body" => $description['description']
+            "title"     => "আবেদন সফল হয়েছে!",
+            "body"      => $description['description']
         ];
     }
 
     private function getBanner()
     {
         $banner = null;
-        if ($this->pgwStatus === 0)
+        if ($this->pgwStatus === 0) {
             $banner = config('reseller_payment.status_wise_home_banner')['pgw_inactive'];
-        elseif ($this->status == 'verified')
+        } elseif ($this->status == 'verified') {
             $banner = config('reseller_payment.status_wise_home_banner')['verified'];
-        elseif ($this->status == 'rejected')
+        } elseif ($this->status == 'rejected') {
             $banner = config('reseller_payment.status_wise_home_banner')['rejected'];
-        elseif ($this->status == 'ekyc_completed')
+        } elseif ($this->status == 'ekyc_completed') {
             $banner = config('reseller_payment.status_wise_home_banner')['ekyc_completed'];
-        elseif ($this->status == 'survey_completed')
+        } elseif ($this->status == 'survey_completed') {
             $banner = config('reseller_payment.status_wise_home_banner')['ekyc_completed'];
-        elseif ($this->status == 'mef_completed')
+        } elseif ($this->status == 'mef_completed') {
             $banner = config('reseller_payment.status_wise_home_banner')['completed_but_did_not_apply'];
-        elseif (is_null($this->status))
+        } elseif (is_null($this->status)) {
             $banner = config('reseller_payment.status_wise_home_banner')['did_not_started_journey'];
+        }
 
         return $banner;
-
     }
 
     /**
@@ -328,18 +339,21 @@ class PaymentService
      */
     private function getResellerPaymentStatus($exceptMorStatus = false)
     {
-        if (!$exceptMorStatus)
+        if (!$exceptMorStatus) {
             $this->getMORStatus();
-        if (isset($this->status))
+        }
+        if (isset($this->status)) {
             return;
+        }
         $this->checkMefCompletion();
-        if (isset($this->status))
+        if (isset($this->status)) {
             return;
+        }
         $this->getSurveyStatus();
-        if (isset($this->status))
+        if (isset($this->status)) {
             return;
+        }
         $this->getEkycStatus();
-
     }
 
     /**
@@ -352,18 +366,18 @@ class PaymentService
     {
         /** @var MORServiceClient $morClient */
         $morClient = app(MORServiceClient::class);
-        $url = $key ? 'api/v1/client/applications/status?user_id=' . $this->partner->id . '&user_type=' . MEFGeneralStatics::USER_TYPE_PARTNER . '&key=' . $key :
-            'api/v1/client/applications/status?user_id=' . $this->partner->id . '&user_type=' . MEFGeneralStatics::USER_TYPE_PARTNER;
+        $url = $key ? 'api/v1/client/applications/status?user_id='.$this->partner->id.'&user_type='.MEFGeneralStatics::USER_TYPE_PARTNER.'&key='.$key :
+            'api/v1/client/applications/status?user_id='.$this->partner->id.'&user_type='.MEFGeneralStatics::USER_TYPE_PARTNER;
 
         $morResponse = $morClient->get($url);
         if (isset($morResponse['data'])) {
             $this->status = $morStatus = $morResponse['data']['application_status'];
-            if ($morStatus == 'rejected')
+            if ($morStatus == 'rejected') {
                 $this->rejectReason = $morResponse['data']['reject_reason'];
+            }
             return $morStatus;
         }
         return null;
-
     }
 
     private function checkMefCompletion(): bool
@@ -373,9 +387,11 @@ class PaymentService
             $merchantEnrollment = app(MerchantEnrollment::class);
             $completion = $merchantEnrollment->setPartner($this->partner)->setKey($key)->getCompletion()->toArray();
             if ($completion['can_apply'] == 1) {
-                $survey = Survey::where('user_type', get_class($this->partner))->where('user_id', $this->partner->id)->where('key', 'reseller_payment')->first();
-                if ($survey)
+                $survey = Survey::where('user_type', get_class($this->partner))->where('user_id', $this->partner->id)->where('key', 'reseller_payment')->first(
+                );
+                if ($survey) {
                     $this->status = 'mef_completed';
+                }
                 return true;
             }
         }
@@ -385,14 +401,16 @@ class PaymentService
     private function getSurveyStatus()
     {
         $survey = Survey::where('user_type', get_class($this->partner))->where('user_id', $this->partner->id)->where('key', 'reseller_payment')->first();
-        if ($survey)
+        if ($survey) {
             $this->status = 'survey_completed';
+        }
     }
 
     private function getEkycStatus()
     {
-        if ($this->partner->isNIDVerified())
+        if ($this->partner->isNIDVerified()) {
             $this->status = 'ekyc_completed';
+        }
     }
 
     public function getPgwStatusForHomePage(): PaymentService
@@ -423,7 +441,6 @@ class PaymentService
             $this->pgwStatus = $pgw_store_account->status;
             $this->pgwMerchantId = (new DynamicSslStoreConfiguration($pgw_store_account->configuration))->getStoreId();
         }
-
     }
 
     /**
@@ -431,8 +448,9 @@ class PaymentService
      * @param $header_message
      * @param $partnerId
      * @param $banner
+     * @param $version_code
      * @return array
-     * @throws Exceptions\MORServiceServerError
+     * @throws MORServiceServerError
      * @throws InvalidKeyException
      * @throws NotFoundAndDoNotReportException
      */
@@ -450,18 +468,30 @@ class PaymentService
             $partner_account = $partner->pgwGatewayAccounts()->where('gateway_type_id', $pgwStore->id)->select('status')->first();
             if (!$mor_status && !$partner_account) {
                 $status = PaymentLinkStatus::UNREGISTERED;
-            } else if ($mor_status == "pending" && !$partner_account) {
-                $status = PaymentLinkStatus::PENDING;
-            } else if ($mor_status == "processing" && !$partner_account) {
-                $status = PaymentLinkStatus::PROCESSING;
-            } else if ($mor_status == "verified" && !$partner_account) {
-                $status = PaymentLinkStatus::VERIFIED;
-            } else if ($mor_status == "rejected" && !$partner_account) {
-                $status = PaymentLinkStatus::REJECTED;
-            } else if ($partner_account->status == 1) {
-                $status = PaymentLinkStatus::ACTIVE;
-            } else if ($partner_account->status == 0) {
-                $status = PaymentLinkStatus::INACTIVE;
+            } else {
+                if ($mor_status == "pending" && !$partner_account) {
+                    $status = PaymentLinkStatus::PENDING;
+                } else {
+                    if ($mor_status == "processing" && !$partner_account) {
+                        $status = PaymentLinkStatus::PROCESSING;
+                    } else {
+                        if ($mor_status == "verified" && !$partner_account) {
+                            $status = PaymentLinkStatus::VERIFIED;
+                        } else {
+                            if ($mor_status == "rejected" && !$partner_account) {
+                                $status = PaymentLinkStatus::REJECTED;
+                            } else {
+                                if ($partner_account->status == 1) {
+                                    $status = PaymentLinkStatus::ACTIVE;
+                                } else {
+                                    if ($partner_account->status == 0) {
+                                        $status = PaymentLinkStatus::INACTIVE;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             $pgwData[] = $this->makePGWGatewayData($pgwStore, $completion, $header_message, $completionData, $status);
         }
@@ -477,29 +507,33 @@ class PaymentService
 
     private function makeQRGatewayData($qrGateway, $completion): array
     {
-        if ($completion == 1)
+        if ($completion == 1) {
             $completion = (new ApplyValidation())->setPartner($this->partner)->setForm($qrGateway->id)->getFormSections();
-        else
+        } else {
             $completion = null;
-        if (isset($this->partner->partnerMefinformation->mtb_account_status))
-            $status = (new MtbMappedAccountStatus())->setStatus(json_decode($this->partner->partnerMefinformation->mtb_account_status)->Status)->mapMtbAccountStatus();
+        }
+        if (isset($this->partner->partnerMefinformation->mtb_account_status)) {
+            $status = (new MtbMappedAccountStatus())->setStatus(
+                json_decode($this->partner->partnerMefinformation->mtb_account_status)->Status
+            )->mapMtbAccountStatus();
+        }
 
         return [
-            'id' => $qrGateway->id,
-            'name' => $qrGateway->name,
-            'key' => $qrGateway->method_name,
-            'name_bn' => $qrGateway->name_bn,
-            'header' => null,
-            'type' => "qr",
+            'id'         => $qrGateway->id,
+            'name'       => $qrGateway->name,
+            'key'        => $qrGateway->method_name,
+            'name_bn'    => $qrGateway->name_bn,
+            'header'     => null,
+            'type'       => "qr",
             'completion' => $completion,
-            'icon' => $qrGateway->icon,
-            'status' => $status['status'] ?? null
+            'icon'       => $qrGateway->icon,
+            'status'     => $status['status'] ?? null
         ];
     }
 
     private function getQRGateways($completion): array
     {
-        $qrData = array();
+        $qrData = [];
         $qrGateways = QRGateway::query()->select('id', 'name', 'method_name', 'name_bn', 'icon')->get();
         foreach ($qrGateways as $qrGateway) {
             $qrData[] = $this->makeQRGatewayData($qrGateway, $completion);
@@ -512,15 +546,15 @@ class PaymentService
     private function makePGWGatewayData($pgwStore, $completion, $header_message, $completionData, $status): array
     {
         return [
-            'id' => $pgwStore->id,
-            'name' => $pgwStore->name,
-            'key' => $pgwStore->key,
-            'name_bn' => $pgwStore->name_bn,
-            'header' => $pgwStore->key === 'ssl' ? $header_message : null,
-            'type' => 'pgw',
+            'id'         => $pgwStore->id,
+            'name'       => $pgwStore->name,
+            'key'        => $pgwStore->key,
+            'name_bn'    => $pgwStore->name_bn,
+            'header'     => $pgwStore->key === 'ssl' ? $header_message : null,
+            'type'       => 'pgw',
             'completion' => $completion == 1 ? $completionData->getOverallCompletion()['en'] : null,
-            'icon' => $pgwStore->icon,
-            'status' => $status
+            'icon'       => $pgwStore->icon,
+            'status'     => $status
         ];
     }
 
@@ -572,11 +606,11 @@ class PaymentService
         $emi_calculator = new CalculatorForManager();
         $icons_folder = getEmiBankIconsFolder(true);
         return [
-            "emi" => $emi_calculator->setPartner($partner)->getCharges($amount),
-            "banks" => (new Banks())->setAmount($amount)->get(),
+            "emi"            => $emi_calculator->setPartner($partner)->getCharges($amount),
+            "banks"          => (new Banks())->setAmount($amount)->get(),
             "minimum_amount" => number_format(config('sheba.min_order_amount_for_emi')),
-            "static_info" => [
-                "how_emi_works" => [
+            "static_info"    => [
+                "how_emi_works"        => [
                     "EMI (Equated Monthly Installment) is one of the payment methods of online purchasing, only for the customers using any of the accepted Credit Cards on Sheba.xyz.* It allows customers to pay for their ordered services  in easy equal monthly installments.*",
                     "Sheba.xyz has introduced a convenient option of choosing up to 12 months EMI facility for customers who use Credit Cards for buying services worth BDT 5,000 or more. The duration and extent of the EMI options available will be visible on the payment page after order placement. EMI plans are also viewable on the checkout page in the EMI Banner below the bill section.",
                     "Customers wanting to avail EMI facility must have a Credit Card from any one of the banks in the list shown in the payment page.",
@@ -601,8 +635,9 @@ class PaymentService
 
     public function sendNotificationOnStatusChange()
     {
-        if ($this->newStatus !== 'processing')
+        if ($this->newStatus !== 'processing') {
             $this->sendSMS();
+        }
         $this->sendPushNotification();
     }
 
@@ -618,17 +653,17 @@ class PaymentService
 
     private function sendPushNotification()
     {
-        $topic = config('sheba.push_notification_topic_name.manager') . $this->partner->id;
+        $topic = config('sheba.push_notification_topic_name.manager').$this->partner->id;
         $channel = config('sheba.push_notification_channel_name.manager');
         $sound = config('sheba.push_notification_sound.manager');
 
         $notification_data = [
-            "title" => 'Reseller Payment Status Change',
-            "message" => config('reseller_payment.mor_status_change_message')[$this->key][$this->newStatus],
-            "sound" => "notification_sound",
+            "title"      => 'Reseller Payment Status Change',
+            "message"    => config('reseller_payment.mor_status_change_message')[$this->key][$this->newStatus],
+            "sound"      => "notification_sound",
             "channel_id" => $channel,
             "event_type" => 'reseller_payment_status_change',
-            "event_id" => $this->partner->id
+            "event_id"   => $this->partner->id
         ];
 
         (new PushNotificationHandler())->send($notification_data, $topic, $channel, $sound);
@@ -641,8 +676,9 @@ class PaymentService
      */
     public function authenticateMorRequest($secret)
     {
-        if ($secret !== config('reseller_payment.mor_access_token'))
+        if ($secret !== config('reseller_payment.mor_access_token')) {
             throw new UnauthorizedRequestFromMORException();
+        }
     }
 
     /**
@@ -654,7 +690,7 @@ class PaymentService
     }
 
     /**
-     * @param mixed $type
+     * @param  mixed  $type
      * @return PaymentService
      */
     public function setType($type): PaymentService
@@ -663,5 +699,13 @@ class PaymentService
         return $this;
     }
 
-
+    public function getBannerForAamarpay(): array
+    {
+        return [
+            'banner'    => $this->getBanner(),
+            'info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
+            "title"     => "আবেদন সফল হয়েছে!",
+            "body"      => 'description'
+        ];
+    }
 }
