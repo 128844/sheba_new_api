@@ -309,11 +309,11 @@ class DynamicForm
         }
 
         if ($this->type == "bankName") {
-            return BanksList::getGeneratedKeyNameValue();
+            return ['list' => BanksList::getGeneratedKeyNameValue()];
         }
 
         if ($this->type == "accountAuthorizationType") {
-            return AccountType::getGeneratedKeyNameValue();
+            return ['list' => AccountType::getGeneratedKeyNameValue()];
         }
     }
 
