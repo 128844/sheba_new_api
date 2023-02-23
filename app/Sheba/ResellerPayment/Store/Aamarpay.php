@@ -79,10 +79,10 @@ class Aamarpay extends PaymentStore
         $this->conn_data = (new EncryptionAndDecryption())->setData($configuration)->getEncryptedData();
 
         return [
-            "gateway_type"    => strtolower(class_basename($this->partner)),
+            "gateway_type"    => 'pgw',
             "gateway_type_id" => (int)$this->gateway_id,
             "user_id"         => $this->partner->id,
-            "user_type"       => get_class($this->partner),
+            "user_type"       => 'partner',
             "name"            => "dynamic_aamarpay",
             "configuration"   => $this->conn_data
         ];
