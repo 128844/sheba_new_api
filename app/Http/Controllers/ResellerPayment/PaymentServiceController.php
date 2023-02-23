@@ -41,6 +41,7 @@ class PaymentServiceController extends Controller
         $partnerId = $request->partner->id;
         $version_code = $request->header('version-code');
         $pgwData = $this->paymentService->setPartner($request->partner)->getPaymentGateways($completion, $header_message, $partnerId, $banner,$version_code);
+
         return api_response($request, null, 200, ['data' => $pgwData]);
     }
 

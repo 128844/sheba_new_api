@@ -4,9 +4,9 @@ namespace App\Sheba\ResellerPayment;
 
 use App\Exceptions\NotFoundAndDoNotReportException;
 use App\Models\Partner;
+use App\Sheba\Aamarpay\AamarpayAccountStatusConstants;
 use App\Sheba\MTB\AuthTypes;
 use App\Sheba\MTB\Exceptions\MtbServiceServerError;
-use App\Sheba\MTB\MtbConstants;
 use App\Sheba\MTB\MtbMappedAccountStatus;
 use App\Sheba\MTB\MtbServerClient;
 use App\Sheba\MTB\Validation\ApplyValidation;
@@ -32,7 +32,6 @@ use Sheba\PushNotificationHandler;
 use Sheba\ResellerPayment\Exceptions\InvalidKeyException;
 use Sheba\Payment\Methods\Ssl\Stores\DynamicSslStoreConfiguration;
 use Sheba\ResellerPayment\Exceptions\ResellerPaymentException;
-use Sheba\ResellerPayment\Statics\ResellerPaymentGeneralStatic;
 use Sheba\Sms\BusinessType;
 use Sheba\Sms\FeatureType;
 use Sheba\Sms\Sms;
@@ -705,7 +704,7 @@ class PaymentService
             'banner'    => $this->getBanner(),
             'info_link' => PaymentLinkStatics::payment_setup_faq_webview(),
             "title"     => "আবেদন সফল হয়েছে!",
-            "body"      => 'description'
+            "body"      => AamarpayAccountStatusConstants::REQUEST_PLACED
         ];
     }
 }

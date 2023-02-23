@@ -60,7 +60,7 @@ class AamarpaySavePrimaryInformation
             "application_data" => json_encode($application_data),
             "user_type"        => MEFGeneralStatics::USER_TYPE_PARTNER,
             "user_id"          => $this->partner->id,
-            "key"              => PaymentStrategy::AAMARPAY,
+            "pgw_store_key"    => PaymentStrategy::AAMARPAY,
             "survey_data"      => $this->getSurvey(),
             "request_type"     => $application_data["presentValueOfTotalMonthlyTransaction"] < 100000 ? "PRA" : "Regular"
         ];
@@ -99,8 +99,8 @@ class AamarpaySavePrimaryInformation
         $bannerAamarpay = (new PaymentService())->setPartner($this->partner)->getBannerForAamarpay();
 
         /** @var MORServiceClient $morClient */
-        // $morClient = app(MORServiceClient::class);
-        // $morClient->post("api/v1/application/users/".$this->partner->id, $data);
+        $morClient = app(MORServiceClient::class);
+        $morClient->post("api/v1/clients/applications/store", $data);
 
         return http_response($request, null, 200, ['message' => 'Successful', 'data' => $bannerAamarpay]);
     }
