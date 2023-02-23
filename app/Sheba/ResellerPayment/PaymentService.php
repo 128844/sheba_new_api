@@ -250,13 +250,14 @@ class PaymentService
         if (!$pgw_store) {
             throw new InvalidQRKeyException();
         }
-        $status_wise_message = in_array($this->status, ['pending', 'processing', 'verified']) ? config(
-                                                                                                    'reseller_payment.mor_status_wise_text'
-                                                                                                )[$this->key][$this->status] : null;
+        $status_wise_message = in_array($this->status, ['pending', 'processing', 'verified']) ?
+            config('reseller_payment.mor_status_wise_text')[$this->key][$this->status] : null;
+
         if ($this->status === "rejected") {
             $status_wise_message = config('reseller_payment.mor_status_wise_text')[$this->key]["rejected_start"].
                 $this->rejectReason.config('reseller_payment.mor_status_wise_text')[$this->key]["rejected_end"];
         }
+
         return [
             'banner'                     => PaymentMethodStatics::getSslBannerURL(),
             'faq'                        => PaymentMethodStatics::detailsFAQ(),

@@ -25,7 +25,7 @@ return [
         ],
     ],
     'completion_message'             => [
-        'mtb' => [
+        'mtb'      => [
             "incomplete_message" => "MTB QR সার্ভিস সচল করতে প্রয়োজনীয় তথ্য প্রদান করুন।",
             "completed_message"  => "প্রয়োজনীয় তথ্য দেয়া সম্পন্ন হয়েছ, MTB QR সার্ভিস সচল করতে আবেদন করুন।"
         ],
@@ -49,7 +49,7 @@ return [
         ]
     ],
     'required_documents'             => [
-        'ssl'   => [
+        'ssl'      => [
             [
                 'name'    => 'trade_licence',
                 'name_bn' => 'ট্রেড লাইসেন্স',
@@ -66,8 +66,8 @@ return [
                 'icon'    => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/partner/reseller_payment/vat_certificate_icon.png'
             ]
         ],
-        'bkash' => [],
-        'mtb'   => [
+        'bkash'    => [],
+        'mtb'      => [
             [
                 'name'    => 'trade_licence',
                 'name_bn' => 'ট্রেড লাইসেন্স',
@@ -84,7 +84,7 @@ return [
                 'icon'    => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/partner/reseller_payment/vat_certificate_icon.png'
             ]
         ],
-        'aamarpay'   => [
+        'aamarpay' => [
             [
                 'name'    => 'trade_licence',
                 'name_bn' => 'ট্রেড লাইসেন্স',
@@ -599,7 +599,14 @@ return [
         'did_not_started_journey'     => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/partner/reseller_payment/homepage_banner/not_started_journey.png'
     ],
     'mor_status_wise_text'           => [
-        'ssl' => [
+        'ssl'      => [
+            'pending'        => 'আপনার আবেদনটি সফলভাবে সম্পন্ন হয়েছে অনুমোদনের জন্য অনুগ্রহ করে ১০ কার্যদিবস অপেক্ষা করুন।',
+            'processing'     => 'আপনার আবেদনটি সফলভাবে সম্পন্ন হয়েছে অনুমোদনের জন্য অনুগ্রহ করে ১০ কার্যদিবস অপেক্ষা করুন।',
+            'verified'       => 'আপনার আবেদনটি সফলভাবে অনুমোদন হয়েছে অনুগ্রহ করে আপনার ইমেইল চেক করুন এবং প্রয়োজনীয় তথ্য দিয়ে পেমেন্ট সার্ভিস সেট-আপ করুন।',
+            'rejected_start' => 'আপনার আবেদনটি অনুমোদন করা সম্ভব হয়নি কারণ - ',
+            'rejected_end'   => ' সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।'
+        ],
+        'aamarpay' => [
             'pending'        => 'আপনার আবেদনটি সফলভাবে সম্পন্ন হয়েছে অনুমোদনের জন্য অনুগ্রহ করে ১০ কার্যদিবস অপেক্ষা করুন।',
             'processing'     => 'আপনার আবেদনটি সফলভাবে সম্পন্ন হয়েছে অনুমোদনের জন্য অনুগ্রহ করে ১০ কার্যদিবস অপেক্ষা করুন।',
             'verified'       => 'আপনার আবেদনটি সফলভাবে অনুমোদন হয়েছে অনুগ্রহ করে আপনার ইমেইল চেক করুন এবং প্রয়োজনীয় তথ্য দিয়ে পেমেন্ট সার্ভিস সেট-আপ করুন।',
