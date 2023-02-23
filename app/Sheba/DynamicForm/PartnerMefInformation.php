@@ -78,6 +78,7 @@ class PartnerMefInformation implements Arrayable
     private $projectedNoOfTransactions;
     private $projectedValueOfMaximumSingleTransaction;
     private $projectedVolumeOfTotalMonthlyTransaction;
+    private $tinCertificate;
 
     public function setProperty($input): PartnerMefInformation
     {
