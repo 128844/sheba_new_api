@@ -13,7 +13,7 @@ use Sheba\ResellerPayment\Statics\StoreConfigurationStatic;
 
 class Aamarpay extends PaymentStore
 {
-    private $conn_data;
+    // private $conn_data;
 
     /**
      * @return mixed
