@@ -4,6 +4,7 @@ namespace Sheba\ResellerPayment\Store;
 
 use Illuminate\Foundation\Application;
 use Sheba\ResellerPayment\Exceptions\InvalidKeyException;
+use Throwable;
 
 class StoreFactory
 {
@@ -29,7 +30,7 @@ class StoreFactory
             $storeClassPath = "Sheba\\ResellerPayment\\Store\\";
             $class = "$storeClassPath" . ucfirst($this->key);
             return app($class);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new InvalidKeyException();
         }
     }
