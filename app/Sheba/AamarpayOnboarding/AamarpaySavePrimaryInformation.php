@@ -55,13 +55,12 @@ class AamarpaySavePrimaryInformation
         $application_data = array_merge($application_data, $other_data);
 
         return [
-            'key'              => MEFGeneralStatics::USER_TYPE_PARTNER,
             'user_name'        => $this->mutateName($this->partner->getFirstAdminResource()->profile->name),
             'user_mobile'      => $this->partner->getFirstAdminResource()->profile->mobile,
             "application_data" => json_encode($application_data),
             "user_type"        => MEFGeneralStatics::USER_TYPE_PARTNER,
             "user_id"          => $this->partner->id,
-            "pgw_store_key"    => PaymentStrategy::AAMARPAY,
+            "key"              => PaymentStrategy::AAMARPAY,
             "survey_data"      => $this->getSurvey(),
             "request_type"     => $application_data["presentValueOfTotalMonthlyTransaction"] < 100000 ? "PRA" : "Regular"
         ];
