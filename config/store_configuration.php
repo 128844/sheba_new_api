@@ -65,7 +65,7 @@ return [
                 "error"      => "Store ID পূরণ আবশ্যক",
                 "input_type" => "text",
                 "data"       => "",
-                "min_length" => 1,
+                "min_length" => "",
                 "max_length" => "",
                 "mandatory"  => true
             ],
@@ -77,7 +77,7 @@ return [
                 "error"      => "Signature Key পূরণ আবশ্যক",
                 "input_type" => "text",
                 "data"       => "",
-                "min_length" => 1,
+                "min_length" => "",
                 "max_length" => "",
                 "mandatory"  => true
             ],
@@ -89,7 +89,7 @@ return [
                 "error"      => "Api Key পূরণ আবশ্যক",
                 "input_type" => "text",
                 "data"       => "",
-                "min_length" => 1,
+                "min_length" => "",
                 "max_length" => "",
                 "mandatory"  => true
             ]
