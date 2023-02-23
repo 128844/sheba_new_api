@@ -82,10 +82,8 @@ class AamarpaySavePrimaryInformation
     /**
      * @param $request
      * @return JsonResponse
-     * @throws MtbServiceServerError
-     * @throws NotFoundAndDoNotReportException
      * @throws MORServiceServerError
-     * @throws TPProxyServerError
+     * @throws NotFoundAndDoNotReportException
      */
     public function storePrimaryInformationToAamarpay($request): JsonResponse
     {

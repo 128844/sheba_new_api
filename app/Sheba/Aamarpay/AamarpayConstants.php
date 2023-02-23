@@ -18,6 +18,6 @@ class AamarpayConstants
     const COUNTRY= "Bangladesh";
     const CONTACT_ADDRESS= "present";
     const CUSTOMER_GRADE= "Moderate";
-    const AAMARPAY_FORM_ID= 10;
+    const AAMARPAY_FORM_ID= 2;
 
 }

@@ -79,7 +79,6 @@ class PartnerMefInformation implements Arrayable
     private $projectedValueOfMaximumSingleTransaction;
     private $projectedVolumeOfTotalMonthlyTransaction;
 
-
     public function setProperty($input): PartnerMefInformation
     {
         foreach ($input as $key => $value) {

@@ -19,7 +19,7 @@ class AamarpayAccountStatus
         $this->client = $client;
     }
 
-    public function setPartner(Partner $partner): MtbAccountStatus
+    public function setPartner(Partner $partner): AamarpayAccountStatus
     {
         $this->partner = $partner;
         return $this;

@@ -30,13 +30,13 @@ class AamarpayDocumentUpload
         $this->client = $client;
     }
 
-    public function setPartner(Partner $partner): MtbDocumentUpload
+    public function setPartner(Partner $partner): AamarpayDocumentUpload
     {
         $this->partner = $partner;
         return $this;
     }
 
-    public function setPartnerMefInformation($partnerMefInformation): MtbDocumentUpload
+    public function setPartnerMefInformation($partnerMefInformation): AamarpayDocumentUpload
     {
         $this->partnerMefInformation = $partnerMefInformation;
         return $this;

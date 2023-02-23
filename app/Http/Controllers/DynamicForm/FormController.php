@@ -87,9 +87,15 @@ class FormController extends Controller
      */
     public function uploadDocument(Request $request): JsonResponse
     {
-        $this->validate($request, ["document" => 'required|image|max:25600', "document_id" => 'required', "category_code" => "required"]);
+        $this->validate($request, [
+            "document"      => 'required|image|max:25600',
+            "document_id"   => 'required',
+            "category_code" => "required"
+        ]);
+
         $partner = $request->auth_user->getPartner();
         $this->dynamicForm->setPartner($partner)->setSection($request->category_code)->uploadDocumentData($request->document, $request->document_id);
+
         return http_response($request, null, 200, ['message' => 'Successful']);
     }
 }

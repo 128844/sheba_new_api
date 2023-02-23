@@ -317,10 +317,20 @@ class DynamicForm
         }
     }
 
+    /**
+     * @param $document
+     * @param $document_id
+     * @return void
+     */
     public function uploadDocumentData($document, $document_id)
     {
         $field = DB::table('fields')->where('data->id', $document_id)->first();
-        $url = (new MerchantEnrollmentFileHandler())->setPartner($this->partner)->uploadDocument($document, json_decode($field->data, true))->getUploadedUrl();
+
+        $url = (new MerchantEnrollmentFileHandler())
+            ->setPartner($this->partner)
+            ->uploadDocument($document, json_decode($field->data, true))
+            ->getUploadedUrl();
+
         (new FormSubmit())->setPartner($this->partner)->setFields($field)->documentStore($url);
     }
 }

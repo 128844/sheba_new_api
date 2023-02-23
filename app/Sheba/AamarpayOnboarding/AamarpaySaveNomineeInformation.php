@@ -37,7 +37,7 @@ class AamarpaySaveNomineeInformation
         return $this;
     }
 
-    public function setPartnerMefInformation($partnerMefInformation): MtbSaveNomineeInformation
+    public function setPartnerMefInformation($partnerMefInformation): AamarpaySaveNomineeInformation
     {
         $this->partnerMefInformation = $partnerMefInformation;
         return $this;
