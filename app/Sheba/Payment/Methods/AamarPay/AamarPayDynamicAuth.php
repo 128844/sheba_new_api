@@ -2,11 +2,15 @@
 
 namespace App\Sheba\Payment\Methods\AamarPay;
 
+use ReflectionClass;
+
 class AamarPayDynamicAuth
 {
-    private $storeId;
-    private $signatureKey;
-    private $apiKey;
+    protected $storeId;
+    protected $signatureKey;
+    protected $apiKey;
+
+    public $configuration;
 
     public function setStoreId($storeId)
     {
@@ -26,12 +30,56 @@ class AamarPayDynamicAuth
         return $this;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getConfiguration()
+    {
+        return $this->configuration;
+    }
+
     public function getConfigurationsArray()
     {
         return [
-            'storeId' => $this->storeId,
+            'storeId'      => $this->storeId,
             'signatureKey' => $this->signatureKey,
-            'apiKey' => $this->apiKey,
+            'apiKey'       => $this->apiKey,
         ];
+    }
+
+    /**
+     * @param  mixed  $configuration
+     * @return AamarPayDynamicAuth
+     */
+    public function setConfiguration($configuration): AamarPayDynamicAuth
+    {
+        $this->configuration = $configuration;
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function buildFromConfiguration(): AamarPayDynamicAuth
+    {
+        foreach ($this->configuration as $key => $value) {
+            if (!empty($value)) {
+                $this->$key = $value;
+            }
+        }
+        return $this;
+    }
+
+    public function toArray(): array
+    {
+        $reflection_class = new ReflectionClass($this);
+        $data = [];
+        foreach ($reflection_class->getProperties() as $item) {
+            if (!$item->isProtected()) {
+                continue;
+            }
+            $data[$item->name] = $this->{$item->name};
+        }
+        return $data;
     }
 }

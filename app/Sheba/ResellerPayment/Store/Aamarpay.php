@@ -2,10 +2,10 @@
 
 namespace Sheba\ResellerPayment\Store;
 
+use App\Sheba\Payment\Methods\AamarPay\AamarPayDynamicAuth;
 use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
-use Sheba\Dal\GatewayAccount\Contract as GatewayAccountRepo;
+use Sheba\Dal\GatewayAccount\Contract as PgwGatewayAccountRepo;
 use Sheba\Payment\Exceptions\InvalidConfigurationException;
-use Sheba\Payment\Methods\Ssl\Stores\DynamicSslStoreConfiguration;
 use Sheba\ResellerPayment\EncryptionAndDecryption;
 use Sheba\ResellerPayment\Exceptions\ResellerPaymentException;
 use Sheba\ResellerPayment\Exceptions\StoreAccountNotFoundException;
@@ -13,7 +13,7 @@ use Sheba\ResellerPayment\Statics\StoreConfigurationStatic;
 
 class Aamarpay extends PaymentStore
 {
-    // private $conn_data;
+    private $conn_data;
 
     /**
      * @return mixed
@@ -46,6 +46,17 @@ class Aamarpay extends PaymentStore
      */
     public function postConfiguration()
     {
+        $data = $this->makeStoreAccountData();
+        // $this->test();
+        $storeAccount = $this->partner->pgwGatewayAccounts()->where("gateway_type_id", $this->gateway_id)->first();
+
+        if (isset($storeAccount)) {
+            $storeAccount->configuration = $data["configuration"];
+            $storeAccount->save();
+        } else {
+            $pgw_store_repo = app()->make(PgwGatewayAccountRepo::class);
+            $pgw_store_repo->create($data);
+        }
     }
 
     private static function staticSslConfigurations(): array
@@ -55,10 +66,26 @@ class Aamarpay extends PaymentStore
 
     public function makeAndGetConfigurationData(): array
     {
+        $configuration = (array)$this->data;
+        return (new AamarPayDynamicAuth())
+            ->setConfiguration($configuration)
+            ->buildFromConfiguration()
+            ->toArray();
     }
 
     private function makeStoreAccountData(): array
     {
+        $configuration = json_encode($this->makeAndGetConfigurationData());
+        $this->conn_data = (new EncryptionAndDecryption())->setData($configuration)->getEncryptedData();
+
+        return [
+            "gateway_type"    => strtolower(class_basename($this->partner)),
+            "gateway_type_id" => (int)$this->gateway_id,
+            "user_id"         => $this->partner->id,
+            "user_type"       => get_class($this->partner),
+            "name"            => "dynamic_aamarpay",
+            "configuration"   => $this->conn_data
+        ];
     }
 
     /**

@@ -435,8 +435,11 @@ class PaymentService
 
     private function getPgwStatus()
     {
-        $pgw_store_account = $this->partner->pgwGatewayAccounts()->join('pgw_stores', 'gateway_type_id', '=', 'pgw_stores.id')
-            ->where('pgw_stores.key', $this->key)->first();
+        $pgw_store_account = $this->partner->pgwGatewayAccounts()
+            ->join('pgw_stores', 'gateway_type_id', '=', 'pgw_stores.id')
+            ->where('pgw_stores.key', $this->key)
+            ->first();
+
         if ($pgw_store_account) {
             $this->pgwStatus = $pgw_store_account->status;
             $this->pgwMerchantId = (new DynamicSslStoreConfiguration($pgw_store_account->configuration))->getStoreId();

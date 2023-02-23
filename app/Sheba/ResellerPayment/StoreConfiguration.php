@@ -24,7 +24,7 @@ class StoreConfiguration
     }
 
     /**
-     * @param mixed $key
+     * @param  mixed  $key
      * @return StoreConfiguration
      */
     public function setKey($key): StoreConfiguration
@@ -34,7 +34,7 @@ class StoreConfiguration
     }
 
     /**
-     * @param mixed $partner
+     * @param  mixed  $partner
      * @return StoreConfiguration
      */
     public function setPartner($partner): StoreConfiguration
@@ -67,7 +67,7 @@ class StoreConfiguration
     }
 
     /**
-     * @param mixed $request_data
+     * @param  mixed  $request_data
      * @return StoreConfiguration
      */
     public function setRequestData($request_data): StoreConfiguration
@@ -77,7 +77,7 @@ class StoreConfiguration
     }
 
     /**
-     * @param mixed $gateway_id
+     * @param  mixed  $gateway_id
      * @return StoreConfiguration
      */
     public function setGatewayId($gateway_id): StoreConfiguration
@@ -93,12 +93,18 @@ class StoreConfiguration
     public function validate()
     {
         $static_data = (new StoreConfigurationStatic())->getStoreConfiguration($this->key);
-        if(!isset($static_data)) throw new InvalidKeyException();
+        if (!isset($static_data)) {
+            throw new InvalidKeyException();
+        }
         $request = json_decode($this->request_data, 1);
-        if(!isset($request) || !is_array($request)) throw new StoreValidationException();
+        if (!isset($request) || !is_array($request)) {
+            throw new StoreValidationException();
+        }
         foreach ($static_data as $data) {
             if ($data["mandatory"]) {
-                if(array_key_exists($data["id"], $request)) continue;
+                if (array_key_exists($data["id"], $request)) {
+                    continue;
+                }
                 throw new StoreValidationException();
             }
         }
