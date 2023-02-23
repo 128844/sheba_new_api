@@ -77,7 +77,10 @@ class StoreConfigurationController extends Controller
         try {
             $this->validate($request, StoreConfigurationStatic::statusUpdateValidation());
             $this->storeConfiguration->setGatewayId($request->gateway_id)
-                ->setPartner($request->partner)->setKey($request->key)->updatePaymentGatewayStatus($request->status);
+                ->setPartner($request->partner)
+                ->setKey($request->key)
+                ->updatePaymentGatewayStatus($request->status);
+
             return api_response($request, null, 200);
         } catch (ResellerPaymentException $e) {
             logError($e);

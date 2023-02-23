@@ -121,5 +121,4 @@ class StoreConfiguration
         $store = (new StoreFactory())->setKey($this->key)->get();
         $store->setGatewayId($this->gateway_id)->setPartner($this->partner)->account_status_update($status);
     }
-
 }

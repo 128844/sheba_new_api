@@ -104,6 +104,14 @@ class Aamarpay extends PaymentStore
      */
     public function account_status_update($status)
     {
+        $storeAccount = $this->partner->pgwGatewayAccounts()->where("gateway_type_id", $this->gateway_id)->first();
+        if (!$storeAccount) {
+            throw new StoreAccountNotFoundException();
+        }
+        if ($status == $storeAccount->status) {
+            throw new ResellerPaymentException("The account is already in this status");
+        }
+        $storeAccount->status = $status;
+        $storeAccount->save();
     }
-
 }
