@@ -461,10 +461,12 @@ class PaymentService
         $pgwStores = new PgwStore();
 
         $pgwStores = $pgwStores->publishedForMEF()->select('id', 'name', 'key', 'name_bn', 'icon')->get();
+
         foreach ($pgwStores as $pgwStore) {
             $completionData = (new MerchantEnrollment())->setPartner($partner)->setKey($pgwStore->key)->getCompletion();
             $mor_status = $this->getMORStatus($pgwStore->key);
             $partner_account = $partner->pgwGatewayAccounts()->where('gateway_type_id', $pgwStore->id)->select('status')->first();
+
             if (!$mor_status && !$partner_account) {
                 $status = PaymentLinkStatus::UNREGISTERED;
             } else {
@@ -494,12 +496,14 @@ class PaymentService
             }
             $pgwData[] = $this->makePGWGatewayData($pgwStore, $completion, $header_message, $completionData, $status);
         }
+
         if (intval($version_code) < 300600) {
             $allData = $pgwData;
         } else {
             $qrData = $this->getQRGateways($completion);
             $allData = array_merge($pgwData, $qrData);
         }
+
         return $banner ?
             array_merge(["payment_gateway_list" => $allData], ["list_banner" => MEFGeneralStatics::LIST_PAGE_BANNER]) : $allData;
     }

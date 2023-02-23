@@ -10,16 +10,17 @@ class PaymentMethodStatics
     const MTB_BANNER_URL = "https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/partner/reseller_payment/mtb_banner.png";
 
     const APPLY_SUCCESS_MESSAGE = [
-        "body" => "আবেদন যাচাই করতে ১০ কার্যদিবস সময় লাগতে পারে অনুগ্রহ করে অপেক্ষা করুন।",
+        "body"  => "আবেদন যাচাই করতে ১০ কার্যদিবস সময় লাগতে পারে অনুগ্রহ করে অপেক্ষা করুন।",
         "title" => "আবেদন সফল হয়েছে!"
     ];
 
     public static function classMap(): array
     {
         return [
-            'ssl'   => 'SslGateway',
-            'bkash' => 'BkashGateway',
+            'ssl'       => 'SslGateway',
+            'bkash'     => 'BkashGateway',
             'shurjopay' => 'ShurjoPayGateway',
+            'aamarpay'  => 'AamarPayGateway',
         ];
     }
 
@@ -31,14 +32,19 @@ class PaymentMethodStatics
     public static function paymentGatewayCategoryList($paymentGatewayCode)
     {
         $categoryList = config('reseller_payment.category_list');
-        if (isset($categoryList[$paymentGatewayCode])) return $categoryList[$paymentGatewayCode];
+        if (isset($categoryList[$paymentGatewayCode])) {
+            return $categoryList[$paymentGatewayCode];
+        }
+
         throw new InvalidKeyException();
     }
 
     public static function categoryTitles($category_code)
     {
         $titles = config('reseller_payment.category_titles');
-        if (isset($titles[$category_code])) return $titles[$category_code];
+        if (isset($titles[$category_code])) {
+            return $titles[$category_code];
+        }
         return ['en' => '', 'bn' => ''];
     }
 
@@ -50,7 +56,9 @@ class PaymentMethodStatics
     public static function paymentMethodWiseExcludedKeys($paymentGatewayKey)
     {
         $categoryList = config('reseller_payment.exclude_form_keys');
-        if (isset($categoryList[$paymentGatewayKey])) return $categoryList[$paymentGatewayKey];
+        if (isset($categoryList[$paymentGatewayKey])) {
+            return $categoryList[$paymentGatewayKey];
+        }
         throw new InvalidKeyException();
     }
 

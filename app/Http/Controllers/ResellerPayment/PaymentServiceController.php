@@ -56,7 +56,6 @@ class PaymentServiceController extends Controller
         return api_response($request, null, 200, ['data' => $data]);
     }
 
-
     /**
      * @param Request $request
      * @return JsonResponse
