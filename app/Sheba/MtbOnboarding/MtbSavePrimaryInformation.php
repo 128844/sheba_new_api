@@ -133,6 +133,7 @@ class MtbSavePrimaryInformation
         else $tradeLicenseExist = "N";
         return [
             'RequestData' => [
+                'DebitCardType' => 1,
                 'retailerId' => strval($this->partner->id),
                 'orgCode' => MtbConstants::CHANNEL_ID,
                 'name' => $this->mutateName($porichoyData->porichoy_data->name_en),
