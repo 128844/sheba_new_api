@@ -99,8 +99,8 @@ class AamarpaySavePrimaryInformation
         $bannerAamarpay = (new PaymentService())->setPartner($this->partner)->getBannerForAamarpay();
 
         /** @var MORServiceClient $morClient */
-        $morClient = app(MORServiceClient::class);
-        $morClient->post("api/v1/application/users/".$this->partner->id, $data);
+        // $morClient = app(MORServiceClient::class);
+        // $morClient->post("api/v1/application/users/".$this->partner->id, $data);
 
         return http_response($request, null, 200, ['message' => 'Successful', 'data' => $bannerAamarpay]);
     }
