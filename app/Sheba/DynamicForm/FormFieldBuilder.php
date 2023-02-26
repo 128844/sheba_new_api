@@ -5,7 +5,9 @@ namespace App\Sheba\DynamicForm;
 use App\Models\Partner;
 use App\Sheba\DynamicForm\DataSources\AccountType;
 use App\Sheba\DynamicForm\DataSources\BanksList;
+use App\Sheba\MTB\Exceptions\MtbServiceServerError;
 use Sheba\Dal\PartnerMefInformation\Contract as PartnerMefInformationRepo;
+use Sheba\Dal\ProfileNIDSubmissionLog\Model as ProfileNIDSubmissionLog;
 
 class FormFieldBuilder
 {
@@ -35,6 +37,20 @@ class FormFieldBuilder
     public function setPartner(Partner $partner): FormFieldBuilder
     {
         $this->partner = $partner;
+        $this->partner->generatedDomain = "smanager.xyz/s/".$this->partner->sub_domain;
+        $porichoy_data = null;
+        $nid_information = ProfileNIDSubmissionLog::where('profile_id', $this->partner->getFirstAdminResource()->profile->id)
+            ->where('verification_status', 'approved')
+            ->whereNotNull('porichy_data')
+            ->last();
+
+        if (isset($nid_information->porichy_data)) {
+            $porichoy_data = json_decode($nid_information->porichy_data);
+        }
+
+        $this->partner->nid = $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $this->partner->getFirstAdminResource()->profile->nid_no;
+        $this->partner->dob = date("Y-m-d", strtotime($this->partner->getFirstAdminResource()->profile->dob));
+
         return $this;
     }
 
