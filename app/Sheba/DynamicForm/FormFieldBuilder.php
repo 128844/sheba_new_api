@@ -5,7 +5,6 @@ namespace App\Sheba\DynamicForm;
 use App\Models\Partner;
 use App\Sheba\DynamicForm\DataSources\AccountType;
 use App\Sheba\DynamicForm\DataSources\BanksList;
-use App\Sheba\MTB\Exceptions\MtbServiceServerError;
 use Sheba\Dal\PartnerMefInformation\Contract as PartnerMefInformationRepo;
 use Sheba\Dal\ProfileNIDSubmissionLog\Model as ProfileNIDSubmissionLog;
 
@@ -87,10 +86,26 @@ class FormFieldBuilder
     public function setFirstAdminProfile()
     {
         $this->firstAdminProfile = $this->partner->getFirstAdminResource()->profile;
+        $this->firstAdminProfile->nid_no = $this->getNidOrPassport($this->firstAdminProfile);
     }
 
     public function setBasicInformation()
     {
         $this->basicInformation = $this->partner->basicInformations;
+    }
+
+    private function getNidOrPassport($first_admin_profile)
+    {
+        $porichoy_data = null;
+        $nid_information = ProfileNIDSubmissionLog::where('profile_id', $first_admin_profile->id)
+            ->where('verification_status', 'approved')
+            ->whereNotNull('porichy_data')
+            ->last();
+
+        if (isset($nid_information->porichy_data)) {
+            $porichoy_data = json_decode($nid_information->porichy_data);
+        }
+
+        return $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $first_admin_profile->nid_no;
     }
 }
