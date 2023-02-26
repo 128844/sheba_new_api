@@ -53,6 +53,8 @@ class AamarpaySavePrimaryInformation
         $application_data = json_decode($this->partner->partnerMefInformation->partner_information, true);
         $other_data = (new PersonalInformation())->setPartner($this->partner)->getPersonalPhoto();
         $application_data = array_merge($application_data, $other_data);
+        $aamarpay_specific_data = $this->aamarpaySpecificData();
+        $application_data = array_merge($application_data, $aamarpay_specific_data);
 
         return [
             'user_name'        => $this->mutateName($this->partner->getFirstAdminResource()->profile->name),
@@ -103,5 +105,13 @@ class AamarpaySavePrimaryInformation
         $morClient->post("api/v1/clients/applications/store", $data);
 
         return http_response($request, null, 200, ['message' => 'Successful', 'data' => $bannerAamarpay]);
+    }
+
+    private function aamarpaySpecificData(): array
+    {
+        return [
+            'email'         => $this->partner->getFirstAdminResource()->profile->email,
+            'monthlyIncome' => json_decode($this->partner->basicInformations->additional_information)->monthly_transaction_amount
+        ];
     }
 }

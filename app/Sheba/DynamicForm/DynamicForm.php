@@ -13,7 +13,6 @@ use Sheba\Dal\MefForm\Model as MefForm;
 use Sheba\Dal\MefSections\Model as MefSection;
 use Sheba\MerchantEnrollment\MerchantEnrollmentFileHandler;
 use Sheba\MerchantEnrollment\Statics\PaymentMethodStatics;
-use Maatwebsite\Excel\Facades\Excel;
 
 class DynamicForm
 {
@@ -26,10 +25,7 @@ class DynamicForm
     private $requestData;
     private $type;
     private $formKey;
-
-    /**
-     * @var PartnerMefInformation
-     */
+    /** @var PartnerMefInformation $partnerMefInformation */
     private $partnerMefInformation;
 
     public function setForm(): DynamicForm

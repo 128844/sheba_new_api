@@ -26,6 +26,8 @@ use Sheba\MerchantEnrollment\MerchantEnrollment;
 use Sheba\MerchantEnrollment\Statics\MEFGeneralStatics;
 use Sheba\MerchantEnrollment\Statics\PaymentMethodStatics;
 use Sheba\ModificationFields;
+use Sheba\Payment\Factory\PaymentStrategy;
+use Sheba\Payment\Methods\PaymentMethod;
 use Sheba\PaymentLink\PaymentLinkStatics;
 use Sheba\PaymentLink\PaymentLinkStatus;
 use Sheba\PushNotificationHandler;
@@ -247,6 +249,7 @@ class PaymentService
         $this->getResellerPaymentStatus();
         $this->getPgwStatus();
         $pgw_store = PgwStore::where('key', $this->key)->first();
+
         if (!$pgw_store) {
             throw new InvalidQRKeyException();
         }
@@ -259,7 +262,7 @@ class PaymentService
         }
 
         return [
-            'banner'                     => PaymentMethodStatics::getSslBannerURL(),
+            'banner'                     => ($pgw_store->key == PaymentStrategy::SSL) ? PaymentMethodStatics::getSslBannerURL() : PaymentMethodStatics::getAamarpayBannerURL(),
             'faq'                        => PaymentMethodStatics::detailsFAQ(),
             'status'                     => $this->status ?? null,
             'mor_status_wise_disclaimer' => $status_wise_message,

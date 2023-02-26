@@ -37,20 +37,6 @@ class FormFieldBuilder
     public function setPartner(Partner $partner): FormFieldBuilder
     {
         $this->partner = $partner;
-        $this->partner->generatedDomain = "smanager.xyz/s/".$this->partner->sub_domain;
-        $porichoy_data = null;
-        $nid_information = ProfileNIDSubmissionLog::where('profile_id', $this->partner->getFirstAdminResource()->profile->id)
-            ->where('verification_status', 'approved')
-            ->whereNotNull('porichy_data')
-            ->last();
-
-        if (isset($nid_information->porichy_data)) {
-            $porichoy_data = json_decode($nid_information->porichy_data);
-        }
-
-        $this->partner->nid = $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $this->partner->getFirstAdminResource()->profile->nid_no;
-        $this->partner->dob = date("Y-m-d", strtotime($this->partner->getFirstAdminResource()->profile->dob));
-
         return $this;
     }
 
@@ -61,10 +47,33 @@ class FormFieldBuilder
     {
         if (!isset($this->partner->partnerMefInformation)) {
             $mefRepo = app(PartnerMefInformationRepo::class);
-            $this->partner->partnerMefInformation = $mefRepo->create(["partner_id" => $this->partner->id]);
+            $this->partner->partnerMefInformation = $mefRepo->create(["partner_id" => $this->partner->id, "partner_information" => "{}"]);
         }
 
         $this->partnerMefInformation = json_decode($this->partner->partnerMefInformation->partner_information);
+
+        if (!property_exists($this->partnerMefInformation, 'nidOrPassport')) {
+            $porichoy_data = null;
+            $nid_information = ProfileNIDSubmissionLog::where('profile_id', $this->partner->getFirstAdminResource()->profile->id)
+                ->where('verification_status', 'approved')
+                ->whereNotNull('porichy_data')
+                ->last();
+
+            if (isset($nid_information->porichy_data)) {
+                $porichoy_data = json_decode($nid_information->porichy_data);
+            }
+
+            $this->partnerMefInformation->nidOrPassport = $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $this->partner->getFirstAdminResource(
+            )->profile->nid_no;
+        }
+
+        if (!property_exists($this->partnerMefInformation, 'dob')) {
+            $this->partnerMefInformation->dob = date("Y-m-d", strtotime($this->partner->getFirstAdminResource()->profile->dob));
+        }
+
+        if (!property_exists($this->partnerMefInformation, 'tradingName')) {
+            $this->partnerMefInformation->tradingName = "smanager.xyz/s/".$this->partner->sub_domain;
+        }
 
         return $this;
     }
