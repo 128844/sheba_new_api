@@ -6,7 +6,6 @@ use App\Exceptions\NotFoundAndDoNotReportException;
 use App\Models\Partner;
 use App\Sheba\Aamarpay\AamarpayConstants;
 use App\Sheba\MerchantEnrollment\PersonalInformation;
-use App\Sheba\MTB\Exceptions\MtbServiceServerError;
 use App\Sheba\Aamarpay\Validation\ApplyValidation;
 use App\Sheba\ResellerPayment\Exceptions\MORServiceServerError;
 use App\Sheba\ResellerPayment\MORServiceClient;
@@ -14,7 +13,7 @@ use App\Sheba\ResellerPayment\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Sheba\MerchantEnrollment\Statics\MEFGeneralStatics;
 use Sheba\Payment\Factory\PaymentStrategy;
-use Sheba\TPProxy\TPProxyServerError;
+use Sheba\Dal\ProfileNIDSubmissionLog\Model as ProfileNIDSubmissionLog;
 
 class AamarpaySavePrimaryInformation
 {
@@ -109,9 +108,32 @@ class AamarpaySavePrimaryInformation
 
     private function aamarpaySpecificData(): array
     {
+        $first_admin_profile = $this->partner->getFirstAdminResource()->profile;
         return [
-            'email'         => $this->partner->getFirstAdminResource()->profile->email,
-            'monthlyIncome' => json_decode($this->partner->basicInformations->additional_information)->monthly_transaction_amount
+            'tradingName'   => "smanager.xyz/s/".$this->partner->sub_domain,
+            'email'         => $first_admin_profile->email,
+            'monthlyIncome' => json_decode($this->partner->basicInformations->additional_information)->monthly_transaction_amount,
+            'nidOrPassport' => $this->getNidOrPassport($first_admin_profile),
+            'dob'           => date("Y-m-d", strtotime($first_admin_profile->dob)),
         ];
+    }
+
+    /**
+     * @param $first_admin_profile
+     * @return mixed
+     */
+    private function getNidOrPassport($first_admin_profile)
+    {
+        $porichoy_data = null;
+        $nid_information = ProfileNIDSubmissionLog::where('profile_id', $first_admin_profile->id)
+            ->where('verification_status', 'approved')
+            ->whereNotNull('porichy_data')
+            ->last();
+
+        if (isset($nid_information->porichy_data)) {
+            $porichoy_data = json_decode($nid_information->porichy_data);
+        }
+
+        return $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $first_admin_profile->nid_no;
     }
 }
