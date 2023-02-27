@@ -248,6 +248,7 @@ class PaymentService
     {
         $this->getResellerPaymentStatus();
         $this->getPgwStatus();
+
         $pgw_store = PgwStore::where('key', $this->key)->first();
 
         if (!$pgw_store) {
@@ -385,8 +386,8 @@ class PaymentService
 
     private function checkMefCompletion(): bool
     {
-        $this->key = MEFGeneralStatics::payment_gateway_keys();
-        foreach ($this->key as $key) {
+        $keys = MEFGeneralStatics::payment_gateway_keys();
+        foreach ($keys as $key) {
             $merchantEnrollment = app(MerchantEnrollment::class);
             $completion = $merchantEnrollment->setPartner($this->partner)->setKey($key)->getCompletion()->toArray();
             if ($completion['can_apply'] == 1) {
