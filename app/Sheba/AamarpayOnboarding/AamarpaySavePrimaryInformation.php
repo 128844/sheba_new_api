@@ -57,7 +57,7 @@ class AamarpaySavePrimaryInformation
 
         return [
             'user_name'        => $this->mutateName($this->partner->getFirstAdminResource()->profile->name),
-            'user_mobile'      => $this->partner->getFirstAdminResource()->profile->mobile,
+            'user_mobile'      => $this->partner->mobile,
             "application_data" => json_encode($application_data),
             "user_type"        => MEFGeneralStatics::USER_TYPE_PARTNER,
             "user_id"          => $this->partner->id,
@@ -111,10 +111,12 @@ class AamarpaySavePrimaryInformation
         $first_admin_profile = $this->partner->getFirstAdminResource()->profile;
         return [
             'tradingName'   => "smanager.xyz/s/".$this->partner->sub_domain,
+            'mobile'        => $this->partner->mobile,
             'email'         => $first_admin_profile->email,
             'monthlyIncome' => json_decode($this->partner->basicInformations->additional_information)->monthly_transaction_amount,
             'nidOrPassport' => $this->getNidOrPassport($first_admin_profile),
             'dob'           => date("Y-m-d", strtotime($first_admin_profile->dob)),
+            'salesItems'    => $this->partner->business_type,
         ];
     }
 
