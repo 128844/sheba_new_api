@@ -63,7 +63,7 @@ class StoreConfiguration
         $this->validate();
         /** @var PaymentStore $store */
         $store = (new StoreFactory())->setKey($this->key)->get();
-        $store->setData($this->request_data)->setPartner($this->partner)->setGatewayId($this->gateway_id)->postConfiguration();
+        $store->setData($this->request_data)->setPartner($this->partner)->setGatewayId($this->gateway_id)->setKey($this->key)->postConfiguration();
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Sheba\Payment\Methods\AamarPay\AamarPayDynamicAuth;
 use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
 use Sheba\Dal\GatewayAccount\Contract as PgwGatewayAccountRepo;
 use Sheba\Payment\Exceptions\InvalidConfigurationException;
+use Sheba\Payment\Exceptions\InvalidStoreConfiguration;
 use Sheba\ResellerPayment\EncryptionAndDecryption;
 use Sheba\ResellerPayment\Exceptions\ResellerPaymentException;
 use Sheba\ResellerPayment\Exceptions\StoreAccountNotFoundException;
@@ -43,13 +44,13 @@ class Aamarpay extends PaymentStore
     /**
      * @return void
      * @throws InvalidConfigurationException
+     * @throws InvalidStoreConfiguration
      */
     public function postConfiguration()
     {
         $data = $this->makeStoreAccountData();
         // $this->test();
         $storeAccount = $this->partner->pgwGatewayAccounts()->where("gateway_type_id", $this->gateway_id)->first();
-
         if (isset($storeAccount)) {
             $storeAccount->configuration = $data["configuration"];
             $storeAccount->save();
@@ -83,7 +84,7 @@ class Aamarpay extends PaymentStore
             "gateway_type_id" => (int)$this->gateway_id,
             "user_id"         => $this->partner->id,
             "user_type"       => 'partner',
-            "name"            => "dynamic_aamarpay",
+            "name"            => "dynamic_".$this->key,
             "configuration"   => $this->conn_data
         ];
     }
@@ -91,9 +92,18 @@ class Aamarpay extends PaymentStore
     /**
      * @return void
      * @throws InvalidConfigurationException
+     * @throws InvalidStoreConfiguration
      */
     public function test()
     {
+        /** @var \App\Sheba\Payment\Methods\AamarPay\AamarPay $method */
+        $method = app(\App\Sheba\Payment\Methods\AamarPay\AamarPay::class);
+        $storeCredentials = $this->makeAndGetConfigurationData();
+        $method->setStoreId($storeCredentials['storeId'])
+            ->setSignatureKey($storeCredentials['signatureKey'])
+            ->setApiKey($storeCredentials['apiKey'])
+            ->testInit();
+        $method->testApiKey();
     }
 
     /**
