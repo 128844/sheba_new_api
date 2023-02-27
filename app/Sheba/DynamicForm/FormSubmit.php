@@ -47,6 +47,7 @@ class FormSubmit
      */
     public function store()
     {
+        $skippable_field = ["trade_license", "tinCertificate", "photoOf1stSignatory", "photoOf2ndSignatory"];
         foreach ($this->fields as $field) {
             $fieldData = (new FormField())->setFormInput(json_decode($field->data));
 
@@ -58,7 +59,8 @@ class FormSubmit
                     $setter = "set".ucfirst($source);
                     $this->$setter();
                 }
-                if (isset($this->postData[$source_id])) {
+
+                if (isset($this->postData[$source_id]) && !in_array($source_id, $skippable_field)) {
                     $this->$source->$source_id = trim($this->postData[$source_id]);
                 }
             }
