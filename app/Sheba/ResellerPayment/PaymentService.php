@@ -468,7 +468,11 @@ class PaymentService
         $partner = Partner::where('id', $partnerId)->first();
         $pgwStores = new PgwStore();
 
-        $pgwStores = $pgwStores->publishedForMEF()->select('id', 'name', 'key', 'name_bn', 'icon')->get();
+        if ($version_code && $version_code <= 300613) {
+            $pgwStores = $pgwStores->publishedForMEF()->where('key', '<>', PaymentStrategy::AAMARPAY)->select('id', 'name', 'key', 'name_bn', 'icon')->get();
+        } else {
+            $pgwStores = $pgwStores->publishedForMEF()->select('id', 'name', 'key', 'name_bn', 'icon')->get();
+        }
 
         foreach ($pgwStores as $pgwStore) {
             $completionData = (new MerchantEnrollment())->setPartner($partner)->setKey($pgwStore->key)->getCompletion();
