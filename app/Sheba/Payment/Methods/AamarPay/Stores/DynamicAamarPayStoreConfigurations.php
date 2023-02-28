@@ -7,9 +7,27 @@ use Sheba\ResellerPayment\EncryptionAndDecryption;
 
 class DynamicAamarPayStoreConfigurations
 {
+    protected $configuration;
+
     private $storeId;
     private $signatureKey;
     private $apiKey;
+
+    public function __construct($configuration = "")
+    {
+        $configuration = !empty($configuration) ? (new EncryptionAndDecryption())->setData($configuration)->getDecryptedData() : "";
+        $this->configuration = json_decode($configuration);
+        if (isset($this->configuration)) {
+            foreach ($this->configuration as $key => $value) {
+                $this->$key = $value;
+            }
+        }
+    }
+
+    public function getConfiguration()
+    {
+        return $this->configuration;
+    }
 
     public function decryptAndSetConfigurations($encryptedConfigurations): self
     {

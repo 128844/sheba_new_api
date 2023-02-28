@@ -24,7 +24,7 @@ class PaymentMethodFactory
     }
 
     /**
-     * @param mixed $partner
+     * @param  mixed  $partner
      * @return PaymentMethodFactory
      */
     public function setPartner($partner): PaymentMethodFactory
@@ -42,7 +42,7 @@ class PaymentMethodFactory
         $class_map = PaymentMethodStatics::classMap();
         $key = $this->payment_gateway->key;
         if (isset($class_map[$key])) {
-            $class=$class_map[$key];
+            $class = $class_map[$key];
             /** @var PaymentMethod $payment_method */
             $payment_method = app("$this->paymentMethodClassPath$class\\$class");
             return $payment_method->setPartner($this->partner)->setPaymentMethod($this->payment_gateway);
@@ -50,5 +50,4 @@ class PaymentMethodFactory
 
         throw new InvalidKeyException();
     }
-
 }

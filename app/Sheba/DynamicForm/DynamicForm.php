@@ -6,31 +6,26 @@ use App\Models\District;
 use App\Models\Division;
 use App\Models\Partner;
 use App\Models\Thana;
+use App\Sheba\DynamicForm\DataSources\AccountType;
+use App\Sheba\DynamicForm\DataSources\BanksList;
 use Illuminate\Support\Facades\DB;
 use Sheba\Dal\MefForm\Model as MefForm;
 use Sheba\Dal\MefSections\Model as MefSection;
 use Sheba\MerchantEnrollment\MerchantEnrollmentFileHandler;
 use Sheba\MerchantEnrollment\Statics\PaymentMethodStatics;
-use Maatwebsite\Excel\Facades\Excel;
 
 class DynamicForm
 {
     /*** @var MefForm */
     private $form;
-
     /*** @var MefSection */
     private $section;
-
     /*** @var Partner */
     private $partner;
-
     private $requestData;
     private $type;
     private $formKey;
-
-    /**
-     * @var PartnerMefInformation
-     */
+    /** @var PartnerMefInformation $partnerMefInformation */
     private $partnerMefInformation;
 
     public function setForm(): DynamicForm
@@ -49,23 +44,29 @@ class DynamicForm
         $categories = $this->sectionDetails();
         $finalCompletion = (new CompletionCalculation())->getFinalCompletion($categories);
 
-        return (new SectionListResponse())->setCategories($categories)->setPartner($this->partner)
+        return (new SectionListResponse())
+            ->setCategories($categories)
+            ->setPartner($this->partner)
             ->setMessage(PaymentMethodStatics::dynamicCompletionPageMessage($this->formKey))
-            ->setOverallCompletion($finalCompletion)->setCanApply($finalCompletion)->toArray();
+            ->setOverallCompletion($finalCompletion)
+            ->setCanApply($finalCompletion)
+            ->toArray();
     }
 
     private function sectionDetails(): array
     {
-        $categories = array();
+        $categories = [];
         foreach ($this->form->sections as $section) {
             $this->setSection($section->id);
             $fields = $this->getSectionFields();
             $completion = (new CompletionCalculation())->setFields($fields)->calculate();
 
-            $categories[] = (new CategoryDetails())->setCategoryCode($section->key)
-                ->setCompletionPercentage($completion)->setCategoryId($section->id)
-                ->setTitle($section->name, $section->bn_name)->toArray();
-
+            $categories[] = (new CategoryDetails())
+                ->setCategoryCode($section->key)
+                ->setCompletionPercentage($completion)
+                ->setCategoryId($section->id)
+                ->setTitle($section->name, $section->bn_name)
+                ->toArray();
         }
         return $categories;
     }
@@ -74,10 +75,10 @@ class DynamicForm
     {
         $fields = $this->getSectionFields();
         return [
-            "title" => $this->getSectionNames(),
+            "title"      => $this->getSectionNames(),
             "form_items" => $fields,
             "completion" => $this->getSectionCompletion($fields),
-            "post_url" => $this->getPostUrl()
+            "post_url"   => $this->getPostUrl()
         ];
     }
 
@@ -92,7 +93,7 @@ class DynamicForm
 
     private function getPostUrl(): string
     {
-        return config('sheba.api_url') . $this->section->post_url;
+        return config('sheba.api_url').$this->section->post_url;
     }
 
     /**
@@ -112,16 +113,18 @@ class DynamicForm
 
     public function getSectionFields(): array
     {
-        $fields = array();
+        $fields = [];
         $form_builder = (new FormFieldBuilder())->setPartner($this->partner);
 
-        foreach ($this->section->fields as $field)
+        foreach ($this->section->fields as $field) {
             $fields[] = $form_builder->setField($field)->build()->toArray();
+        }
+
         return $fields;
     }
 
     /**
-     * @param mixed $partner
+     * @param  mixed  $partner
      * @return DynamicForm
      */
     public function setPartner($partner): DynamicForm
@@ -131,7 +134,7 @@ class DynamicForm
     }
 
     /**
-     * @param mixed $section_id
+     * @param  mixed  $section_id
      * @return DynamicForm
      */
     public function setSection($section_id): DynamicForm
@@ -141,7 +144,7 @@ class DynamicForm
     }
 
     /**
-     * @param mixed $requestData
+     * @param  mixed  $requestData
      * @return DynamicForm
      */
     public function setRequestData($requestData): DynamicForm
@@ -161,7 +164,7 @@ class DynamicForm
     }
 
     /**
-     * @param mixed $formKey
+     * @param  mixed  $formKey
      * @return DynamicForm
      */
     public function setFormKey($formKey): DynamicForm
@@ -173,8 +176,8 @@ class DynamicForm
 
     private function getDivision()
     {
-        $divisionInformation = json_decode(file_get_contents(public_path() . "/mtbThana.json"));
-        $filtered_array = array();
+        $divisionInformation = json_decode(file_get_contents(public_path()."/mtbThana.json"));
+        $filtered_array = [];
         foreach ($divisionInformation as $value) {
             if (!in_array($value, $filtered_array)) {
                 $filtered_array[] = $value;
@@ -185,8 +188,8 @@ class DynamicForm
 
     private function getDistrict($division)
     {
-        $thanaInformation = json_decode(file_get_contents(public_path() . "/mtbThana.json"));
-        $filtered_array = array();
+        $thanaInformation = json_decode(file_get_contents(public_path()."/mtbThana.json"));
+        $filtered_array = [];
         foreach ($thanaInformation as $value) {
             if (ucfirst(strtolower($value->division)) == $division) {
                 $filtered_array[] = $value;
@@ -197,8 +200,8 @@ class DynamicForm
 
     private function getThana($district)
     {
-        $thanaInformation = json_decode(file_get_contents(public_path() . "/mtbThana.json"));
-        $filtered_array = array();
+        $thanaInformation = json_decode(file_get_contents(public_path()."/mtbThana.json"));
+        $filtered_array = [];
         foreach ($thanaInformation as $value) {
             if ($value->district == $district) {
                 $filtered_array[] = $value;
@@ -260,7 +263,7 @@ class DynamicForm
         if ($this->type == "division") {
             $division = $this->getDivision();
             $division = (new CollectionFormatter())->setData($division)->formatCollectionUpdated();
-            $final = array();
+            $final = [];
             foreach ($division as $current) {
                 if (!in_array($current, $final)) {
                     $final[] = $current;
@@ -274,7 +277,7 @@ class DynamicForm
         if ($this->type == "district") {
             $district = $this->getDistrict(ucfirst(strtolower($request->division)));
             $district = (new CollectionFormatter())->setData($district)->formatCollectionDistrict();
-            $final = array();
+            $final = [];
             foreach ($district as $current) {
                 if (!in_array($current, $final)) {
                     $final[] = $current;
@@ -300,13 +303,30 @@ class DynamicForm
         if ($this->type == "nomineeRelation") {
             return config('mtb_nominee_relation');
         }
+
+        if ($this->type == "bankName") {
+            return ['list' => BanksList::getGeneratedKeyNameValue()];
+        }
+
+        if ($this->type == "accountAuthorizationType") {
+            return ['list' => AccountType::getGeneratedKeyNameValue()];
+        }
     }
 
-
+    /**
+     * @param $document
+     * @param $document_id
+     * @return void
+     */
     public function uploadDocumentData($document, $document_id)
     {
         $field = DB::table('fields')->where('data->id', $document_id)->first();
-        $url = (new MerchantEnrollmentFileHandler())->setPartner($this->partner)->uploadDocument($document, json_decode($field->data, true))->getUploadedUrl();
+
+        $url = (new MerchantEnrollmentFileHandler())
+            ->setPartner($this->partner)
+            ->uploadDocument($document, json_decode($field->data, true))
+            ->getUploadedUrl();
+
         (new FormSubmit())->setPartner($this->partner)->setFields($field)->documentStore($url);
     }
 }

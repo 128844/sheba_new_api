@@ -36,5 +36,9 @@ class ResellerPaymentRoute
             $api->post('/send-notification', 'ResellerPayment\\PaymentServiceController@sendNotificationOnStatusChange');
             $api->post('/send-custom-sms', 'ResellerPayment\\PaymentServiceController@sendCustomSMS');
         });
+
+        $api->group(['prefix' => 'partners'], function ($api) {
+            $api->post('reseller-payment/store-configuration-by-mor', 'ResellerPayment\\StoreConfigurationController@storeByMor');
+        });
     }
 }

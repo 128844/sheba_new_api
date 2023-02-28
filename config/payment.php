@@ -111,5 +111,6 @@ return [
         'success_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/success',
         'fail_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/fail',
         'cancel_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/cancel',
+        'emi_list_url' => env('AAMARPAY_EMI_LIST_URL'),
     ],
 ];

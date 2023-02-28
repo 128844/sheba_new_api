@@ -40,7 +40,8 @@ class PaymentServiceController extends Controller
         $header_message = 'সর্বাধিক ব্যবহৃত';
         $partnerId = $request->partner->id;
         $version_code = $request->header('version-code');
-        $pgwData = $this->paymentService->setPartner($request->partner)->getPaymentGateways($completion, $header_message, $partnerId, $banner,$version_code);
+        $pgwData = $this->paymentService->setPartner($request->partner)->getPaymentGateways($completion, $header_message, $partnerId, $banner, $version_code);
+
         return api_response($request, null, 200, ['data' => $pgwData]);
     }
 
@@ -54,7 +55,6 @@ class PaymentServiceController extends Controller
         $data = $this->paymentService->getServiceCharge($partnerId);
         return api_response($request, null, 200, ['data' => $data]);
     }
-
 
     /**
      * @param Request $request

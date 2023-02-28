@@ -10,11 +10,10 @@ abstract class PaymentStore
     protected $partner;
     protected $data;
     protected $gateway_id;
-
-//    protected $conn_data;
+    // protected $conn_data;
 
     /**
-     * @param mixed $key
+     * @param  mixed  $key
      * @return PaymentStore
      */
     public function setKey($key): PaymentStore
@@ -24,7 +23,7 @@ abstract class PaymentStore
     }
 
     /**
-     * @param mixed $partner
+     * @param  mixed  $partner
      * @return PaymentStore
      */
     public function setPartner($partner): PaymentStore
@@ -34,7 +33,7 @@ abstract class PaymentStore
     }
 
     /**
-     * @param mixed $data
+     * @param  mixed  $data
      */
     public function setData($data): PaymentStore
     {
@@ -43,7 +42,7 @@ abstract class PaymentStore
     }
 
     /**
-     * @param mixed $gateway_id
+     * @param  mixed  $gateway_id
      * @return PaymentStore
      */
     public function setGatewayId($gateway_id): PaymentStore
@@ -54,9 +53,10 @@ abstract class PaymentStore
 
     protected function getStoreAccount()
     {
-        if(isset($this->partner))
+        if (isset($this->partner)) {
             return $this->partner->pgwGatewayAccounts()->join('pgw_stores', 'gateway_type_id', '=', 'pgw_stores.id')
                 ->where('pgw_stores.key', $this->key)->first();
+        }
     }
 
     public function getAndSetConfiguration($configuration): array
@@ -65,7 +65,7 @@ abstract class PaymentStore
         return [
                 "pgw_store_id"  => (int)$this->gateway_id,
                 "user_id"       => $this->partner->id,
-//                "user_type"     => strtolower(class_basename($this->partner)),
+                // "user_type"     => strtolower(class_basename($this->partner)),
                 "user_type"     => get_class($this->partner),
                 "name"          => "dynamic_$this->key",
                 "configuration" => $this->conn_data

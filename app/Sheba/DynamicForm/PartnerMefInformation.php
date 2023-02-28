@@ -44,19 +44,52 @@ class PartnerMefInformation implements Arrayable
     private $accountHolderName;
     private $bankName;
     private $branchName;
+
     private $bankAccountNumber;
     private $bankRoutingNumber;
+
     private $branchCode;
     private $userRecentPhoto;
     private $bankChequePhoto;
     private $businessVisitingCard;
     private $spouseName;
 
+    private $businessRegisteredName;
+    private $tradingName;
+    private $mobile;
+    private $email;
+    private $natureOfBusiness;
+    private $salesItems;
+    private $legalIdentity;
+
+    private $accountsContactName;
+    private $businessDesignation;
+
+    private $accountAuthorizationType;
+    private $accountName;
+
+    private $nidOrPassport;
+    private $dob;
+
+    private $presentNoOfTransactions;
+    private $presentValueOfMaximumSingleTransaction;
+    private $presentValueOfTotalMonthlyTransaction;
+
+    private $projectedNoOfTransactions;
+    private $projectedValueOfMaximumSingleTransaction;
+    private $projectedVolumeOfTotalMonthlyTransaction;
+
+    private $tinCertificate;
+    private $photoOf1stSignatory;
+    private $photoOf2ndSignatory;
+
     public function setProperty($input): PartnerMefInformation
     {
-        foreach ($input as $key => $value)
-            if(property_exists($this, $key))
+        foreach ($input as $key => $value) {
+            if (property_exists($this, $key)) {
                 $this->$key = $value;
+            }
+        }
 
         return $this;
     }
@@ -80,9 +113,11 @@ class PartnerMefInformation implements Arrayable
     {
         $reflection_class = new ReflectionClass($this);
         $data = [];
-        foreach ($reflection_class->getProperties() as $item)
-            if (isset($this->{$item->name}))
+        foreach ($reflection_class->getProperties() as $item) {
+            if (isset($this->{$item->name})) {
                 $data[$item->name] = $this->{$item->name};
+            }
+        }
 
         return $data;
     }

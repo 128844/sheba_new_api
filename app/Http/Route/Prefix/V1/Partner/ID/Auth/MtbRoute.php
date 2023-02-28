@@ -8,11 +8,9 @@ class MtbRoute
     {
         $api->post('/validate/mtb-account', 'Mtb\MtbController@statusValidate');
         $api->group(['middleware' => ['accessToken']], function ($api) {
-
             $api->post('/partners/mtb-apply', 'Mtb\MtbController@apply');
             $api->post('/partners/mtb-send-otp', 'Mtb\MtbController@sendOtp');
             $api->get('/partners/mobile', 'Mtb\MtbController@getPartnerMobileNumber');
         });
-
     }
 }

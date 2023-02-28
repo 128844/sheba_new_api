@@ -10,6 +10,8 @@ use App\Sheba\Payment\Methods\AamarPay\Stores\AamarPayDynamicStore;
 use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
 use Illuminate\Support\Facades\Log;
 use Sheba\Payment\Exceptions\FailedToInitiate;
+use Sheba\Payment\Exceptions\InvalidConfigurationException;
+use Sheba\Payment\Exceptions\InvalidStoreConfiguration;
 use Sheba\Payment\Factory\PaymentStrategy;
 use Sheba\Payment\Methods\PaymentMethod;
 use Sheba\Payment\Statuses;
@@ -26,6 +28,9 @@ class AamarPay extends PaymentMethod
      * @var DynamicAamarPayStoreConfigurations
      */
     private $configuration;
+    private $storeId;
+    private $signatureKey;
+    private $apiKey;
 
     public function __construct(TPProxyClient $tpClient)
     {
@@ -40,7 +45,9 @@ class AamarPay extends PaymentMethod
 
     public function init(Payable $payable): Payment
     {
-        if (!$payable->isPaymentLink()) throw  new \Exception('Only Payment Link payment will work');
+        if (!$payable->isPaymentLink()) {
+            throw  new \Exception('Only Payment Link payment will work');
+        }
         $this->setConfiguration($this->getCredentials($payable));
         if ($payable->emi_month > 0 && $this->configuration->getApiKey() === null) {
             throw new FailedToInitiate('Api key not found');
@@ -58,8 +65,8 @@ class AamarPay extends PaymentMethod
             $error = $init_response->getError();
             $this->paymentLogRepo->setPayment($payment);
             $this->paymentLogRepo->create([
-                'to' => Statuses::INITIATION_FAILED,
-                'from' => $payment->status,
+                'to'                  => Statuses::INITIATION_FAILED,
+                'from'                => $payment->status,
                 'transaction_details' => json_encode($error->details)
             ]);
             $payment->status = Statuses::INITIATION_FAILED;
@@ -80,8 +87,8 @@ class AamarPay extends PaymentMethod
         if ($validation_response->hasSuccess()) {
             $success = $validation_response->getSuccess();
             $this->paymentLogRepo->create([
-                'to' => Statuses::VALIDATED,
-                'from' => $payment->status,
+                'to'                  => Statuses::VALIDATED,
+                'from'                => $payment->status,
                 'transaction_details' => $payment->transaction_details
             ]);
             $payment->gateway_transaction_id = $success->id;
@@ -94,8 +101,8 @@ class AamarPay extends PaymentMethod
         } else {
             $error = $validation_response->getError();
             $this->paymentLogRepo->create([
-                'to' => Statuses::VALIDATION_FAILED,
-                'from' => $payment->status,
+                'to'                  => Statuses::VALIDATION_FAILED,
+                'from'                => $payment->status,
                 'transaction_details' => $payment->transaction_details
             ]);
             if ($error->id) {
@@ -117,33 +124,35 @@ class AamarPay extends PaymentMethod
     {
         $payable = $payment->payable;
         $data = [
-            'store_id' => $this->configuration->getStoreId(),
+            'store_id'      => $this->configuration->getStoreId(),
             'signature_key' => $this->configuration->getSignatureKey(),
-            'tran_id' => $payment->transaction_id,
-            'success_url' => $this->successUrl,
-            'fail_url' => $this->failUrl,
-            'cancel_url' => $this->cancelUrl,
-            'amount' => (double)$payable->amount,
-            'currency' => 'BDT',
-            'desc' => 'payment through payment link',
-            'cus_name' => $payable->getName(),
-            'cus_email' => $payable->getEmail() ?? 'payment@smanager.com',
-            'cus_add1' => 'House #57, Road #25',
-            'cus_add2' => 'Banani',
-            'cus_city' => 'Dhaka',
-            'cus_state' => 'Dhaka',
-            'cus_postcode' => '1213',
-            'cus_country' => 'Bangladesh',
-            'cus_phone' => $payable->getMobile(),
+            'tran_id'       => $payment->transaction_id,
+            'success_url'   => $this->successUrl,
+            'fail_url'      => $this->failUrl,
+            'cancel_url'    => $this->cancelUrl,
+            'amount'        => (double)$payable->amount,
+            'currency'      => 'BDT',
+            'desc'          => 'payment through payment link',
+            'cus_name'      => $payable->getName(),
+            'cus_email'     => $payable->getEmail() ?? 'payment@smanager.com',
+            'cus_add1'      => 'House #57, Road #25',
+            'cus_add2'      => 'Banani',
+            'cus_city'      => 'Dhaka',
+            'cus_state'     => 'Dhaka',
+            'cus_postcode'  => '1213',
+            'cus_country'   => 'Bangladesh',
+            'cus_phone'     => $payable->getMobile(),
         ];
-        $request = (new TPRequest())->setUrl($this->baseUrl . '/request.php')
+        $request = (new TPRequest())->setUrl($this->baseUrl.'/request.php')
             ->setMethod(TPRequest::METHOD_POST)->setInput($data);
         return $this->tpClient->call($request);
     }
 
     public function getPaymentStatusFromAamarpay($transactionId)
     {
-        $request = (new TPRequest())->setUrl($this->baseUrl . "/api/v1/trxcheck/request.php?request_id={$transactionId}&store_id={$this->configuration->getStoreId()}&signature_key={$this->configuration->getSignatureKey()}&type=json")
+        $request = (new TPRequest())->setUrl(
+            $this->baseUrl."/api/v1/trxcheck/request.php?request_id={$transactionId}&store_id={$this->configuration->getStoreId()}&signature_key={$this->configuration->getSignatureKey()}&type=json"
+        )
             ->setMethod(TPRequest::METHOD_GET);
         return $this->tpClient->call($request);
     }
@@ -159,15 +168,15 @@ class AamarPay extends PaymentMethod
         $this->setConfiguration($this->getCredentials($payable));
 
         $data = [
-            'api_key' => $this->configuration->getApiKey(),
-            'store_id' => $this->configuration->getStoreId(),
-            'pg_trxnid' => $payment->gateway_transaction_id,
-            'amount' => $payable->amount,
-            'tenure' => $payable->emi_month,
+            'api_key'        => $this->configuration->getApiKey(),
+            'store_id'       => $this->configuration->getStoreId(),
+            'pg_trxnid'      => $payment->gateway_transaction_id,
+            'amount'         => $payable->amount,
+            'tenure'         => $payable->emi_month,
             'monthly_amount' => $monthlyAmount,
-            'trxn_date' => date('Y-m-d H:i:s'),
-            'bank_name' => $bank->name,
-            'emi_details' => "{$payable->emi_month} months - BDT {$monthlyAmount} | EMI Charges Payable @ 1.6%",
+            'trxn_date'      => date('Y-m-d H:i:s'),
+            'bank_name'      => $bank->name,
+            'emi_details'    => "{$payable->emi_month} months - BDT {$monthlyAmount} | EMI Charges Payable @ 1.6%",
         ];
 
         $request = (new TPRequest())->setUrl(config('payment.aamarpay.emi_process_url'))
@@ -205,6 +214,81 @@ class AamarPay extends PaymentMethod
     {
         if (isset($transaction_details->status_code) && $transaction_details->status_code == ValidationResponse::SUCCESS_CODE) {
             return $transaction_details->processing_charge;
+        }
+    }
+
+    public function setStoreId($storeId): AamarPay
+    {
+        $this->storeId = $storeId;
+        return $this;
+    }
+
+    public function setSignatureKey($signatureKey): AamarPay
+    {
+        $this->signatureKey = $signatureKey;
+        return $this;
+    }
+
+    public function setApiKey($apiKey): AamarPay
+    {
+        $this->apiKey = $apiKey;
+        return $this;
+    }
+
+    public function testInit(): bool
+    {
+        $response = $this->getTestSession();
+        if (config('app.env') === 'production' && substr($response, 0, 27) === '/paynow_check_update.php?d=') {
+            return true;
+        } elseif (config('app.env') !== 'production' && substr($response, 0, 18) === '/paynow.php?track=') {
+            return true;
+        }
+
+        throw new InvalidConfigurationException("Invalid credentials! Please try again.");
+    }
+
+    public function getTestSession()
+    {
+        if ($this->storeId === null || $this->signatureKey === null) {
+            throw new InvalidStoreConfiguration('Store id or signature key is not set');
+        }
+        $data = [
+            'store_id'      => $this->storeId,
+            'signature_key' => $this->signatureKey,
+            'tran_id'       => 'test_transaction_id_'.time(),
+            'success_url'   => $this->successUrl,
+            'fail_url'      => $this->failUrl,
+            'cancel_url'    => $this->cancelUrl,
+            'amount'        => 10,
+            'currency'      => 'BDT',
+            'desc'          => 'Test init',
+            'cus_name'      => 'test_customer_name',
+            'cus_email'     => 'test_customer_email@test.com',
+            'cus_add1'      => 'test',
+            'cus_add2'      => 'test',
+            'cus_city'      => 'test',
+            'cus_state'     => 'test',
+            'cus_postcode'  => 'test',
+            'cus_country'   => 'Bangladesh',
+            'cus_phone'     => '+8801774567890',
+        ];
+        $request = (new TPRequest())->setUrl($this->baseUrl.'/request.php')->setMethod(TPRequest::METHOD_POST)->setInput($data);
+        return $this->tpClient->call($request);
+    }
+
+    public function testApiKey()
+    {
+        if ($this->apiKey === null) {
+            throw new InvalidStoreConfiguration('Api key is not set');
+        }
+
+        $request = (new TPRequest())->setUrl(config('payment.aamarpay.emi_list_url'))
+            ->setMethod(TPRequest::METHOD_POST)
+            ->setHeaders(['Content-Type' => 'application/json'])
+            ->setInput(['api_key' => $this->apiKey]);
+        $response = $this->tpClient->call($request);
+        if (property_exists($response[0], 'result') && $response[0]->result === 'Failed') {
+            throw new InvalidStoreConfiguration('Api key doesn\'t match');
         }
     }
 }
