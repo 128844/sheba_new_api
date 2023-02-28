@@ -344,7 +344,7 @@ class PaymentService
     private function getResellerPaymentStatus($exceptMorStatus = false)
     {
         if (!$exceptMorStatus) {
-            $this->getMORStatus();
+            $this->getMORStatus($this->key);
         }
         if (isset($this->status)) {
             return;
