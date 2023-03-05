@@ -11,6 +11,7 @@ use App\Models\Profile;
 use App\Repositories\CustomerRepository;
 use App\Repositories\FileRepository;
 use App\Repositories\ProfileRepository;
+use Sheba\Customer\Deleter;
 use Sheba\Gender\Gender;
 use Carbon\Carbon;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -28,6 +29,7 @@ use Hash;
 class CustomerController extends Controller
 {
     use DispatchesJobs;
+
     private $customer;
     private $fbKit;
     private $fileRepository;
@@ -35,19 +37,21 @@ class CustomerController extends Controller
 
     public function __construct()
     {
-        $this->customer = new CustomerRepository();
-        $this->fbKit = new FacebookAccountKit();
-        $this->fileRepository = new FileRepository();
+        $this->customer          = new CustomerRepository();
+        $this->fbKit             = new FacebookAccountKit();
+        $this->fileRepository    = new FileRepository();
         $this->profileRepository = new ProfileRepository();
     }
 
     public function index($customer, Request $request)
     {
-        $customer = $request->customer->load(['profile' => function ($q) {
-            $q->select('id', 'name', 'password', 'address', DB::raw('pro_pic as picture'), 'gender', DB::raw('dob as birthday'), 'email', 'mobile');
-        }]);
-        $profile = $customer->profile;
-        $profile->password = ($profile->password) ? 1 : 0;
+        $customer                    = $request->customer->load([
+            'profile' => function ($q) {
+                $q->select('id', 'name', 'password', 'address', DB::raw('pro_pic as picture'), 'gender', DB::raw('dob as birthday'), 'email', 'mobile');
+            }
+        ]);
+        $profile                     = $customer->profile;
+        $profile->password           = ($profile->password) ? 1 : 0;
         $customer->profile['credit'] = $customer->shebaCredit();
         return api_response($request, $customer->profile, 200, ['profile' => $customer->profile]);
     }
@@ -59,8 +63,8 @@ class CustomerController extends Controller
             'value' => 'required|string'
         ]);
         $customer = $request->customer;
-        $field = $request->field;
-        $profile = $customer->profile;
+        $field    = $request->field;
+        $profile  = $customer->profile;
         if ($field == 'birthday') {
             $this->validate($request, [
                 'value' => 'required|date|date_format:Y-m-d|before:' . Carbon::today()->format('Y-m-d'),
@@ -75,7 +79,7 @@ class CustomerController extends Controller
             $this->validate($request, [
                 'value' => 'required|string'
             ]);
-            $value = $field == 'name' ? ucwords($request->value) : $request->value;
+            $value           = $field == 'name' ? ucwords($request->value) : $request->value;
             $profile->$field = trim($value);
         }
         $profile->update();
@@ -91,15 +95,15 @@ class CustomerController extends Controller
     public function updateV3($customer, Request $request)
     {
         /** @var Customer $customer */
-        $customer = $request->customer;
-        $profile = $customer->profile;
+        $customer         = $request->customer;
+        $profile          = $customer->profile;
         $request['email'] = trim($request->email);
         $this->validate($request, [
-            'name' => 'string',
-            'gender'=>'string|in:' . Gender::implodeEnglish(),
-            'address'=>'string',
-            'dob' => 'date|date_format:Y-m-d|before:' . Carbon::today()->format('Y-m-d'),
-            'email' => 'email|unique:profiles,email,' . $profile->id,
+            'name'        => 'string',
+            'gender'      => 'string|in:' . Gender::implodeEnglish(),
+            'address'     => 'string',
+            'dob'         => 'date|date_format:Y-m-d|before:' . Carbon::today()->format('Y-m-d'),
+            'email'       => 'email|unique:profiles,email,' . $profile->id,
             'is_old_user' => 'required'
         ]);
         if ($request->has('name')) $profile->name = ucwords($request->name);
@@ -113,8 +117,7 @@ class CustomerController extends Controller
             app()->make(ActionRewardDispatcher::class)->run('profile_complete', $customer);
             $customer->is_completed = 1;
             $customer->update();
-        }
-        elseif ($customer->isCompleted() && !$customer->is_completed) {
+        } elseif ($customer->isCompleted() && !$customer->is_completed) {
             $customer->is_completed = 1;
             $customer->update();
         }
@@ -156,12 +159,12 @@ class CustomerController extends Controller
             'picture' => 'required|mimes:jpeg,png'
         ]);
         $profile = $request->customer->profile;
-        $photo = $request->file('picture');
+        $photo   = $request->file('picture');
         if (basename($profile->pro_pic) != 'default.jpg') {
             $filename = substr($profile->pro_pic, strlen(env('S3_URL')));
             $this->fileRepository->deleteFileFromCDN($filename);
         }
-        $filename = Carbon::now()->timestamp . '_profile_image_' . $profile->id . '.' . $photo->extension();
+        $filename     = Carbon::now()->timestamp . '_profile_image_' . $profile->id . '.' . $photo->extension();
         $picture_link = $this->fileRepository->uploadToCDN($filename, $photo, 'images/profiles/');
         if ($picture_link != false) {
             $profile->pro_pic = $picture_link;
@@ -179,11 +182,11 @@ class CustomerController extends Controller
         ]);
         $code_data = $this->fbKit->authenticateKit($request->code);
         if ($code_data) {
-            $mobile = formatMobile($code_data['mobile']);
+            $mobile         = formatMobile($code_data['mobile']);
             $mobile_profile = Profile::where('mobile', $mobile)->first();
             if ($mobile_profile == null) {
-                $profile = $request->customer->profile;
-                $profile->mobile = $mobile;
+                $profile                  = $request->customer->profile;
+                $profile->mobile          = $mobile;
                 $profile->mobile_verified = 1;
                 $profile->update();
             } else {
@@ -227,7 +230,7 @@ class CustomerController extends Controller
 
     public function getIntercomInfo($customer, Request $request)
     {
-        $customer = $request->customer->profile()->select('id', 'name', 'mobile', 'email')->first();
+        $customer  = $request->customer->profile()->select('id', 'name', 'mobile', 'email')->first();
         $user_hash = hash_hmac('sha256', $customer->id, env('INTERCOM_SECRET_KEY'));
         array_add($customer, 'signed_up_at', $request->customer->created_at->timestamp);
         array_add($customer, 'user_hash', $user_hash);
@@ -256,14 +259,14 @@ class CustomerController extends Controller
     public function modifyMobile(Request $request, $customer)
     {
         $code_data = $this->fbKit->authenticateKit($request->input('code'));
-        $customer = Customer::find($customer);
+        $customer  = Customer::find($customer);
         if ($this->customer->mobileValid($code_data['mobile'])) {
-            $customer->mobile = $code_data['mobile'];
+            $customer->mobile          = $code_data['mobile'];
             $customer->mobile_verified = 1;
             if ($customer->update()) {
-                $cus_mobile = new CustomerMobile();
+                $cus_mobile              = new CustomerMobile();
                 $cus_mobile->customer_id = $customer->id;
-                $cus_mobile->mobile = $customer->mobile;
+                $cus_mobile->mobile      = $customer->mobile;
                 $cus_mobile->save();
                 return response()->json(['msg' => 'successful', 'code' => 200, 'mobile' => $customer->mobile]);
             }
@@ -275,14 +278,16 @@ class CustomerController extends Controller
     public function addSecondaryMobile(Request $request, $customer)
     {
         $code_data = $this->fbKit->authenticateKit($request->input('code'));
-        $customer = Customer::find($customer);
+        $customer  = Customer::find($customer);
         if ($this->customer->mobileValid($code_data['mobile'])) {
-            $customer_mobile = new CustomerMobile();
-            $customer_mobile->mobile = $code_data['mobile'];
+            $customer_mobile              = new CustomerMobile();
+            $customer_mobile->mobile      = $code_data['mobile'];
             $customer_mobile->customer_id = $customer->id;
             if ($customer_mobile->save()) {
-                return response()->json(['msg' => 'successful', 'mobile' => $customer_mobile->mobile,
-                    'mobile_id' => $customer_mobile->id, 'code' => 200]);
+                return response()->json([
+                    'msg'       => 'successful', 'mobile' => $customer_mobile->mobile,
+                    'mobile_id' => $customer_mobile->id, 'code' => 200
+                ]);
             }
         } else {
             return response()->json(['msg' => 'already exists', 'code' => 409]);
@@ -291,9 +296,9 @@ class CustomerController extends Controller
 
     public function addDeliveryAddress(Request $request, $customer)
     {
-        $customer = Customer::find($customer);
-        $delivery_address = new CustomerDeliveryAddress();
-        $delivery_address->address = $request->input('delivery_address');
+        $customer                      = Customer::find($customer);
+        $delivery_address              = new CustomerDeliveryAddress();
+        $delivery_address->address     = $request->input('delivery_address');
         $delivery_address->customer_id = $customer->id;
         if ($delivery_address->save()) {
             return response()->json(['msg' => 'successful', 'address_id' => $delivery_address->id, 'code' => 200]);
@@ -304,14 +309,16 @@ class CustomerController extends Controller
 
     public function getDeliveryInfo($customer, Request $request)
     {
-        $customer = $request->customer;
-        $customer_order_addresses = $customer->orders()->selectRaw('delivery_address,count(*) as c')->groupBy('delivery_address')->orderBy('c', 'desc')->get();
+        $customer                    = $request->customer;
+        $customer_order_addresses    = $customer->orders()->selectRaw('delivery_address,count(*) as c')->groupBy('delivery_address')->orderBy('c', 'desc')->get();
         $customer_delivery_addresses = $customer->delivery_addresses()->select('id', 'address')->get()->map(function ($customer_delivery_address) use ($customer_order_addresses) {
             $customer_delivery_address['count'] = $this->getOrderCount($customer_order_addresses, $customer_delivery_address);
             return $customer_delivery_address;
         })->sortByDesc('count')->values()->all();
-        return api_response($request, $customer_delivery_addresses, 200, ['addresses' => $customer_delivery_addresses,
-            'name' => $customer->profile->name, 'mobile' => $customer->profile->mobile]);
+        return api_response($request, $customer_delivery_addresses, 200, [
+            'addresses' => $customer_delivery_addresses,
+            'name'      => $customer->profile->name, 'mobile' => $customer->profile->mobile
+        ]);
     }
 
     private function getOrderCount($customer_order_addresses, $customer_delivery_address)
@@ -326,7 +333,7 @@ class CustomerController extends Controller
 
     public function removeDeliveryAddress($customer, Request $request)
     {
-        $customer = Customer::find($customer);
+        $customer            = Customer::find($customer);
         $delivery_address_id = $customer->delivery_addresses()->pluck('id');
         if ($delivery_address_id->contains($request->input('address_id'))) {
             $address = CustomerDeliveryAddress::find($request->input('address_id'));
@@ -344,7 +351,7 @@ class CustomerController extends Controller
         if ($email = $this->customer->ifExist($request->input('email'), 'email')) {
             return response()->json(['msg' => 'email already exists', 'code' => 409]);
         } else {
-            $customer->email = $request->input('email');
+            $customer->email          = $request->input('email');
             $customer->email_verified = 0;
             $customer->update();
             $this->dispatch(new SendEmailVerficationEmail($customer));
@@ -357,7 +364,7 @@ class CustomerController extends Controller
         $key = Redis::get('email-verification-' . $customer_id);
         if ($key != null && $key == $request->input('e_token')) {
             Redis::del('email-verification-' . $customer_id);
-            $customer = Customer::find($customer_id);
+            $customer                 = Customer::find($customer_id);
             $customer->email_verified = 1;
             if ($customer->update()) {
                 return response()->json(['msg' => 'successful', 'code' => 200]);
@@ -387,8 +394,8 @@ class CustomerController extends Controller
 
     public function setPrimaryMobile($customer, Request $request)
     {
-        $customer = Customer::find($customer);
-        $customer_mobile = CustomerMobile::where('mobile', $request->input('mobile'))->first();
+        $customer                = Customer::find($customer);
+        $customer_mobile         = CustomerMobile::where('mobile', $request->input('mobile'))->first();
         $customer_mobile->mobile = $customer->mobile;
         $customer_mobile->update();
         $customer->mobile = $request->input('mobile');
@@ -403,10 +410,10 @@ class CustomerController extends Controller
         if ($msg = $this->_validateEditInfo($request, $profile))
             return response()->json(['code' => 500, 'msg' => $msg]);
 
-        $profile->name = $request->name;
-        $profile->email = $request->email;
+        $profile->name   = $request->name;
+        $profile->email  = $request->email;
         $profile->gender = $request->gender;
-        $profile->dob = $request->dob;
+        $profile->dob    = $request->dob;
         if ($profile->update()) {
             return response()->json(['msg' => 'successful', 'code' => 200]);
         } else {
@@ -448,17 +455,17 @@ class CustomerController extends Controller
     private function _validateEditInfo($request, $profile)
     {
         $validator = Validator::make($request->all(), [
-            'name'  => 'required|string',
-            'email' => 'required|email|unique:profiles,email,' . $profile->id,
-            'gender'=> 'sometimes|required|in:' . Gender::implodeEnglish(),
-            'dob'   => 'sometimes|required|date|date_format:Y-m-d|before:' . date('Y-m-d')
+            'name'   => 'required|string',
+            'email'  => 'required|email|unique:profiles,email,' . $profile->id,
+            'gender' => 'sometimes|required|in:' . Gender::implodeEnglish(),
+            'dob'    => 'sometimes|required|date|date_format:Y-m-d|before:' . date('Y-m-d')
         ]);
         return $validator->fails() ? $validator->errors()->all()[0] : false;
     }
 
     public function getNotifications($customer, Request $request)
     {
-        $customer = $request->customer;
+        $customer      = $request->customer;
         $notifications = ($customer->notifications()->select('id', 'title', 'event_type', 'event_id', 'type', 'is_seen', 'created_at')->orderBy('id', 'desc')->limit(20)->get());
         $notifications->map(function ($notification) {
             $notification->event_type = str_replace('App\Models\\', "", $notification->event_type);
@@ -475,9 +482,9 @@ class CustomerController extends Controller
                 array_add($notification, 'event_code', $code);
             } elseif ($notification->event_type == 'Order') {
                 $notification->event_type = "Job";
-                $code = null;
+                $code                     = null;
                 if ($notification->event_id) {
-                    $order = Order::find($notification->event_id);
+                    $order                  = Order::find($notification->event_id);
                     $notification->event_id = $order->partnerOrders[0]->jobs[0]->id;
                     if ($order) {
                         $code = $order->code();
@@ -499,21 +506,32 @@ class CustomerController extends Controller
         $request->merge(['mobile' => formatMobile($request->mobile)]);
         $this->validate($request, [
             'mobile' => 'required|string|mobile:bd',
-            'name' => 'required|string'
+            'name'   => 'required|string'
         ], ['mobile' => 'Invalid mobile number!']);
 
         $profile = $this->profileRepository->getIfExist($request->mobile, 'mobile');
-        if(!$profile) {
+        if (!$profile) {
             $profile = $this->profileRepository->store(['mobile' => $request->mobile, 'name' => $request->name]);
         } else {
-            if($profile->customer)
+            if ($profile->customer)
                 return api_response($request, null, 400, ['message' => "User already exists."]);
         }
 
-        $customer = new Customer();
+        $customer                 = new Customer();
         $customer->remember_token = str_random(255);
-        $customer->profile_id = $profile->id;
+        $customer->profile_id     = $profile->id;
         $customer->save();
         return api_response($request, $customer, 200, ['customer' => array('id' => $customer->id, 'remember_token' => $customer->remember_token)]);
+    }
+
+    public function delete($customer, Request $request)
+    {
+        $customer = $request->customer;
+        try {
+            (new Deleter($customer))->delete();
+            return api_response($request, null, 200);
+        } catch (\Throwable $e) {
+            return api_response($request, null, $e->getCode() ?? 500);
+        }
     }
 }
