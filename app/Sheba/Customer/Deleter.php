@@ -28,7 +28,7 @@ class Deleter
     /**
      * @throws CustomerDeleteException
      */
-    private function checkPartner()
+    private function checkPartner(): Deleter
     {
         /** @var Resource $resource */
         $resource = $this->profile->resource;
@@ -36,10 +36,13 @@ class Deleter
             /** @var Partner[] $partners */
             $partners = $resource->associatePartners();
             foreach ($partners as $partner) {
-                /** Parner  */
+                /** Partner  */
                 $orders = $partner->partner_orders()->ongoing()->count();
-                if ($orders>0){
+                if ($orders > 0) {
                     throw  new CustomerDeleteException("Customer Has Pending Orders");
+                }
+                if ($partner->wallet < 0) {
+                    throw new CustomerDeleteException("Your sManager partner has negative wallet balance");
                 }
             }
         }
@@ -49,12 +52,13 @@ class Deleter
     private function invalidateJWT()
     {
         (app(AccountServerClient::class))->post("/api/v1/logout-from-all/admin", ["profile_id" => $this->profile->id]);
-        return $this;
     }
-    private function deleteProfile(){
 
-        $this->profile->update(['mobile'=>null,'email'=>null,'remember_token'=>str_random(255)]);
-        DeletedUser::create(['profile_id'=>$this->profile->id,'mobile'=>$this->profile->mobile,'email'=>$this->profile->email]);
+    private function deleteProfile(): Deleter
+    {
+
+        $this->profile->update(['mobile' => null, 'email' => null, 'remember_token' => str_random(255)]);
+        DeletedUser::create(['profile_id' => $this->profile->id, 'mobile' => $this->profile->mobile, 'email' => $this->profile->email]);
         return $this;
     }
 
@@ -64,6 +68,5 @@ class Deleter
     public function delete()
     {
         $this->checkPartner()->deleteProfile()->invalidateJWT();
-
     }
 }
