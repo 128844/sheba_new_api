@@ -69,8 +69,8 @@ class Deleter
     private function deleteProfile(): Deleter
     {
 
-        $this->profile->update(['mobile' => null, 'email' => null, 'remember_token' => str_random(255)]);
         DeletedUser::create(['profile_id' => $this->profile->id, 'mobile' => $this->profile->mobile, 'email' => $this->profile->email]);
+        $this->profile->update(['mobile' => null, 'email' => null, 'remember_token' => str_random(255)]);
         return $this;
     }
 
