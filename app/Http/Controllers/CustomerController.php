@@ -531,7 +531,7 @@ class CustomerController extends Controller
             (new Deleter($customer))->delete();
             return api_response($request, null, 200);
         } catch (\Throwable $e) {
-            return api_response($request, null, $e->getCode() ?? 500);
+            return api_response($request, null, $e->getCode() ?? 500, ["message" => $e->getMessage()]);
         }
     }
 }
