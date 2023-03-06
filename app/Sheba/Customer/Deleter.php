@@ -49,6 +49,18 @@ class Deleter
         return $this;
     }
 
+    /**
+     * @throws CustomerDeleteException
+     */
+    private function checkOrder(): Deleter
+    {
+        $ongoingOrders = $this->customer->partnerOrders()->ongoing()->count();
+        if ($ongoingOrders > 0) {
+            throw new CustomerDeleteException("Customer has Ongoing order can't be deleted");
+        }
+        return $this;
+    }
+
     private function invalidateJWT()
     {
         (app(AccountServerClient::class))->post("/api/v1/logout-from-all/admin", ["profile_id" => $this->profile->id]);
@@ -67,6 +79,6 @@ class Deleter
      */
     public function delete()
     {
-        $this->checkPartner()->deleteProfile()->invalidateJWT();
+        $this->checkPartner()->checkOrder()->deleteProfile()->invalidateJWT();
     }
 }
