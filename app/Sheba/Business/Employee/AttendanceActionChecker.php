@@ -112,7 +112,7 @@ class AttendanceActionChecker
 
     public function isLiveTrackEnable(): bool
     {
-        return $this->business->isLiveTrackEnabled();
+        return $this->business->isLiveTrackEnabled() && $this->businessMember->is_live_track_enable;
     }
 
     private function hasAttendance(): bool
