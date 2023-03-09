@@ -74,7 +74,7 @@ class EmployeeDashboardPresenter extends Presenter
                     'pro_pic' => $profile->pro_pic ?: null,
                     'designation' => $designation ? ucwords($designation->name) : null
                 ],
-                'is_live_track_enable' => (int) $this->business->isLiveTrackEnabled() && $this->businessMember->is_live_track_enable,
+                'is_live_track_enable' => (int) ($this->business->isLiveTrackEnabled() && $this->businessMember->is_live_track_enable),
                 'location_fetch_interval_in_minutes' => $live_tracking_settings ? $live_tracking_settings->location_fetch_interval_in_minutes : null
             ]
         ];
