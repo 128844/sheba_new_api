@@ -14,8 +14,7 @@ class PayStationResponse extends TopUpResponse
 
     public function isCompleted(): bool
     {
-        // return $this->response && $this->response->Status == "SUCCESS";
-        return $this->response && $this->response->status_code == "2000";
+        return $this->response && $this->response->status_code == "2000" && $this->response->status == "Success";
     }
 
     /**
@@ -23,7 +22,6 @@ class PayStationResponse extends TopUpResponse
      */
     public function getTransactionId()
     {
-        // return $this->response->Transiction_id;
         return $this->response->trxId;
     }
 
@@ -50,7 +48,6 @@ class PayStationResponse extends TopUpResponse
 
     public function isPending(): bool
     {
-        return false;
-        // return $this->response && $this->response->Status == "REQUEST ACCEPTED";
+        return $this->response && $this->response->status_code == "2000" && $this->response->status == "Accepted";
     }
 }
