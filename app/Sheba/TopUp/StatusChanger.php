@@ -1,14 +1,18 @@
-<?php namespace Sheba\TopUp;
+<?php
 
+namespace Sheba\TopUp;
 
 use App\Models\TopUpOrder;
 use Illuminate\Support\Facades\DB;
 use Sheba\Dal\TopupOrder\Statuses;
 use Sheba\Dal\TopupOrder\TopUpOrderRepository;
 use Sheba\Dal\TopUpOrderStatusLog\TopUpOrderStatusLogRepository;
+use Sheba\ModificationFields;
 
 class StatusChanger
 {
+    use ModificationFields;
+
     /** @var TopUpOrderRepository */
     private $orderRepo;
     /** @var TopUpOrderStatusLogRepository */
@@ -48,7 +52,7 @@ class StatusChanger
     public function pending($transaction_details, $transaction_id): TopUpOrder
     {
         return $this->update(Statuses::PENDING, [
-            "transaction_id" => $transaction_id,
+            "transaction_id"      => $transaction_id,
             "transaction_details" => json_encode($transaction_details),
         ]);
     }
@@ -60,23 +64,23 @@ class StatusChanger
      */
     public function successful($transaction_details, $transaction_id = null): TopUpOrder
     {
-        $data = [
-            "transaction_details" => json_encode($transaction_details),
-        ];
-        if ($transaction_id) $data["transaction_id"] = $transaction_id;
+        $data = ["transaction_details" => json_encode($transaction_details)];
+        if ($transaction_id) {
+            $data["transaction_id"] = $transaction_id;
+        }
 
         return $this->update(Statuses::SUCCESSFUL, $data);
     }
 
     /**
-     * @param FailDetails $details
+     * @param  FailDetails  $details
      * @return TopUpOrder
      */
     public function failed(FailDetails $details): TopUpOrder
     {
         return $this->update(Statuses::FAILED, [
-            "failed_reason" => $details->getReason(),
-            "failed_message" => $details->getMessage(),
+            "failed_reason"       => $details->getReason(),
+            "failed_message"      => $details->getMessage(),
             "transaction_details" => json_encode($details->getTransactionDetails()),
         ]);
     }
@@ -91,7 +95,7 @@ class StatusChanger
 
     /**
      * @param $status
-     * @param array $data
+     * @param  array  $data
      * @return TopUpOrder
      */
     private function update($status, array $data = []): TopUpOrder
@@ -99,20 +103,26 @@ class StatusChanger
         DB::transaction(function () use ($data, $status) {
             $data["status"] = $status;
             $this->orderRepo->update($this->order, $data);
-            $this->saveLog();
+            $this->saveLog($data);
         });
 
         $this->oldOrder = clone $this->order;
         return $this->order;
     }
 
-    private function saveLog()
+    /**
+     * @param  array  $data
+     * @return void
+     */
+    private function saveLog(array $data = [])
     {
-        $this->statusRepo->create([
-            "topup_order_id" => $this->order->id,
-            "from" => $this->oldOrder->status,
-            "to" => $this->order->status,
-            "transaction_details" => $this->oldOrder->transaction_details
+        $transaction_details = $data['transaction_details'] ?? $this->oldOrder->transaction_details;
+        $log_data = $this->withCreateModificationField([
+            "topup_order_id"      => $this->order->id,
+            "from"                => $this->oldOrder->status,
+            "to"                  => $this->order->status,
+            "transaction_details" => $transaction_details
         ]);
+        $this->statusRepo->create($log_data);
     }
 }
