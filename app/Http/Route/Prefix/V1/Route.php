@@ -132,6 +132,7 @@ class Route
             });
             $api->group(['prefix' => 'customer', 'middleware' => ['customer.auth']], function ($api) {
                 $api->get('{customer}', 'CustomerController@getCustomerInfo');
+                $api->delete('{customer}','CustomerController@delete');
                 $api->post('{customer}/edit', 'CustomerController@editInfo');
                 $api->get('{customer}/general-info', 'CustomerController@getCustomerGeneralInfo');
                 $api->get('{customer}/intercom-info', 'CustomerController@getIntercomInfo');
