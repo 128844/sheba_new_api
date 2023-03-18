@@ -58,6 +58,7 @@ class TopUpLifecycleManager extends TopUpManager
                 $this->topUpOrder->agent->getCommission()->setTopUpOrder($this->topUpOrder)->disburse();
                 $vendor->deductAmount($this->topUpOrder->amount);
                 $order_repo->update($this->topUpOrder, ['is_agent_debited' => 1]);
+                $this->logSuccessfulButAgentNotDebited($this->topUpOrder);
             }
         });
 
@@ -99,5 +100,12 @@ class TopUpLifecycleManager extends TopUpManager
         $key .= Carbon::now()->timestamp.'_'.$ipn_response->getTopUpOrder()->id;
         Redis::set($key, json_encode($request_data));
         Redis::expire($key, 60 * 60);
+    }
+
+    private function logSuccessfulButAgentNotDebited($topUpOrder)
+    {
+        $key = 'Topup::'."AgentNotDebited:topup"."_";
+        $key .= Carbon::now()->timestamp.'_'.$topUpOrder->id;
+        Redis::set($key, $topUpOrder->id);
     }
 }
