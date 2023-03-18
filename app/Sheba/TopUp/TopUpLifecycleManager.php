@@ -98,5 +98,6 @@ class TopUpLifecycleManager extends TopUpManager
         $key = 'Topup::'.($ipn_response instanceof FailResponse ? "Failed:failed" : "Success:success")."_";
         $key .= Carbon::now()->timestamp.'_'.$ipn_response->getTopUpOrder()->id;
         Redis::set($key, json_encode($request_data));
+        Redis::expire($key, 60 * 60);
     }
 }
