@@ -1,6 +1,5 @@
 <?php namespace Sheba\TopUp;
 
-
 use App\Models\Affiliate;
 use App\Models\Partner;
 use App\Models\TopUpOrder;
