@@ -100,7 +100,12 @@ class MonthlyAttendanceCalculator
                 $member_start_date = $business_member_joining_date;
             }
             $time_frame = $this->timeFrame->forDateRange($member_start_date, $end_date);
-            $business_member_leave = $business_member->leaves()->accepted()->startDateBetween($time_frame)->endDateBetween($time_frame)->get();
+
+            $business_member_leave = $business_member->leaves()->accepted()->where(function ($query) use ($time_frame){
+                $query->whereBetween('start_date', [$time_frame->start, $time_frame->end]);
+                $query->orWhereBetween('end_date', [$time_frame->start, $time_frame->end]);
+            })->get();
+
             $attendances = $this->attendanceRepo->getAllAttendanceByBusinessMemberFilteredWithYearMonth($business_member, $time_frame);
             $business_member_shifts = null;
             if ($is_shift_enable = $business->isShiftEnable()) {
