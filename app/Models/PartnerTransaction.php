@@ -27,4 +27,7 @@ class PartnerTransaction extends Model
     {
         $query->where('transaction_details', 'LIKE', '%"id":"' . $transactionId . '"%')->orWhere('transaction_details','LIKE','%"trxID":"' . $transactionId . '"%');
     }
+    public function category(){
+        return $this->hasOne(PartnerTransactionCategory::class,"partner_transaction_id");
+    }
 }
