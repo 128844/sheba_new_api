@@ -32,6 +32,7 @@ class WalletTransactionHandler extends WalletTransaction
     protected $transaction_details;
     private   $source;
     private   $isNegativeDebitAllowed = false;
+    protected $category;
 
     /**
      * @param bool $isNegativeDebitAllowed
@@ -110,8 +111,19 @@ class WalletTransactionHandler extends WalletTransaction
         return $transaction;
     }
 
+    /**
+     * @param mixed $category
+     * @return WalletTransactionHandler
+     */
+    public function setCategory($category)
+    {
+        $this->category = $category;
+        return $this;
+    }
+
     private function getTransactionCategory(PartnerTransaction $transaction)
     {
+        if (!empty($this->category)) return $this->category;
         if (str_contains($transaction->log, "topped up") || strContainsAll($transaction->log, ["recharge", "failed", "refunded"])) return "TopUP";
         if (strContainsAny($transaction->log, ["Credit Purchase", "gateway charge"])) return "Purchase";
         if ((strContainsAny($transaction->log, ["Partner collect", "reward #"]))) return "sheba.xyz";
