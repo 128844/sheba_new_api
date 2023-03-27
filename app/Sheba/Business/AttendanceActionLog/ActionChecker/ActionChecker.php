@@ -5,12 +5,14 @@ use Sheba\Business\Attendance\AttendanceTypes\TypeFactory;
 use Sheba\Business\AttendanceActionLog\TimeByBusiness;
 use Sheba\Business\AttendanceActionLog\WeekendHolidayByBusiness;
 use Sheba\Business\Leave\HalfDay\HalfDayLeaveCheck;
+use Sheba\Business\ShiftAssignment\ShiftAssignmentFinder;
 use Sheba\Dal\Attendance\Statuses;
 use Sheba\Dal\AttendanceActionLog\Model as AttendanceActionLog;
 use Sheba\Dal\Attendance\Model as Attendance;
 use App\Models\BusinessMember;
 use App\Models\Business;
 use Sheba\Dal\ShiftAssignment\ShiftAssignment;
+use Sheba\Dal\ShiftAssignment\ShiftAssignmentRepository;
 use Sheba\Location\Coords;
 use Sheba\Location\Geo;
 use Carbon\Carbon;
@@ -42,6 +44,24 @@ abstract class ActionChecker
     private $lng;
     /** @var ActionResult */
     protected $result;
+    /**
+     * @var ShiftAssignmentFinder
+     */
+    protected $shiftAssignmentFinder;
+    /**
+     * @var ShiftAssignmentRepository
+     */
+    protected $shiftAssignmentRepository;
+    /**
+     * @var bool
+     */
+    protected $isBusinessMemberShiftEnabled;
+
+    public function __construct()
+    {
+        $this->shiftAssignmentFinder = app(ShiftAssignmentFinder::class);
+        $this->shiftAssignmentRepository = app(ShiftAssignmentRepository::class);
+    }
 
     /**
      * @param Business $business
@@ -61,6 +81,7 @@ abstract class ActionChecker
     public function setBusinessMember($business_member)
     {
         $this->businessMember = $business_member;
+        $this->isBusinessMemberShiftEnabled = $this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id);
         return $this;
     }
 
@@ -137,7 +158,20 @@ abstract class ActionChecker
 
     private function setAttendanceActionLogsOfToday()
     {
-        if ($this->attendanceOfToday) $this->attendanceLogsOfToday = $this->attendanceOfToday->actions;
+        $currentAssignment = null;
+        $lastAttendance = null;
+        if ($this->isBusinessMemberShiftEnabled) {
+            $currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
+            $lastAttendance = $this->businessMember->lastAttendance();
+        }
+
+        if ($this->isBusinessMemberShiftEnabled && $currentAssignment) {
+            if ($currentAssignment->id == $lastAttendance->shift_assignment_id) {
+                $this->attendanceLogsOfToday = $lastAttendance->actions;
+            }
+        } else if ($this->attendanceOfToday) {
+            $this->attendanceLogsOfToday = $this->attendanceOfToday->actions;
+        }
     }
 
     protected function checkAlreadyHasActionForToday()
@@ -148,6 +182,19 @@ abstract class ActionChecker
 
     private function hasSameActionForToday()
     {
+        $currentAssignment = null;
+        $lastAttendance = null;
+        if ($this->isBusinessMemberShiftEnabled) {
+            $currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
+            $lastAttendance = $this->businessMember->lastAttendance();
+        }
+
+        if ($this->isBusinessMemberShiftEnabled && $currentAssignment) {
+            if ($currentAssignment->id == $lastAttendance->shift_assignment_id) {
+                return $lastAttendance->actions->contains('action', $this->getActionName());
+            }
+        }
+
         return $this->attendanceLogsOfToday && $this->attendanceLogsOfToday->filter(function ($log) {
                 return $log->action == $this->getActionName();
             })->count() > 0;
@@ -173,7 +220,8 @@ abstract class ActionChecker
     private function hasDeviceUsedInDifferentAccountToday()
     {
         $business_members = $this->business->members()->select('business_member.id');
-        if ($this->attendanceOfToday) $business_members = $business_members->where('business_member.id', '<>', $this->attendanceOfToday->business_member_id);
+        if ($this->isBusinessMemberShiftEnabled) $business_members = $business_members->where('business_member.id', '<>', $this->businessMember->id);
+        else if ($this->attendanceOfToday) $business_members = $business_members->where('business_member.id', '<>', $this->attendanceOfToday->business_member_id);
         $business_members = $business_members->get();
         if (count($business_members) == 0) return 0;
         $attendances_count = Attendance::whereIn('business_member_id', $business_members->pluck('id'))->where('date', date('Y-m-d'))->whereHas('actions', function ($q) {

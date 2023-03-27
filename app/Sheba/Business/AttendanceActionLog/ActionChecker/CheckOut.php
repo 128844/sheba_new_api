@@ -34,9 +34,20 @@ class CheckOut extends ActionChecker
 
     private function hasCheckedIn()
     {
-        return $this->attendanceLogsOfToday ? $this->attendanceLogsOfToday->filter(function ($log) {
+        $business = $this->businessMember->business;
+        $currentAssignment = null;
+        $lastAttendance = null;
+        $isShiftEnable = $business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id);
+        if ($isShiftEnable) {
+            $currentAssignment = $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment();
+            $lastAttendance = $this->businessMember->lastAttendance();
+        }
+
+        if ($isShiftEnable && $lastAttendance) return $currentAssignment->id == $lastAttendance->shift_assignment_id;
+
+        return $this->attendanceLogsOfToday && $this->attendanceLogsOfToday->filter(function ($log) {
                 return $log->action == Actions::CHECKIN;
-            })->count() > 0 : false;
+            })->count() > 0;
     }
 
     protected function checkLeftEarly()

@@ -4,6 +4,7 @@ use Sheba\Business\Attendance\AttendanceTypes\AttendanceSuccess;
 use Sheba\Business\AttendanceActionLog\Creator as AttendanceActionLogCreator;
 use Sheba\Business\AttendanceActionLog\ActionChecker\ActionProcessor;
 use Sheba\Business\Leave\HalfDay\HalfDayLeaveCheck;
+use Sheba\Business\ShiftAssignment\ShiftAssignmentFinder;
 use Sheba\Dal\AttendanceActionLog\Model as AttendanceActionLog;
 use Sheba\Business\Attendance\Creator as AttendanceCreator;
 use Sheba\Dal\Attendance\EloquentImplementation;
@@ -41,6 +42,8 @@ class AttendanceAction
     /*** @var ShiftAssignmentRepository */
     private $shiftAssignmentRepository;
     private $shiftAssignment;
+    /*** @var ShiftAssignmentFinder */
+    private $shiftAssignmentFinder;
 
     /**
      * AttendanceAction constructor.
@@ -50,19 +53,25 @@ class AttendanceAction
      * @param ShiftAssignmentRepository $shift_assignment_repository
      */
     public function __construct(EloquentImplementation $attendance_repository, AttendanceCreator $attendance_creator,
-                                AttendanceActionLogCreator $attendance_action_log_creator, ShiftAssignmentRepository $shift_assignment_repository)
+                                AttendanceActionLogCreator $attendance_action_log_creator, ShiftAssignmentRepository $shift_assignment_repository,
+                                ShiftAssignmentFinder $shiftAssignmentFinder)
     {
         $this->today = Carbon::now();
         $this->attendanceRepository = $attendance_repository;
         $this->attendanceCreator = $attendance_creator;
         $this->attendanceActionLogCreator = $attendance_action_log_creator;
         $this->shiftAssignmentRepository = $shift_assignment_repository;
+        $this->shiftAssignmentFinder = $shiftAssignmentFinder;
     }
 
     public function setBusinessMember(BusinessMember $business_member)
     {
         $this->businessMember = $business_member;
-        $this->setAttendance($this->businessMember->attendanceOfToday());
+        $isBusinessMemberShiftEnabled = $this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id);
+        $currentAssignment = $isBusinessMemberShiftEnabled ? $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment() : null;
+        $lastAttendance = $this->businessMember->lastAttendance();
+        $todayAttendance = $isBusinessMemberShiftEnabled && $currentAssignment && $currentAssignment->id == $lastAttendance->shift_assignment_id ? $lastAttendance : $this->businessMember->attendanceOfToday();
+        $this->setAttendance($todayAttendance);
         return $this;
     }
 
@@ -162,6 +171,7 @@ class AttendanceAction
     {
         $processor = new ActionProcessor();
         $action = $processor->setActionName($this->action)->getAction();
+
         $action
             ->setAttendanceOfToday($this->attendance)
             ->setShiftAssignment($this->shiftAssignment)
@@ -171,7 +181,6 @@ class AttendanceAction
             ->setLng($this->lng)
             ->setBusiness($this->business)
             ->setBusinessMember($this->businessMember);
-
         $action->check();
         return $action;
     }
