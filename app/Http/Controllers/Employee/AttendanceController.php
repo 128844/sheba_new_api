@@ -123,9 +123,10 @@ class AttendanceController extends Controller
         }
         #$this->validate($request, $validation_data);
         $this->setModifier($business_member->member);
-        $attendance_action->setBusinessMember($business_member)
-            ->setAction($request->action)
+        $attendance_action
             ->setBusiness($business_member->business)
+            ->setBusinessMember($business_member)
+            ->setAction($request->action)
             ->setDeviceId($request->device_id)
             ->setRemoteMode($request->remote_mode)
             ->setLat($request->lat)
