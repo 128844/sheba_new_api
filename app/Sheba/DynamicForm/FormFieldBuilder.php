@@ -37,6 +37,9 @@ class FormFieldBuilder
 
             if (isset($this->$data_source)) {
                 $data = $this->$data_source->$data_source_id ?? "";
+                if (in_array($data_source_id, ['legalIdentity', 'natureOfBusiness'])) {
+                    $data = $this->setStaticDataSourceValueForAamarpay($data_source_id);
+                }
                 $form_field->setData($data);
             }
         }
@@ -107,5 +110,12 @@ class FormFieldBuilder
         }
 
         return $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $first_admin_profile->nid_no;
+    }
+
+    private function setStaticDataSourceValueForAamarpay($data_source_id): string
+    {
+        if ($data_source_id == 'legalIdentity') return "sole proprietor";
+        if ($data_source_id == 'natureOfBusiness') return "e-commerce";
+        return "";
     }
 }
