@@ -107,15 +107,22 @@ class PolicyActionTaker
             $one_working_day_amount = $this->getOneWorkingDayAmountForGrossComponent($this->payrollSetting, $this->businessMember, $component);
             return $this->totalPenaltyAmountByOneWorkingDay($one_working_day_amount, $this->penaltyDays);
         }
+
         $this->policyRules = $this->business->policy()->where('policy_type', $this->policyType)->where(function ($query) {
             $query->where('from_days', '<=', $this->penaltyDays);
             $query->where('to_days', '>=', $this->penaltyDays);
         })->first();
+
+        if (!$this->policyRules && $this->policyType == Type::LATE_CHECKIN_EARLY_CHECKOUT) {
+            $policyRules = $this->business->policy()->where('policy_type', $this->policyType)->last();
+            if ($this->penaltyDays >= $policyRules->to_days) $this->policyRules = $policyRules;
+        }
         return $this->rulesPolicyCalculation();
     }
 
     private function rulesPolicyCalculation()
     {
+
         $policy_total = 0;
         if (!$this->policyRules) return $policy_total;
         $action = $this->policyRules->action;
