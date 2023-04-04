@@ -148,7 +148,7 @@ class AamarpaySavePrimaryInformation
         $nid_information = $this->getNidInformationFromProfileNIDSubmissionLog($first_admin_profile);
 
         if ($nid_information && isset($nid_information->nid_ocr_data)) {
-            $nid_ocr_data = $nid_information->nid_ocr_data;
+            $nid_ocr_data = json_decode($nid_information->nid_ocr_data);
 
             return [$nid_ocr_data->id_front_image, $nid_ocr_data->id_back_image];
         }
