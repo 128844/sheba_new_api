@@ -109,8 +109,14 @@ class QRValidator
      */
     public function complete()
     {
-        if (config('app.env') == 'production' && !$this->validated())
-            throw new QRException("MTB validation failed for this transaction", 400);
+        /**
+         * THIS CHECK TURNED OFF BECAUSE THERE IS SOME SYNC ISSUES ON MTB END
+         * SHEBA WHITELIST MTB IP
+         *
+         */
+        // if (config('app.env') == 'production' && !$this->validated()) {
+        //     throw new QRException("MTB validation failed for this transaction", 400);
+        // }
 
         if (!isset($this->qrId)) {
             $partner = $this->getPartnerFromMerchantId();
@@ -121,10 +127,10 @@ class QRValidator
             $qr_payable = (new QRPayableGenerator())->setPartner($partner)->setData($data)->getQrPayable();
             $this->setPayable($qr_payable->payable);
         }
+        
         $this->storePayment();
         $this->qrPaymentComplete();
         $this->sendNotification();
-
     }
 
     /**

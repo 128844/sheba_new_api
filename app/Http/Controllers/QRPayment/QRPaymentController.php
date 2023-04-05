@@ -52,8 +52,14 @@ class QRPaymentController extends Controller
     {
         Redis::set('MTB_' . Carbon::now()->timestamp, json_encode($request->all()));
         $this->validate($request, QRPaymentStatics::getValidationForValidatePayment());
-        $validator->setRequest($request->all())->setGateway($payment_method)
-            ->setQrId($request->qr_id)->setAmount($request->amount)->setMerchantId($request->merchant_id)->complete();
+
+        $validator->setRequest($request->all())
+            ->setGateway($payment_method)
+            ->setQrId($request->qr_id)
+            ->setAmount($request->amount)
+            ->setMerchantId($request->merchant_id)
+            ->complete();
+
         return http_response($request, null, 200);
     }
 }

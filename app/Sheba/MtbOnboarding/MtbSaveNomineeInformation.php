@@ -1,4 +1,6 @@
-<?php namespace App\Sheba\MtbOnboarding;
+<?php
+
+namespace App\Sheba\MtbOnboarding;
 
 use App\Models\Partner;
 use App\Sheba\DynamicForm\PartnerMefInformation;
@@ -45,33 +47,37 @@ class MtbSaveNomineeInformation
     {
         return [
             'RequestData' => [
-                'ticketId' => $this->partner->partnerMefInformation->mtb_ticket_id,
-                'nomNm' => json_decode($this->partnerMefInformation->partner_information)->nomineeName,
-                'nomFatherNm' => json_decode($this->partnerMefInformation->partner_information)->nomineeFatherName,
-                'nomMotherNm' => json_decode($this->partnerMefInformation->partner_information)->nomineeMotherName,
-                'nomDob' => date("Ymd", strtotime(json_decode($this->partnerMefInformation->partner_information)->nomineeDOB)),
-                'nomMobileNum' => json_decode($this->partnerMefInformation->partner_information)->nomineePhone,
-                'nomRelation' => json_decode($this->partnerMefInformation->partner_information)->nomineeRelation,
-                'nid' => json_decode($this->partnerMefInformation->partner_information)->nomineeNid,
-                'presentPostcode' => json_decode($this->partnerMefInformation->partner_information)->nomineePresentPostCode,
-                'presentAddress' => json_decode($this->partnerMefInformation->partner_information)->nomineePresentAddress,
+                'ticketId'          => $this->partner->partnerMefInformation->mtb_ticket_id,
+                'nomNm'             => json_decode($this->partnerMefInformation->partner_information)->nomineeName,
+                'nomFatherNm'       => json_decode($this->partnerMefInformation->partner_information)->nomineeFatherName,
+                'nomMotherNm'       => json_decode($this->partnerMefInformation->partner_information)->nomineeMotherName,
+                'nomDob'            => date("Ymd", strtotime(json_decode($this->partnerMefInformation->partner_information)->nomineeDOB)),
+                'nomMobileNum'      => json_decode($this->partnerMefInformation->partner_information)->nomineePhone,
+                'nomRelation'       => json_decode($this->partnerMefInformation->partner_information)->nomineeRelation,
+                'nid'               => json_decode($this->partnerMefInformation->partner_information)->nomineeNid,
+                'presentPostcode'   => json_decode($this->partnerMefInformation->partner_information)->nomineePresentPostCode,
+                'presentAddress'    => json_decode($this->partnerMefInformation->partner_information)->nomineePresentAddress,
                 'permanentPostCode' => json_decode($this->partnerMefInformation->partner_information)->nomineePermanentPostCode,
-                'permanentAddress' => json_decode($this->partnerMefInformation->partner_information)->nomineePermanentAddress
+                'permanentAddress'  => json_decode($this->partnerMefInformation->partner_information)->nomineePermanentAddress
             ],
-            'requestId' => strval($this->partner->id),
-            'channelId' => MtbConstants::CHANNEL_ID
+            'requestId'   => strval($this->partner->id),
+            'channelId'   => MtbConstants::CHANNEL_ID
         ];
     }
+
     private function checkIfBanglaInputExist($data)
     {
         $data = collect($data);
         $flattened = $data->flatten()->toArray();
         foreach ($flattened as $x => $flat) {
-            $isEnglish = $this->is_english($flat);
-            if (!$isEnglish) throw new MtbServiceServerError("অনুগ্রহ পূর্বক সব তথ্য ইংরেজিতে লিখুন");
+            $isEnglish = $this->isEnglish($flat);
+            if (!$isEnglish) {
+                throw new MtbServiceServerError("অনুগ্রহ পূর্বক সব তথ্য ইংরেজিতে লিখুন");
+            }
         }
     }
-    function is_english($str)
+
+    private function isEnglish($str): bool
     {
         if (strlen($str) != strlen(utf8_decode($str))) {
             return false;
@@ -88,7 +94,7 @@ class MtbSaveNomineeInformation
     {
         $data = $this->makeData();
         $this->checkIfBanglaInputExist($data);
+
         return $this->client->post(QRPaymentStatics::MTB_SAVE_NOMINEE_INFORMATION, $data, AuthTypes::BARER_TOKEN);
     }
-
 }

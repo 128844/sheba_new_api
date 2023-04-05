@@ -21,6 +21,7 @@ use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\ExternalPaymentLinkAuthMiddleware;
 use App\Http\Middleware\GeoAuthMiddleware;
 use App\Http\Middleware\IpWhitelistMiddleware;
+use App\Http\Middleware\IpWhitelistMiddlewareForMTB;
 use App\Http\Middleware\JWT\ResourceAuthMiddleware;
 use App\Http\Middleware\JwtAccessTokenMiddleware;
 use App\Http\Middleware\JWTAuthentication;
@@ -131,6 +132,7 @@ class Kernel extends HttpKernel
         'terminate' => TerminatingMiddleware::class,
         'jwtAccessToken' => JwtAccessTokenMiddleware::class,
         'ip.whitelist' => IpWhitelistMiddleware::class,
+        'mtb.ip.whitelist' => IpWhitelistMiddlewareForMTB::class,
         'accounting.auth' => AccountingAuthMiddleware::class,
         'userMigration.auth' => UserMigrationMiddleware::class,
         'userMigration.check_status' => CheckUserMigrationRunningMiddleware::class,

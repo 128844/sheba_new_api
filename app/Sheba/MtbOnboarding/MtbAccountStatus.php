@@ -7,16 +7,23 @@ use App\Sheba\QRPayment\QRPaymentStatics;
 
 class MtbAccountStatus
 {
-    /**
-     * @var Partner
-     */
+    /** @var Partner $partner */
     private $partner;
+    /** @var MtbServerClient $client */
+    private $client;
 
+    /**
+     * @param  MtbServerClient  $client
+     */
     public function __construct(MtbServerClient $client)
     {
         $this->client = $client;
     }
 
+    /**
+     * @param  Partner  $partner
+     * @return $this
+     */
     public function setPartner(Partner $partner): MtbAccountStatus
     {
         $this->partner = $partner;
