@@ -13,7 +13,7 @@ class QRPaymentRoute
             });
         });
 
-        $api->group(['prefix' => 'qr-payments'], function ($api) {
+        $api->group(['prefix' => 'qr-payments', 'middleware' => ['mtb.ip.whitelist']], function ($api) {
             $api->post('/validate/{payment_method}', 'QRPayment\\QRPaymentController@validatePayment');
         });
     }
