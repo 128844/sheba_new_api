@@ -109,14 +109,17 @@ class AamarpaySavePrimaryInformation
     private function aamarpaySpecificData(): array
     {
         $first_admin_profile = $this->partner->getFirstAdminResource()->profile;
+        list($nid_image_front_url, $nid_image_back_url) = $this->getNidImages($first_admin_profile);
         return [
-            'tradingName'   => "smanager.xyz/s/".$this->partner->sub_domain,
-            'mobile'        => $this->partner->mobile,
-            'email'         => $first_admin_profile->email,
-            'monthlyIncome' => json_decode($this->partner->basicInformations->additional_information)->monthly_transaction_amount,
-            'nidOrPassport' => $this->getNidOrPassport($first_admin_profile),
-            'dob'           => date("Y-m-d", strtotime($first_admin_profile->dob)),
-            'salesItems'    => $this->partner->business_type,
+            'tradingName'         => "smanager.xyz/s/".$this->partner->sub_domain,
+            'mobile'              => $this->partner->mobile,
+            'email'               => $first_admin_profile->email,
+            'monthlyIncome'       => json_decode($this->partner->basicInformations->additional_information)->monthly_transaction_amount,
+            'nidOrPassport'       => $this->getNidOrPassport($first_admin_profile),
+            'dob'                 => date("Y-m-d", strtotime($first_admin_profile->dob)),
+            'salesItems'          => $this->partner->business_type,
+            'nid_image_front_url' => $nid_image_front_url,
+            'nid_image_back_url'  => $nid_image_back_url
         ];
     }
 
@@ -127,15 +130,41 @@ class AamarpaySavePrimaryInformation
     private function getNidOrPassport($first_admin_profile)
     {
         $porichoy_data = null;
-        $nid_information = ProfileNIDSubmissionLog::where('profile_id', $first_admin_profile->id)
-            ->where('verification_status', 'approved')
-            ->whereNotNull('porichy_data')
-            ->last();
+        $nid_information = $this->getNidInformationFromProfileNIDSubmissionLog($first_admin_profile);
 
         if (isset($nid_information->porichy_data)) {
             $porichoy_data = json_decode($nid_information->porichy_data);
         }
 
         return $porichoy_data ? $porichoy_data->porichoy_data->nid_no : $first_admin_profile->nid_no;
+    }
+
+    /**
+     * @param $first_admin_profile
+     * @return array
+     */
+    private function getNidImages($first_admin_profile): array
+    {
+        $nid_information = $this->getNidInformationFromProfileNIDSubmissionLog($first_admin_profile);
+
+        if ($nid_information && isset($nid_information->nid_ocr_data)) {
+            $nid_ocr_data = json_decode($nid_information->nid_ocr_data);
+
+            return [$nid_ocr_data->id_front_image, $nid_ocr_data->id_back_image];
+        }
+
+        return [$first_admin_profile->nid_image_front, $first_admin_profile->nid_image_back];
+    }
+
+    /**
+     * @param $first_admin_profile
+     * @return mixed
+     */
+    public function getNidInformationFromProfileNIDSubmissionLog($first_admin_profile)
+    {
+        return ProfileNIDSubmissionLog::where('profile_id', $first_admin_profile->id)
+            ->where('verification_status', 'approved')
+            ->whereNotNull('porichy_data')
+            ->last();
     }
 }
