@@ -47,7 +47,8 @@ class ApplyValidation
 
     public function getFormSections(): float
     {
-        $categories = array();
+        $categories = [];
+
         foreach ($this->form->sections as $section) {
             $this->setSection($section->id);
             $fields = $this->getSectionFields();
@@ -56,6 +57,7 @@ class ApplyValidation
                 ->setCompletionPercentage($completion)->setCategoryId($section->id)
                 ->setTitle($section->name, $section->bn_name)->toArray();
         }
+
         return (new CompletionCalculation())->getFinalCompletion($categories);
     }
 }

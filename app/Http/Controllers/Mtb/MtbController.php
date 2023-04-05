@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Mtb;
 
+use App\Exceptions\NotFoundAndDoNotReportException;
 use App\Http\Controllers\Controller;
 use App\Sheba\MTB\Exceptions\MtbServiceServerError;
 use App\Sheba\MtbOnboarding\MtbSavePrimaryInformation;
 use App\Sheba\MtbOnboarding\MtbSendOtp;
+use App\Sheba\ResellerPayment\Exceptions\MORServiceServerError;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Sheba\TPProxy\TPProxyServerError;
 
 class MtbController extends Controller
 {
@@ -30,6 +33,9 @@ class MtbController extends Controller
      * @param  Request  $request
      * @return JsonResponse
      * @throws MtbServiceServerError
+     * @throws NotFoundAndDoNotReportException
+     * @throws MORServiceServerError
+     * @throws TPProxyServerError
      */
     public function apply(Request $request): JsonResponse
     {

@@ -1,4 +1,6 @@
-<?php namespace App\Sheba\MTB;
+<?php
+
+namespace App\Sheba\MTB;
 
 use Sheba\Helpers\ConstGetter;
 
@@ -15,9 +17,8 @@ class MtbConstants
     const CUSTOMER_SIGNATURE = 6;
     const DECLARATION_LETTER = 13;
     const CHANNEL_ID = "Sheba_XYZ";
-    const COUNTRY= "Bangladesh";
-    const CONTACT_ADDRESS= "present";
-    const CUSTOMER_GRADE= "Moderate";
-    const MTB_FORM_ID= 1;
-
+    const COUNTRY = "Bangladesh";
+    const CONTACT_ADDRESS = "present";
+    const CUSTOMER_GRADE = "Moderate";
+    const MTB_FORM_ID = 1;
 }
