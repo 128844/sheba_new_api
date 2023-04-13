@@ -155,3 +155,14 @@ if (!function_exists('removeRestrictedCharacters')) {
         return str_replace(['/', '$', '#', ' ', '?', '%'], '', $string);
     }
 }
+
+if (!function_exists("strContainsAny")){
+    function strContainsAny($haystack,array $needle){
+        foreach ($needle as $item){
+            if (stripos($haystack,$item)!==false){
+                return true;
+            }
+        }
+        return false;
+    }
+}

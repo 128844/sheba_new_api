@@ -1,6 +1,8 @@
 <?php namespace Sheba\Transactions\Wallet;
 
 use App\Models\Partner;
+use App\Models\PartnerTransaction;
+use App\Models\PartnerTransactionCategory;
 use App\Models\Resource;
 use App\Models\WithdrawalRequest;
 use App\Sheba\DueTracker\Exceptions\InsufficientBalance;
@@ -30,7 +32,8 @@ class WalletTransactionHandler extends WalletTransaction
     /** @var TransactionDetails $transaction_details */
     protected $transaction_details;
     private   $source;
-    private $isNegativeDebitAllowed = false;
+    private   $isNegativeDebitAllowed = false;
+    protected $category;
 
     /**
      * @param bool $isNegativeDebitAllowed
@@ -43,8 +46,8 @@ class WalletTransactionHandler extends WalletTransaction
     }
 
     /**
-     * @param  array  $extras
-     * @param  bool  $isJob
+     * @param array $extras
+     * @param bool $isJob
      * @return Model
      * @throws WalletDebitForbiddenException
      * @throws WalletUnexpectedException
@@ -82,19 +85,22 @@ class WalletTransactionHandler extends WalletTransaction
         /** @noinspection PhpUndefinedMethodInspection */
         DB::transaction(function () use ($data, &$transaction) {
             $typeMethod = sprintf("%sWallet", $this->type);
-            $wallet = $this->$typeMethod();
-            $data = array_merge($data, [
-                'type'      => ucfirst($this->type),
-                'amount'    => $this->amount,
-                'balance'   => $wallet,
-                'log'       => $this->log,
-                'created_at'=> Carbon::now(),
+            $wallet     = $this->$typeMethod();
+            $data       = array_merge($data, [
+                'type'                       => ucfirst($this->type),
+                'amount'                     => $this->amount,
+                'balance'                    => $wallet,
+                'log'                        => $this->log,
+                'created_at'                 => Carbon::now(),
                 'third_party_transaction_id' => $this->transaction_details ? $this->thirdPartyTransactionId($this->transaction_details->toString()) : null,
-                'transaction_details' => $this->transaction_details ? $this->transaction_details->toString() : null
+                'transaction_details'        => $this->transaction_details ? $this->transaction_details->toString() : null
             ]);
 
             $transaction_data = $this->getTransactionClass()->fill($data);
             $transaction      = $this->model->transactions()->save($transaction_data);
+            if ($this->model instanceof Partner && $transaction instanceof PartnerTransaction) {
+                $transaction->category()->save(new PartnerTransactionCategory(["category" => $this->getTransactionCategory($transaction)]));
+            }
 
         });
         event(new WalletUpdateEvent([
@@ -104,6 +110,26 @@ class WalletTransactionHandler extends WalletTransaction
         ]));
 
         return $transaction;
+    }
+
+    /**
+     * @param mixed $category
+     * @return WalletTransactionHandler
+     */
+    public function setCategory($category)
+    {
+        $this->category = $category;
+        return $this;
+    }
+
+    private function getTransactionCategory(PartnerTransaction $transaction)
+    {
+        if (!empty($this->category)) return $this->category;
+        if (str_contains($transaction->log, "topped up") || strContainsAll($transaction->log, ["recharge", "failed", "refunded"])) return "TopUP";
+        if (strContainsAny($transaction->log, ["Credit Purchase", "gateway charge"])) return "Purchase";
+        if ((strContainsAny($transaction->log, ["Partner collect", "reward #","Credited for Order ID"]))) return "sheba.xyz";
+        if (str_contains($transaction->log, "subscription package")) return "Subscription";
+        return "other";
     }
 
     /**
@@ -242,7 +268,7 @@ class WalletTransactionHandler extends WalletTransaction
 
     /**
      * DISPATCH TRANSACTION STORE JOB
-     * @param  array  $extras
+     * @param array $extras
      * @throws WalletDebitForbiddenException
      * @throws WalletUnexpectedException
      */
@@ -259,7 +285,7 @@ class WalletTransactionHandler extends WalletTransaction
     private function getCalculatedBalance()
     {
         $last_inserted_transaction = $this->model->transactions()->orderBy('id', 'desc')->first();
-        $last_inserted_balance = $last_inserted_transaction ? $last_inserted_transaction->balance : 0.00;
+        $last_inserted_balance     = $last_inserted_transaction ? $last_inserted_transaction->balance : 0.00;
         return strtolower($this->type) == 'credit' ? $last_inserted_balance + $this->amount : $last_inserted_balance - $this->amount;
     }
 
@@ -274,8 +300,8 @@ class WalletTransactionHandler extends WalletTransaction
         if ((double)$partner->wallet < $amount) {
             throw new InsufficientBalance();
         }
-        $withdrawalRequests = $partner->walletSetting->pending_withdrawal_amount;
-        $remainingAmount = $partner->wallet - (float) $withdrawalRequests;
+        $withdrawalRequests   = $partner->walletSetting->pending_withdrawal_amount;
+        $remainingAmount      = $partner->wallet - (float)$withdrawalRequests;
         $withdrawalRequestsBn = convertNumbersToBangla($withdrawalRequests, true, 0);
         if ($withdrawalRequests > 0 && $amount > $remainingAmount) {
             $message = sprintf("<center>আপনি <b> %s </b> টাকা উত্তোলনের জন্য আবেদন করেছেন, একারনে %s জন্য পর্যাপ্ত ব্যালেন্স নেই। অনুগ্রহ করে সেবা ক্রেডিট রিচার্জ করে পুনরায় চেষ্টা করুন।</center>", $withdrawalRequestsBn, $reason);
