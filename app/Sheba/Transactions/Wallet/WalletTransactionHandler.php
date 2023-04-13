@@ -2,6 +2,7 @@
 
 use App\Models\Partner;
 use App\Models\PartnerTransaction;
+use App\Models\PartnerTransactionCategory;
 use App\Models\Resource;
 use App\Models\WithdrawalRequest;
 use App\Sheba\DueTracker\Exceptions\InsufficientBalance;
@@ -98,7 +99,7 @@ class WalletTransactionHandler extends WalletTransaction
             $transaction_data = $this->getTransactionClass()->fill($data);
             $transaction      = $this->model->transactions()->save($transaction_data);
             if ($this->model instanceof Partner && $transaction instanceof PartnerTransaction) {
-                $transaction->category()->create(["category" => $this->getTransactionCategory($transaction)]);
+                $transaction->category()->save(new PartnerTransactionCategory(["category" => $this->getTransactionCategory($transaction)]));
             }
 
         });
@@ -126,7 +127,7 @@ class WalletTransactionHandler extends WalletTransaction
         if (!empty($this->category)) return $this->category;
         if (str_contains($transaction->log, "topped up") || strContainsAll($transaction->log, ["recharge", "failed", "refunded"])) return "TopUP";
         if (strContainsAny($transaction->log, ["Credit Purchase", "gateway charge"])) return "Purchase";
-        if ((strContainsAny($transaction->log, ["Partner collect", "reward #"]))) return "sheba.xyz";
+        if ((strContainsAny($transaction->log, ["Partner collect", "reward #","Credited for Order ID"]))) return "sheba.xyz";
         if (str_contains($transaction->log, "subscription package")) return "Subscription";
         return "other";
     }
