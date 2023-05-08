@@ -27,7 +27,7 @@ class EmployeeShiftDetailsTransformer extends TransformerAbstract
             'updated_by'                => $shift_assignment->updated_by,
             'updated_by_name'           => $shift_assignment->updated_by_name
         ];
-        if($shift_assignment->is_shift) $shift_details['title'] = $shift_assignment->shift->title;
+        if($shift_assignment->is_shift) $shift_details['title'] = $shift_assignment->shift_title;
         return $shift_details;
     }
 }
