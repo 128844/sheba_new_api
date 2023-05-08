@@ -204,7 +204,7 @@ if (!function_exists('isEmailValid')) {
      */
     function isEmailValid($email)
     {
-        $regex = '/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/';
+        $regex = '/^[_a-z0-9-+]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/';
         return preg_match($regex, $email);
     }
 }
