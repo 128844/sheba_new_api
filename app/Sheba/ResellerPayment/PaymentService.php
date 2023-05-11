@@ -723,4 +723,14 @@ class PaymentService
             "body"      => AamarpayAccountStatusConstants::REQUEST_PLACED
         ];
     }
+
+    public function isCardPaymentAvailable(): bool
+    {
+        $user_type = strtolower(class_basename($this->partner));
+        $pgw_store_accounts = GatewayAccount::where('user_type', $user_type)
+            ->where('user_id', $this->partner->id)->where('status',1)
+            ->whereIn('name',['dynamic_aamarpay','dynamic_ssl'])->get();
+        return !$pgw_store_accounts->isEmpty();
+
+    }
 }
