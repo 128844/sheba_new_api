@@ -33,6 +33,8 @@ class ShiftAssignmentFinder
     {
         list($yesterday_assignment, $today_assignment, $tomorrow_assignment) = $this->shiftAssignmentRepo->shiftAssignmentFromYesterdayToTomorrow($this->businessMember->id);
 
+        if ($this->isTomorrowUnassigned($tomorrow_assignment)) return $today_assignment;
+
         if ($this->isTodayInGeneral($today_assignment, $yesterday_assignment, $tomorrow_assignment)) return $today_assignment;
 
         $avg_minutes_diff_of_today_yesterday =  intval($this->getMinutesGapOfTwoAssignments($yesterday_assignment, $today_assignment) / 2);
@@ -63,5 +65,10 @@ class ShiftAssignmentFinder
         return $today_assignment->isGeneral()
             && ($yesterday_assignment->isGeneral() || $yesterday_assignment->isUnassigned())
             && ($tomorrow_assignment->isGeneral() || $tomorrow_assignment->isUnassigned());
+    }
+
+    private function isTomorrowUnassigned(ShiftAssignment $tomorrow_assignment): bool
+    {
+        return $tomorrow_assignment->isUnassigned();
     }
 }
