@@ -827,6 +827,9 @@ class Partner extends BaseModel implements Rewardable, TopUpAgent, HasWallet, Tr
     {
         return $this->package_id == (int)config('sheba.partner_lite_packages_id');
     }
+    public function isMxPartner(){
+        return (int)$this->package_id === (int) config('sheba.mx_package_id');
+    }
 
     public function isAccessibleForMarketPlace()
     {

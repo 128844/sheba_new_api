@@ -2,6 +2,7 @@
 
 use App\Models\Affiliate;
 use App\Models\Customer;
+use App\Models\Partner;
 use App\Models\Payable;
 use Sheba\Payment\Methods\Nagad\Stores\AffiliateStore;
 use Sheba\Payment\Methods\Nagad\Stores\DefaultStore;
@@ -33,6 +34,7 @@ class NagadBuilder
         $user = $payable->user;
         $type = $payable->readable_type;
         if ($user instanceof Affiliate) return new AffiliateStore();
+        if ($user instanceof Partner && $user->isMxPartner()) return new MarketplaceStore();
         if ($user instanceof Customer && $type != 'payment_link') return new MarketplaceStore();
         return new DefaultStore();
     }

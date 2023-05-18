@@ -6,10 +6,12 @@ use App\Jobs\SendFaqEmail;
 use App\Models\HyperLocal;
 use App\Models\Job;
 use App\Models\OfferShowcase;
+use App\Models\Partner;
 use App\Models\Payable;
 use App\Models\Payment;
 use App\Models\Profile;
 use App\Models\Resource;
+use Sheba\Auth\JWTAuth;
 use Sheba\Dal\EmiBank\Repository\EmiBankContract;
 use Sheba\Dal\PaymentGateway\Contract as PaymentGatewayRepository;
 use Sheba\Dal\Service\Service;
@@ -35,6 +37,7 @@ use Sheba\EMI\Banks;
 use Sheba\EMI\Calculator;
 use Sheba\EMI\CalculatorForManager;
 use Sheba\NID\Validations\NidValidation;
+use Sheba\OAuth2\AuthUser;
 use Sheba\Payment\AvailableMethods;
 use Sheba\Payment\Presenter\PaymentMethodDetails;
 use Sheba\Payment\Statuses;
@@ -64,17 +67,17 @@ class ShebaController extends Controller
         $service_count = Service::where('publication_status', 1)->get()->count();
         $resource_count = Resource::where('is_verified', 1)->get()->count();
         return response()->json([
-            'service' => $service_count, 'job' => $job_count,
+            'service'  => $service_count, 'job' => $job_count,
             'resource' => $resource_count,
-            'msg' => 'successful', 'code' => 200
+            'msg'      => 'successful', 'code' => 200
         ]);
     }
 
     public function sendFaq(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'email' => 'required|email',
+            'name'    => 'required|string',
+            'email'   => 'required|email',
             'subject' => 'required|string',
             'message' => 'required|string'
         ]);
@@ -192,13 +195,13 @@ class ShebaController extends Controller
         $butcher_service = Service::find((int)env('BUTCHER_SERVICE_ID'));
         if (!$butcher_service) return api_response($request, null, 404);
         $butcher_info = [
-            'id' => $butcher_service->id,
-            'category_id' => $butcher_service->category_id,
-            'name' => $butcher_service->name,
-            'unit' => $butcher_service->unit,
+            'id'           => $butcher_service->id,
+            'category_id'  => $butcher_service->category_id,
+            'name'         => $butcher_service->name,
+            'unit'         => $butcher_service->unit,
             'min_quantity' => (double)$butcher_service->min_quantity,
-            'price_info' => json_decode($butcher_service->variables),
-            'date' => "2018-08-21"
+            'price_info'   => json_decode($butcher_service->variables),
+            'date'         => "2018-08-21"
         ];
         return api_response($request, $butcher_info, 200, ['info' => $butcher_info]);
     }
@@ -239,14 +242,14 @@ class ShebaController extends Controller
         /** @var Payable $payable */
         $payable = $payment->payable;
         $info = [
-            'amount' => $payable->amount,
-            'method' => $payment->paymentDetails->last()->readable_method,
-            'description' => $payable->description,
-            'created_at' => $payment->created_at->format('jS M, Y, h:i A'),
-            'invoice_link' => $payment->invoice_link,
-            'transaction_id' => $payment->transaction_id,
+            'amount'                           => $payable->amount,
+            'method'                           => $payment->paymentDetails->last()->readable_method,
+            'description'                      => $payable->description,
+            'created_at'                       => $payment->created_at->format('jS M, Y, h:i A'),
+            'invoice_link'                     => $payment->invoice_link,
+            'transaction_id'                   => $payment->transaction_id,
             'external_payment_redirection_url' => $external_payment ? $external_payment->success_url : null,
-            'store' => $payment->gateway_account_name
+            'store'                            => $payment->gateway_account_name
         ];
         if ($payable->isPaymentLink()) $this->mergePaymentLinkInfo($info, $payable);
 
@@ -266,14 +269,14 @@ class ShebaController extends Controller
         return [
             'payment_receiver' => [
                 'receiver' => $receiver->id,
-                'name' => $receiver->name,
-                'image' => $receiver->logo,
-                'mobile' => $receiver->getMobile(),
-                'address' => $receiver->address
+                'name'     => $receiver->name,
+                'image'    => $receiver->logo,
+                'mobile'   => $receiver->getMobile(),
+                'address'  => $receiver->address
             ],
-            'payer' => [
-                'id' => $payer->id,
-                'name' => $payer->name,
+            'payer'            => [
+                'id'     => $payer->id,
+                'name'   => $payer->name,
                 'mobile' => $payer->mobile
             ]
         ];
@@ -291,9 +294,25 @@ class ShebaController extends Controller
         $platform_name = $request->header('Platform-Name');
         $user_type = $request->type;
         $payable_type = $request->payable_type;
+        /** @var Partner $partner */
+        $partner = null;
         if (!$user_type) $user_type = getUserTypeFromRequestHeader($request);
         if (!$user_type) $user_type = "customer";
+        if ($user_type === "partner") {
+            try {
+                $token = JWTAuth::getToken();
+                if ($token) {
+                    $authUser = AuthUser::createFromToken($token);
+                    $partner = $authUser->getPartner();
+                }
+            } catch (\Throwable $e) {
 
+            }
+        }
+        if (!empty($partner) && $partner->isMxPartner()) {
+            $user_type = 'customer';
+            $request->merge(['payable_type_id'=>$partner->id]);
+        }
         $serviceType = 'App\\Models\\' . ucfirst($user_type);
         $dbGateways = $paymentGateWayRepository->builder()
             ->where('service_type', $serviceType)
@@ -313,7 +332,7 @@ class ShebaController extends Controller
         }
 
         return api_response($request, $payments, 200, [
-            'payments' => $payments,
+            'payments'         => $payments,
             'discount_message' => 'Pay online and stay relaxed!!!'
         ]);
     }
@@ -331,7 +350,7 @@ class ShebaController extends Controller
         }
 
         $emi_data = [
-            "emi" => $emi_calculator->getCharges($amount),
+            "emi"   => $emi_calculator->getCharges($amount),
             "banks" => (new Banks())->setAmount($amount)->get()
         ];
 
@@ -349,11 +368,11 @@ class ShebaController extends Controller
             return api_response($request, null, 400, ['message' => 'Amount is less than minimum emi amount']);
         }
         $emi_data = [
-            "emi" => $emi_calculator->getCharges($amount),
-            "banks" => (new Banks())->setAmount($amount)->get(),
+            "emi"            => $emi_calculator->getCharges($amount),
+            "banks"          => (new Banks())->setAmount($amount)->get(),
             "minimum_amount" => number_format(config('sheba.min_order_amount_for_emi')),
-            "static_info" => [
-                "how_emi_works" => [
+            "static_info"    => [
+                "how_emi_works"        => [
                     "EMI (Equated Monthly Installment) is one of the payment methods of online purchasing, only for the customers using any of the accepted Credit Cards on Sheba.xyz.* It allows customers to pay for their ordered services  in easy equal monthly installments.*",
                     "Sheba.xyz has introduced a convenient option of choosing up to 12 months EMI facility for customers who use Credit Cards for buying services worth BDT 5,000 or more. The duration and extent of the EMI options available will be visible on the payment page after order placement. EMI plans are also viewable on the checkout page in the EMI Banner below the bill section.",
                     "Customers wanting to avail EMI facility must have a Credit Card from any one of the banks in the list shown in the payment page.",
@@ -385,11 +404,11 @@ class ShebaController extends Controller
             $amount = $request->amount;
             $icons_folder = getEmiBankIconsFolder(true);
             $emi_data = [
-                "emi" => $emi_calculator->getCharges($amount),
-                "banks" => (new Banks())->setAmount($amount)->get(),
+                "emi"            => $emi_calculator->getCharges($amount),
+                "banks"          => (new Banks())->setAmount($amount)->get(),
                 "minimum_amount" => number_format(config('sheba.min_order_amount_for_emi')),
-                "static_info" => [
-                    "how_emi_works" => [
+                "static_info"    => [
+                    "how_emi_works"        => [
                         "EMI (Equated Monthly Installment) is one of the payment methods of online purchasing, only for the customers using any of the accepted Credit Cards on Sheba.xyz.* It allows customers to pay for their ordered services  in easy equal monthly installments.*",
                         "Sheba.xyz has introduced a convenient option of choosing up to 12 months EMI facility for customers who use Credit Cards for buying services worth BDT 5,000 or more. The duration and extent of the EMI options available will be visible on the payment page after order placement. EMI plans are also viewable on the checkout page in the EMI Banner below the bill section.",
                         "Customers wanting to avail EMI facility must have a Credit Card from any one of the banks in the list shown in the payment page.",
@@ -461,10 +480,10 @@ class ShebaController extends Controller
         else $model = 'category';
         $meta_tag = $meta_tag_repository->builder()->select('meta_tag', 'og_tag')->where('taggable_type', 'like', '%' . $model)->where('taggable_id', $type->sluggable_id)->first();
         $sluggable_type = [
-            'type' => $type->sluggable_type,
-            'id' => $type->sluggable_id,
+            'type'     => $type->sluggable_type,
+            'id'       => $type->sluggable_id,
             'meta_tag' => $meta_tag && $meta_tag->meta_tag ? json_decode($meta_tag->meta_tag) : null,
-            'og_tag' => $meta_tag && $meta_tag->og_tag ? json_decode($meta_tag->og_tag) : null,
+            'og_tag'   => $meta_tag && $meta_tag->og_tag ? json_decode($meta_tag->og_tag) : null,
         ];
         return api_response($request, true, 200, ['sluggable_type' => $sluggable_type]);
     }
