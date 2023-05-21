@@ -11,7 +11,6 @@ use App\Models\Payable;
 use App\Models\Payment;
 use App\Models\Profile;
 use App\Models\Resource;
-use Sheba\Auth\JWTAuth;
 use Sheba\Dal\EmiBank\Repository\EmiBankContract;
 use Sheba\Dal\PaymentGateway\Contract as PaymentGatewayRepository;
 use Sheba\Dal\Service\Service;
@@ -44,6 +43,7 @@ use Sheba\Payment\Statuses;
 use Sheba\Repositories\PaymentLinkRepository;
 use Sheba\Transactions\Wallet\HasWalletTransaction;
 use Throwable;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Validator;
 
 class ShebaController extends Controller
@@ -306,12 +306,12 @@ class ShebaController extends Controller
                     $partner = $authUser->getPartner();
                 }
             } catch (\Throwable $e) {
-
             }
         }
         if (!empty($partner) && $partner->isMxPartner()) {
             $user_type = 'customer';
-            $request->merge(['payable_type_id'=>$partner->id]);
+            $request->merge(['payable_type_id' => $partner->id]);
+            $payable_type = "order";
         }
         $serviceType = 'App\\Models\\' . ucfirst($user_type);
         $dbGateways = $paymentGateWayRepository->builder()
@@ -319,10 +319,9 @@ class ShebaController extends Controller
             ->whereNull('payment_method')
             ->where('status', 'Published')
             ->get();
-
         $payments = array_map(function (PaymentMethodDetails $details) use ($dbGateways, $user_type, $payable_type) {
             return (new PresentableDTOPresenter($details, $dbGateways))->mergeWithDbGateways($user_type, $payable_type);
-        }, AvailableMethods::getDetails($request->payable_type, $request->payable_type_id, $version_code, $platform_name, $user_type));
+        }, AvailableMethods::getDetails($payable_type, $request->payable_type_id, $version_code, $platform_name, $user_type));
 
         if ($user_type == 'partner') {
             $payments = array_filter($payments, function ($arr) {
