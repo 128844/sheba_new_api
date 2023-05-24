@@ -2,6 +2,7 @@
 
 use App\Console\Commands\GeneratePayslip;
 use App\Console\Commands\LeaveAdjustmentOnEndOfFiscalYear;
+use App\Console\Commands\ManualShiftAssignmentCreation;
 use App\Console\Commands\Payslip;
 use App\Console\Commands\ProductUpload;
 use App\Console\Commands\RunAnnouncementNotifications;
@@ -28,7 +29,8 @@ class Kernel extends ConsoleKernel
         TestCommand::class,
         GeneratePayslip::class,
         LeaveAdjustmentOnEndOfFiscalYear::class,
-        RunAnnouncementNotifications::class
+        RunAnnouncementNotifications::class,
+        ManualShiftAssignmentCreation::class
     ];
     /*** @var Schedule $schedule */
     private $schedule;
