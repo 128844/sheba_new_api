@@ -55,6 +55,7 @@ class BkashAuthBuilder
         } elseif ($user instanceof Affiliate) {
             return self::set017BkashAuth();
         } elseif ($user instanceof Partner) {
+            if ($user->isMxPartner()) return self::set018BkashAuth();
             return self::set017BkashAuth();
         } else {
             throw new Exception('Invalid User Type');

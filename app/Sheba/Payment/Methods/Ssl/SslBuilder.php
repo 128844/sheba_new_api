@@ -54,7 +54,7 @@ class SslBuilder
         if ($payable->isPaymentLink()) return self::getStoreForPaymentLink($payable);
 
         if ($user instanceof Customer) return new MarketPlace();
-
+        if ($user instanceof Partner&&$user->isMxPartner()) return new MarketPlace();
         return new DefaultStore();
     }
 

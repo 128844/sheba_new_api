@@ -179,4 +179,5 @@ return [
     'ios_app_store_id' => env('IOS_APP_STORE_ID'),
     'android_app_name' => env('ANDROID_APP_NAME'),
     'android_app_store_id' => env('ANDROID_APP_STORE_ID'),
+    'mx_package_id'=>env('MX_PACKAGE_ID',7)
 ];
