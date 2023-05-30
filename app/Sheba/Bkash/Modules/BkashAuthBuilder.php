@@ -23,7 +23,9 @@ class BkashAuthBuilder
     {
         return self::generateBkashAuth('01833922030');
     }
-
+    public static function setMarketplaceBkashAuth(){
+        return self::generateBkashAuth('01833309595');
+    }
     /**
      * @param $bkash_number
      * @return BkashAuth
@@ -51,11 +53,11 @@ class BkashAuthBuilder
     {
         if ($type == 'payment_link') return self::set017BkashAuth();
         if ($user instanceof Customer || $user instanceof Business) {
-            return self::set018BkashAuth();
+            return self::setMarketplaceBkashAuth();
         } elseif ($user instanceof Affiliate) {
             return self::set017BkashAuth();
         } elseif ($user instanceof Partner) {
-            if ($user->isMxPartner()) return self::set018BkashAuth();
+            if ($user->isMxPartner()) return self::setMarketplaceBkashAuth();
             return self::set017BkashAuth();
         } else {
             throw new Exception('Invalid User Type');

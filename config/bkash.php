@@ -8,6 +8,13 @@ return [
         'password' => env('BKASH_PASSWORD_017'),
         'url' => env('BKASH_URL_017')
     ],
+    '01833309595'=>[
+        'app_key'=>env('BKASH_APP_KEY_MARKETPLACE'),
+        'app_secret'=>env('BKASH_APP_SECRET_MARKETPLACE'),
+        'username'=>env('BKASH_USERNAME_MARKETPLACE'),
+        'password'=>env('BKASH_PASSWORD_MARKETPLACE'),
+        'url'=>env('BKASH_URL_MARKETPLACE')
+    ],
     '01833922030' => [
         'app_key' => env('BKASH_APP_KEY_018'),
         'app_secret' => env('BKASH_APP_SECRET_018'),
