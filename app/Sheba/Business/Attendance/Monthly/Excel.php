@@ -51,7 +51,7 @@ class Excel
                 $sheet->fromArray($this->data, null, 'A1', true, false);
                 $sheet->prependRow($this->getHeaders());
                 $sheet->freezeFirstRow();
-                $sheet->cell('A1:R1', function ($cells) {
+                $sheet->cell('A1:S1', function ($cells) {
                     $cells->setFontWeight('bold');
                 });
                 $sheet->getDefaultStyle()->getAlignment()->applyFromArray(
@@ -70,6 +70,7 @@ class Excel
                 'name' => $employee['member']['name'],
                 'email' => $employee['email'],
                 'dept' => $employee['department']['name'],
+                'address' => $employee['address'],
                 'working_days' => $employee['attendance']['working_days'],
                 'present' => $employee['attendance']['present'],
                 'on_time' => $employee['attendance']['on_time'],
@@ -94,6 +95,6 @@ class Excel
 
     private function getHeaders()
     {
-        return ['Employee ID', 'Employee Name', 'Employee Email', 'Department', 'Working Days', 'Present', 'On time', 'Late', 'Left Timely', 'Left early', 'On leave', 'Absent', 'Total Hours', 'Overtime', 'Total Remote Checkin', 'Total Office Checkin', 'Total Remote Checkout', 'Total Office Checkout', 'Joining Prorated', 'Leave Days', 'Late Days', 'Absent Days'];
+        return ['Employee ID', 'Employee Name', 'Employee Email', 'Department', 'Address', 'Working Days', 'Present', 'On time', 'Late', 'Left Timely', 'Left early', 'On leave', 'Absent', 'Total Hours', 'Overtime', 'Total Remote Checkin', 'Total Office Checkin', 'Total Remote Checkout', 'Total Office Checkout', 'Joining Prorated', 'Leave Days', 'Late Days', 'Absent Days'];
     }
 }

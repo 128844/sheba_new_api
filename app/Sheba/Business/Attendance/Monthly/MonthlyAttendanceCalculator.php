@@ -118,6 +118,7 @@ class MonthlyAttendanceCalculator
                 'business_member_id' => $business_member->id,
                 'employee_id' => $business_member->employee_id ?: 'N/A',
                 'email' => $profile->email,
+                'address' => $profile->address,
                 'status' => $business_member->status,
                 'member' => [
                     'id' => $member->id,
