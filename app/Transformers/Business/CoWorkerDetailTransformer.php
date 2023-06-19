@@ -307,6 +307,7 @@ class CoWorkerDetailTransformer extends TransformerAbstract
             'company_name' => $this->business->name,
             'company_logo' => $this->isDefaultImageByUrl($this->business->logo) ? null : $this->business->logo,
             'joining_date' => $business_member->join_date ? Carbon::parse($business_member->join_date)->format('d.m.y') : 'N/A',
+            'deactivated_date' => $business_member->inactived_at ? Carbon::parse($business_member->inactived_at)->format('d.m.y') : 'N/A',
             'date_of_birth' => $this->profile->dob ? Carbon::parse($this->profile->dob)->format('d.m.y') : 'N/A'
         ];
     }

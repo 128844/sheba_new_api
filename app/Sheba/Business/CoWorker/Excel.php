@@ -60,7 +60,7 @@ class Excel
                 $sheet->fromArray($this->data, null, 'A1', false, false);
                 $sheet->prependRow($this->getHeaders());
                 $sheet->freezePane('C2');
-                $sheet->cell('A1:V1', function ($cells) {
+                $sheet->cell('A1:W1', function ($cells) {
                     $cells->setFontWeight('bold');
                 });
                 $sheet->getDefaultStyle()->getAlignment()->applyFromArray(['horizontal' => 'left']);
@@ -82,6 +82,7 @@ class Excel
                 'designation' => $employee['designation'] ?: '-',
                 "manager_name" => $employee['manager_name'] ?: '-',
                 "join_date" => $employee['join_date'] ?: '-',
+                "inactived_at" => $employee['inactived_at'] ?: '-',
                 "employee_grade" => $employee['employee_grade'] ?: '-',
                 "employee_type" => $employee['employee_type'] ?: '-',
                 "previous_institution" => $employee['previous_institution'] ?: '-',
@@ -107,7 +108,7 @@ class Excel
     {
         return [
             'Employee ID', 'Employee Name', 'Phone', 'Email', 'Status',
-            'Department', 'Designation', 'Manager', 'Joining Date', 'Employee Grade',
+            'Department', 'Designation', 'Manager', 'Joining Date', 'Deactivated Date', 'Employee Grade',
             'Employee Type', 'Previous Institution', 'DOB', 'Address',
             'Nationality', 'NID/Passport', 'TIN', 'Bank Name',
             'Bank Account No.','Emergency Contact', 'Name Emergency Contact', 'Relationship Emergency Contact'

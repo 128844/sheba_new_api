@@ -38,6 +38,7 @@ class CoWorkerReportDetailsTransformer extends TransformerAbstract
             'designation' => $role ? $role->name : '-',
             'manager_name' => $business_member->manager_id ? $this->getManagerName($business_member->manager_id) : '-',
             'join_date' => Carbon::parse($business_member->join_date)->format('jS M, Y'),
+            'inactived_at' => $business_member->inactived_at ? Carbon::parse($business_member->inactived_at)->format('jS M, Y') : null,
             'employee_grade' => $business_member->grade,
             'employee_type' => $business_member->employee_type,
             'previous_institution' => $business_member->previous_institution,
