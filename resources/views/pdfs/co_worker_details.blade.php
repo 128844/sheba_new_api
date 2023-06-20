@@ -165,6 +165,11 @@
                     <td class="employeeBasicInfo" style="width: 400px">{{ $employee['pdf_info']['joining_date'] }}</td>
                 </tr>
                 <tr>
+                    <td class="employeeBasicInfo" style="width: 97px">Deactivation Date</td>
+                    <td class="employeeBasicInfo" style="width: 20px">:</td>
+                    <td class="employeeBasicInfo" style="width: 400px">{{ $employee['pdf_info']['deactivated_date'] }}</td>
+                </tr>
+                <tr>
                     <td class="employeeBasicInfo" style="width: 97px">Employee Type</td>
                     <td class="employeeBasicInfo" style="width: 20px">:</td>
                     <td class="employeeBasicInfo" style="width: 400px">{{ $employee['official_info']['employee_type'] ? ucfirst($employee['official_info']['employee_type']['title']) : 'N/A' }}</td>

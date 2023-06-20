@@ -512,6 +512,7 @@ class Updater
                 $this->shiftAssignmentRemover->deleteAllAfterToday([$this->businessMember]);
                 $business_member_data['is_super'] = 0;
                 $business_member_data['is_payroll_enable'] = 0;
+                $business_member_data['inactived_at'] = Carbon::now();
                 (new InvalidToken())->invalidTheTokens($this->profile->email);
             }
             $this->businessMember = $this->businessMemberUpdater->setBusinessMember($this->businessMember)->update($business_member_data);
