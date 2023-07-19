@@ -51,7 +51,7 @@ class Partner extends TopUpCommission
             ->setDetails("TopUp for sale")
             ->setReference("TopUp sales amount is " . $this->transaction->amount . " tk.")
             ->setCommission($this->amount - $this->transaction->amount)
-            ->setEndPoint('api/journals/top-up')
+            ->setEndPoint('api/journals/top-up-sync')
             ->store();
     }
 
