@@ -93,6 +93,10 @@ class MonthlyAttendanceCalculator
             $department_name = $member_department ? $member_department->name : 'N/S';
             $department_id = $member_department ? $member_department->id : 'N/S';
             $business_member_joining_date = $business_member->join_date;
+            $businessMemberDesignation = $business_member->role ? $business_member->role->name : 'N/S';
+            /** @var BusinessMember $line_manager */
+            $line_manager = $business_member->manager()->first();
+            $businessMemberLineManager = $line_manager ? $line_manager->member->profile->name : 'N/S';
             $joining_prorated = null;
             $member_start_date = Carbon::parse($start_date);
             if ($this->checkJoiningDate($business_member_joining_date, $start_date, $end_date)) {
@@ -118,8 +122,10 @@ class MonthlyAttendanceCalculator
                 'business_member_id' => $business_member->id,
                 'employee_id' => $business_member->employee_id ?: 'N/A',
                 'email' => $profile->email,
+                'designation' => $businessMemberDesignation,
                 'address' => $profile->address,
                 'status' => $business_member->status,
+                'line_manager' => $businessMemberLineManager,
                 'member' => [
                     'id' => $member->id,
                     'name' => $member_name,

@@ -51,7 +51,7 @@ class Excel
                 $sheet->fromArray($this->data, null, 'A1', true, false);
                 $sheet->prependRow($this->getHeaders());
                 $sheet->freezeFirstRow();
-                $sheet->cell('A1:S1', function ($cells) {
+                $sheet->cell('A1:Z1', function ($cells) {
                     $cells->setFontWeight('bold');
                 });
                 $sheet->getDefaultStyle()->getAlignment()->applyFromArray(
@@ -70,6 +70,8 @@ class Excel
                 'name' => $employee['member']['name'],
                 'email' => $employee['email'],
                 'dept' => $employee['department']['name'],
+                'designation' => $employee['designation'],
+                'line_manager' => $employee['line_manager'],
                 'address' => $employee['address'],
                 'working_days' => $employee['attendance']['working_days'],
                 'present' => $employee['attendance']['present'],
