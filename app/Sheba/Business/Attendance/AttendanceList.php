@@ -277,7 +277,7 @@ class AttendanceList
                     $q->select('id', 'profile_id')
                         ->with([
                             'profile' => function ($q) {
-                                $q->select('id', 'name', 'pro_pic');
+                                $q->select('id', 'name', 'pro_pic', 'address');
                             }
                         ]);
                 },
@@ -567,7 +567,7 @@ class AttendanceList
                     $q->select('id', 'profile_id')
                         ->with([
                             'profile' => function ($q) {
-                                $q->select('id', 'name');
+                                $q->select('id', 'name', 'address');
                             }]);
                 },
                 'role' => function ($q) {
@@ -638,7 +638,7 @@ class AttendanceList
                             $q->select('id', 'profile_id')
                                 ->with([
                                     'profile' => function ($q) {
-                                        $q->select('id', 'name', 'pro_pic');
+                                        $q->select('id', 'name', 'pro_pic', 'adddress');
                                     }]);
                         },
                         'role' => function ($q) {
