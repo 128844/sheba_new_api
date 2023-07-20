@@ -72,6 +72,7 @@ class Excel
                 'dept' => $employee['department']['name'],
                 'designation' => $employee['designation'],
                 'line_manager' => $employee['line_manager'],
+                'line_manager_email' => $employee['line_manager_email'],
                 'address' => $employee['address'],
                 'working_days' => $employee['attendance']['working_days'],
                 'present' => $employee['attendance']['present'],
@@ -98,6 +99,6 @@ class Excel
 
     private function getHeaders()
     {
-        return ['Employee ID', 'Employee Name', 'Employee Email', 'Employee Department', 'Employee Designation', 'Employee Manager', 'Employee Address', 'Working Days', 'Present', 'On time', 'Late', 'Left Timely', 'Left early', 'On leave', 'Absent', 'Total Hours', 'Overtime', 'Total Remote Checkin', 'Total Office Checkin', 'Total Remote Checkout', 'Total Office Checkout', 'Total Checkout Missing', 'Joining Prorated', 'Leave Days', 'Late Days', 'Absent Days'];
+        return ['Employee ID', 'Employee Name', 'Employee Email', 'Employee Department', 'Employee Designation', 'Employee Line Manager', 'Line Manager Email', 'Employee Address', 'Working Days', 'Present', 'On time', 'Late', 'Left Timely', 'Left early', 'On leave', 'Absent', 'Total Hours', 'Overtime', 'Total Remote Checkin', 'Total Office Checkin', 'Total Remote Checkout', 'Total Office Checkout', 'Total Checkout Missing', 'Joining Prorated', 'Leave Days', 'Late Days', 'Absent Days'];
     }
 }

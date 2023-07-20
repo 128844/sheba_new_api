@@ -97,6 +97,7 @@ class MonthlyAttendanceCalculator
             /** @var BusinessMember $line_manager */
             $line_manager = $business_member->manager()->first();
             $businessMemberLineManager = $line_manager ? $line_manager->member->profile->name : 'N/S';
+            $businessMemberLineManagerEmail = $line_manager ? $line_manager->member->profile->email : 'N/S';
             $joining_prorated = null;
             $member_start_date = Carbon::parse($start_date);
             if ($this->checkJoiningDate($business_member_joining_date, $start_date, $end_date)) {
@@ -126,6 +127,7 @@ class MonthlyAttendanceCalculator
                 'address' => $profile->address,
                 'status' => $business_member->status,
                 'line_manager' => $businessMemberLineManager,
+                'line_manager_email' => $businessMemberLineManagerEmail,
                 'member' => [
                     'id' => $member->id,
                     'name' => $member_name,
