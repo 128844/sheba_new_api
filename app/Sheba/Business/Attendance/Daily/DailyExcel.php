@@ -14,6 +14,7 @@ class DailyExcel
             'employeeId' => null,
             'employeeName' => null,
             'department' => null,
+            'employee_address' => null,
             'status' => null,
             'checkInTime' => '-',
             'checkInStatus' => '-',
@@ -51,7 +52,7 @@ class DailyExcel
                 $sheet->fromArray($this->data, null, 'A1', false, false);
                 $sheet->prependRow($this->getHeaders());
                 $sheet->freezeFirstRow();
-                $sheet->cell('A1:S1', function ($cells) {
+                $sheet->cell('A1:Z1', function ($cells) {
                     $cells->setFontWeight('bold');
                 });
                 $sheet->getDefaultStyle()->getAlignment()->applyFromArray([
@@ -130,7 +131,7 @@ class DailyExcel
                 'employee_id' => $attendance['employee_id'],
                 'employee_name' => $attendance['member']['name'],
                 'department' => $attendance['department']['name'],
-
+                'employee_address' => $attendance['employee_address'],
                 'status' => $row['status'],
                 'check_in_time' => $row['checkInTime'],
                 'check_in_status' => $row['checkInStatus'],
@@ -154,7 +155,7 @@ class DailyExcel
     private function getHeaders()
     {
         return [
-            'Date', 'Employee ID', 'Employee Name', 'Department',
+            'Date', 'Employee ID', 'Employee Name', 'Department', 'Address',
             'Status', 'Check in time', 'Check in status', 'Check in location',
             'Check in address', 'Check out time', 'Check out status',
             'Check out location', 'Check out address', 'Total Hours', 'Overtime',
