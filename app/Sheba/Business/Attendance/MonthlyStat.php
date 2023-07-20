@@ -107,7 +107,8 @@ class MonthlyStat
             'remote_checkin' => 0,
             'office_checkin' => 0,
             'remote_checkout' => 0,
-            'office_checkout' => 0
+            'office_checkout' => 0,
+            'total_checkout_miss' => 0
         ];
 
         $daily_breakdown = [];
@@ -164,7 +165,7 @@ class MonthlyStat
                 $checkout_is_in_wifi = $attendance_checkout_action ? $attendance_checkout_action->is_in_wifi : null;
                 $checkout_is_geo = $attendance_checkout_action ? $attendance_checkout_action->is_geo_location : null;
                 $checkout_business_office = $checkout_is_in_wifi || $checkout_is_geo ? $this->businessOfficeRepo->findWithTrashed($attendance_checkout_action->business_office_id) : null;
-
+                $totalCheckoutMiss = $attendance_checkin_action && !$attendance_checkout_action ? ($totalCheckoutMiss + 1) : ($totalCheckoutMiss + 0);
                 if ($this->forOneEmployee) {
                     $business_office_name = $business_office ? $business_office->name : null;
                     $checkout_business_office_name = $checkout_business_office ? $checkout_business_office->name : null;
@@ -225,6 +226,7 @@ class MonthlyStat
                 if ($business_office) $statistics['office_checkin'] = $statistics['office_checkin'] + 1;
                 if ($attendance_checkout_action && $attendance_checkout_action->is_remote) $statistics['remote_checkout'] = $statistics['remote_checkout'] + 1;
                 if ($checkout_business_office) $statistics['office_checkout'] = $statistics['office_checkout'] + 1;
+                $statistics['total_checkout_miss'] = $totalCheckoutMiss;
             }
 
             if ($this->isAbsent($attendance, ($is_unassigned || (!$shift || $is_general) && $is_weekend_or_holiday || $this->isFullDayLeave($date, $leaves_date_with_half_and_full_day)), $date)) {
