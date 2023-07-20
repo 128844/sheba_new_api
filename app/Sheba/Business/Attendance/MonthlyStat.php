@@ -112,6 +112,7 @@ class MonthlyStat
         ];
 
         $daily_breakdown = [];
+        $totalCheckoutMiss = 0;
         foreach ($period as $date) {
             $breakdown_data = [
                 'date' => null,
