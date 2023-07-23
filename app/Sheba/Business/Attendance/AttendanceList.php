@@ -277,7 +277,7 @@ class AttendanceList
                     $q->select('id', 'profile_id')
                         ->with([
                             'profile' => function ($q) {
-                                $q->select('id', 'name', 'pro_pic');
+                                $q->select('id', 'name', 'pro_pic', 'address');
                             }
                         ]);
                 },
@@ -567,7 +567,7 @@ class AttendanceList
                     $q->select('id', 'profile_id')
                         ->with([
                             'profile' => function ($q) {
-                                $q->select('id', 'name');
+                                $q->select('id', 'name', 'address');
                             }]);
                 },
                 'role' => function ($q) {
@@ -638,7 +638,7 @@ class AttendanceList
                             $q->select('id', 'profile_id')
                                 ->with([
                                     'profile' => function ($q) {
-                                        $q->select('id', 'name', 'pro_pic');
+                                        $q->select('id', 'name', 'pro_pic', 'adddress');
                                     }]);
                         },
                         'role' => function ($q) {
@@ -711,20 +711,23 @@ class AttendanceList
      */
     private function getBusinessMemberData(BusinessMember $business_member)
     {
+        $member = $business_member->member;
+        $profile = $member->profile;
         return [
             'employee_id' => $business_member->employee_id ?: 'N/A',
             'business_member_id' => $business_member->id,
             'member' => [
-                'id' => $business_member->member->id,
-                'name' => $business_member->member->profile->name,
-                'pro_pic' => $business_member->member->profile->pro_pic
+                'id' => $member->id,
+                'name' => $profile->name,
+                'pro_pic' => $profile->pro_pic
             ],
             'department' => $business_member->role ? [
                 'id' => $business_member->role->business_department_id,
                 'name' => $this->departments->where('id', $business_member->role->business_department_id)->first() ?
                     $this->departments->where('id', $business_member->role->business_department_id)->first()->name :
                     'n/s'
-            ] : null
+            ] : null,
+            'employee_address' => $profile->address
         ];
     }
 
