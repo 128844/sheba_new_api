@@ -638,7 +638,7 @@ class AttendanceList
                             $q->select('id', 'profile_id')
                                 ->with([
                                     'profile' => function ($q) {
-                                        $q->select('id', 'name', 'pro_pic', 'adddress');
+                                        $q->select('id', 'name', 'pro_pic', 'address');
                                     }]);
                         },
                         'role' => function ($q) {
