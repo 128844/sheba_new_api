@@ -83,6 +83,8 @@ class PartnerMefInformation implements Arrayable
     private $photoOf1stSignatory;
     private $photoOf2ndSignatory;
 
+    private $mtbBranchName;
+
     public function setProperty($input): PartnerMefInformation
     {
         foreach ($input as $key => $value) {
