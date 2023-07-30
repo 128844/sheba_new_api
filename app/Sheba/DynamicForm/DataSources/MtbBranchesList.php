@@ -8,8 +8,8 @@ class MtbBranchesList
 {
     use ConstGetter;
 
-    const thakurgaon_branch = ['name' => "Thakurgaon Branch", 'branch_code' => 58];
-    const shahparan_gate_branch = ['name' => "Shahparan Gate Branch", 'branch_code' => 59];
+    const thakurgaon_branch = ['name' => "Thakurgaon Branch", 'branch_code' => '58'];
+    const shahparan_gate_branch = ['name' => "Shahparan Gate Branch", 'branch_code' => '59'];
 
 
     public static function getGeneratedKeyNameValue(): array
