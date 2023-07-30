@@ -4,6 +4,7 @@ namespace App\Sheba\MtbOnboarding;
 
 use App\Exceptions\NotFoundAndDoNotReportException;
 use App\Models\Partner;
+use App\Sheba\DynamicForm\DataSources\MtbBranchesList;
 use App\Sheba\DynamicForm\PartnerMefInformation;
 use App\Sheba\MTB\AuthTypes;
 use App\Sheba\MTB\Exceptions\MtbServiceServerError;
@@ -139,6 +140,10 @@ class MtbSavePrimaryInformation
         } else {
             $tradeLicenseExist = "N";
         }
+
+        $mtb_branches_list_with_code = array_column(MtbBranchesList::get(), 'branch_code', 'name');
+        $mtb_branch_code = $mtb_branches_list_with_code[$this->partnerMefInformation->mtbBranchName] ?? "0001";
+
         return [
             'RequestData' => [
                 'DebitCardType'       => 1,
@@ -159,8 +164,7 @@ class MtbSavePrimaryInformation
                 'businessStartDt'     => date("Ymd", strtotime($this->partnerMefInformation->businessStartDt)),
                 'tradeLicenseExists'  => $tradeLicenseExist,
                 'startDtWithMerchant' => date("Ymd", strtotime($this->partner->getFirstAdminResource()->profile->created_at)),
-                // 'param1'              => strval($this->getCode() ?? "0001"),
-                'param1'              => $this->partnerMefInformation->mtbBranchName ?? "0001",
+                'param1'              => $mtb_branch_code,
                 'param2'              => $reference,
                 'param3'              => $this->partner->getFirstAdminResource()->profile->mobile,
                 'param4'              => $otp,
