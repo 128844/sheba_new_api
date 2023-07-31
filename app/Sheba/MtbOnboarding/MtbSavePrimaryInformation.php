@@ -186,6 +186,14 @@ class MtbSavePrimaryInformation
                     'shopOwnerNm' => $this->mutateName($this->partnerMefInformation->shopOwnerName),
                     'shopNm'      => $this->partner->name,
                     'shopClass'   => config("mtbmcc.{$this->partner->business_type}") ?? config("mtbmcc.অন্যান্য")
+                ],
+                "FatcaInfo" => [
+                    "USResident" => "N",
+                    "USCitizen" => "N",
+                    "USGreenCard" => "N",
+                    "USAddress" => "N",
+                    "USGrantedAuthority" => "N",
+                    "USReceivedPayment" => "N"
                 ]
             ],
             'requestId'   => strval($this->partner->id)
