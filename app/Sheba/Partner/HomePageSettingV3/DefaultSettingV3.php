@@ -13,7 +13,7 @@ class DefaultSettingV3
         $pos_due = [
             "key" => "pos_due",
             "name_en" => "Due Tracker",
-            "name_bn" => "বাকীর খাতা",
+            "name_bn" => "বাকির খাতা",
             "is_on_homepage" => 1
         ];
         $payment_link = [
