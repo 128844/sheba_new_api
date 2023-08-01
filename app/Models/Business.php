@@ -381,7 +381,7 @@ class Business extends BaseModel implements TopUpAgent, PayableUser, HasWalletTr
 
     private function isForceRemoteAttendanceEnable($business_member_id): bool
     {
-        $sheba_employees = [573, 574, 674, 2041, 6895, 13529, 16460, 16461, 16462];
+        $sheba_employees = [573, 574, 674, 2041, 6895, 13529, 16460, 16461, 16462, 19393, 19614];
         return in_array($business_member_id, $sheba_employees);
     }
 
