@@ -8,6 +8,7 @@ use App\Models\Partner;
 use App\Models\Thana;
 use App\Sheba\DynamicForm\DataSources\AccountType;
 use App\Sheba\DynamicForm\DataSources\BanksList;
+use App\Sheba\DynamicForm\DataSources\MtbBranchesList;
 use Illuminate\Support\Facades\DB;
 use Sheba\Dal\MefForm\Model as MefForm;
 use Sheba\Dal\MefSections\Model as MefSection;
@@ -303,13 +304,14 @@ class DynamicForm
         if ($this->type == "nomineeRelation") {
             return config('mtb_nominee_relation');
         }
-
         if ($this->type == "bankName") {
             return ['list' => BanksList::getGeneratedKeyNameValue()];
         }
-
         if ($this->type == "accountAuthorizationType") {
             return ['list' => AccountType::getGeneratedKeyNameValue()];
+        }
+        if ($this->type == "mtbBranchName") {
+            return ['list' => MtbBranchesList::getGeneratedKeyNameValue()];
         }
     }
 
