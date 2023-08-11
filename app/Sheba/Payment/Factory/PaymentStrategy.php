@@ -1,4 +1,6 @@
-<?php namespace Sheba\Payment\Factory;
+<?php
+
+namespace Sheba\Payment\Factory;
 
 use App\Models\Customer;
 use App\Models\Partner;
@@ -7,20 +9,18 @@ use App\Sheba\Payment\Methods\AamarPay\AamarPay;
 use App\Sheba\Payment\Methods\Nagad\NagadBuilder;
 use App\Sheba\QRPayment\Methods\MTB\MtbQr;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Log;
 use Sheba\Helpers\ConstGetter;
 use Sheba\Payment\Exceptions\InvalidPaymentMethod;
 use Sheba\Payment\Methods\Bkash\Bkash;
 use Sheba\Payment\Methods\BondhuBalance;
 use Sheba\Payment\Methods\Cbl\Cbl;
 use Sheba\Payment\Methods\Ebl\EblBuilder;
-use Sheba\Payment\Methods\Nagad\Nagad;
 use Sheba\Payment\Methods\OkWallet\OkWallet;
 use Sheba\Payment\Methods\PartnerWallet;
 use Sheba\Payment\Methods\PaymentMethod;
+use Sheba\Payment\Methods\Paystation\Paystation;
 use Sheba\Payment\Methods\PortWallet\PortWallet;
 use Sheba\Payment\Methods\ShurjoPay\ShurjoPay;
-use Sheba\Payment\Methods\Ssl\Ssl;
 use Sheba\Payment\Methods\Ssl\SslBuilder;
 use Sheba\Payment\Methods\Upay\UpayBuilder;
 use Sheba\Payment\Methods\Wallet;
@@ -43,9 +43,10 @@ class PaymentStrategy
     const NAGAD          = 'nagad';
     const EBL            = 'ebl';
     const MTB            = 'mtb';
-    const SHURJOPAY = 'shurjopay';
+    const SHURJOPAY      = 'shurjopay';
     const UPAY           = 'upay';
-    const AAMARPAY = 'aamarpay';
+    const AAMARPAY       = 'aamarpay';
+    const PAYSTATION     = 'paystation';
 
     public static function getDefaultOnlineMethod()
     {
@@ -93,6 +94,8 @@ class PaymentStrategy
                 return UpayBuilder::get($payable);
             case self::AAMARPAY:
                 return app(AamarPay::class);
+            case self::PAYSTATION:
+                return app(Paystation::class);
         }
     }
 
@@ -124,6 +127,5 @@ class PaymentStrategy
 
         if ($user instanceof Customer) return self::SSL;
         else if ($user instanceof Partner) return self::PORT_WALLET;
-
     }
 }

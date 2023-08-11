@@ -113,4 +113,12 @@ return [
         'cancel_url' => env('SHEBA_API_URL') . '/v2/payments/aamarpay/cancel',
         'emi_list_url' => env('AAMARPAY_EMI_LIST_URL'),
     ],
+    'paystation' => [
+        'base_url' => env('PAYSTATION_BASE_URL', 'https://api.paystation.com.bd'),
+        'urls' => [
+            'ipn' => env('SHEBA_API_URL') . '/v2/payments/paystation/ipn',
+        ],
+        'merchant_id' => env('PAYSTATION_MERCHANT_ID'),
+        'password' => env('PAYSTATION_MERCHANT_PASSWORD'),
+    ],
 ];

@@ -1,4 +1,6 @@
-<?php namespace App\Http\Route\Prefix\V2;
+<?php
+
+namespace App\Http\Route\Prefix\V2;
 
 use App\Http\Route\Prefix\V2\Resource\ResourceRoute;
 use App\Http\Route\Prefix\V2\Partner\PartnerRoute;
@@ -116,9 +118,13 @@ class Route
                     $api->post('fail', 'OkWalletController@validatePayment');
                     $api->post('cancel', 'OkWalletController@validatePayment');
                 });
-                $api->group(['prefix'=>'upay'],function($api){
-                    $api->get('/','Payments\\UpayController@validatePayment');
-                    $api->post('/','Payments\\UpayController@validatePayment');
+                $api->group(['prefix' => 'upay'], function ($api) {
+                    $api->get('/', 'Payments\\UpayController@validatePayment');
+                    $api->post('/', 'Payments\\UpayController@validatePayment');
+                });
+                $api->group(['prefix' => 'paystation'], function ($api) {
+                    $api->get('/ipn', 'Payments\\PaystationController@validatePayment');
+                    $api->post('/ipn', 'Payments\\PaystationController@validatePayment');
                 });
             });
             $api->group(['prefix' => 'login'], function ($api) {

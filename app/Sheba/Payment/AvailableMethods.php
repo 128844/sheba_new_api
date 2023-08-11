@@ -1,4 +1,6 @@
-<?php namespace Sheba\Payment;
+<?php
+
+namespace Sheba\Payment;
 
 use App\Models\Partner;
 use App\Sheba\Payment\Methods\AamarPay\Stores\DynamicAamarPayStoreConfigurations;
@@ -11,6 +13,9 @@ use Sheba\Repositories\Interfaces\PaymentLinkRepositoryInterface;
 
 class AvailableMethods
 {
+    private $aamarPayConfigs;
+
+
     /**
      * @param $payable_type
      * @param $payable_type_id
@@ -20,8 +25,6 @@ class AvailableMethods
      * @return PaymentMethodDetails[]
      * @throws Exception
      */
-
-    private $aamarPayConfigs;
     public static function getDetails($payable_type, $payable_type_id, $version_code, $platform_name, $user_type)
     {
         $methods = self::getMethods($payable_type, $payable_type_id, $user_type);
@@ -125,7 +128,8 @@ class AvailableMethods
             PaymentStrategy::BKASH,
             PaymentStrategy::OK_WALLET,
             PaymentStrategy::NAGAD,
-            PaymentStrategy::UPAY
+            PaymentStrategy::UPAY,
+            PaymentStrategy::PAYSTATION
         ];
     }
 
@@ -175,10 +179,10 @@ class AvailableMethods
         /** @var PaymentLinkRepositoryInterface $repo */
         $repo = app(PaymentLinkRepositoryInterface::class);
         $payment_link = $repo->findByIdentifier($payment_link_identifier);
-        if(!isset($payment_link)) throw new InvalidPaymentLinkIdentifierException();
+        if (!isset($payment_link)) throw new InvalidPaymentLinkIdentifierException();
 
         $receiver = ($payment_link->getPaymentReceiver());
-        if($receiver instanceof Partner) return (new AvailableMethods())->getPublishedPartnerPaymentGateways($receiver);
+        if ($receiver instanceof Partner) return (new AvailableMethods())->getPublishedPartnerPaymentGateways($receiver);
 
         return [
             PaymentStrategy::BKASH,
