@@ -77,11 +77,11 @@ $upay           = [
     'cash_in_charge' => 0
 ];
 $paystation     = [
-    'name'           => 'bKash, Nagad, Rocket',
-    'name_bn'        => 'বিকাশ, নগদ, রকেট',
+    'name'           => 'Rocket',
+    'name_bn'        => 'রকেট',
     'asset'          => 'paystation',
     'method_name'    => 'paystation',
-    'icon'           => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/payments/paystation.png',
+    'icon'           => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/payments/rocket.png',
     'cash_in_charge' => 0
 ];
 
