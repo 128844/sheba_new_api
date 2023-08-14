@@ -41,7 +41,6 @@ class Client
             $res = $this->httpClient->request(strtoupper($method), $this->makeUrl($uri), $options);
             return decodeGuzzleResponse($res, false);
         } catch (GuzzleException $e) {
-            logError($e);
             throw new PaystationNotWorking($e->getMessage());
         }
     }
