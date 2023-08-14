@@ -72,7 +72,7 @@ class Excel
     private function makeData()
     {
         foreach ($this->employees as $employee) {
-            array_push($this->data, [
+            $this->data[] = [
                 'employee_id' => $employee['employee_id'] ?: 'N/A',
                 'employee_name' => $employee['profile']['name'],
                 'phone' => $employee['profile']['mobile'] ?: '-',
@@ -93,10 +93,11 @@ class Excel
                 "tin_no" => $employee['tin_no'] ?: '-',
                 "bank_name" => $employee['bank_name'] ?: '-',
                 "bank_account_no" => $employee['bank_account_no'] ?: '-',
+                "bkash_no" => $employee['bkash_no'] ?: '-',
                 "emergency_contract_person_number" => $employee['emergency_contract_person_number'] ?: '-',
                 "emergency_contract_person_name" => $employee['emergency_contract_person_name'] ?: '-',
                 "emergency_contract_person_relationship" => $employee['emergency_contract_person_relationship'] ?: '-',
-            ]);
+            ];
         }
 
     }
@@ -111,7 +112,7 @@ class Excel
             'Department', 'Designation', 'Manager', 'Joining Date', 'Deactivated Date', 'Employee Grade',
             'Employee Type', 'Previous Institution', 'DOB', 'Address',
             'Nationality', 'NID/Passport', 'TIN', 'Bank Name',
-            'Bank Account No.','Emergency Contact', 'Name Emergency Contact', 'Relationship Emergency Contact'
+            'Bank Account No.', 'bKash Account No', 'Emergency Contact', 'Name Emergency Contact', 'Relationship Emergency Contact'
         ];
     }
 

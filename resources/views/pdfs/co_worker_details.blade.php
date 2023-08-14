@@ -293,6 +293,11 @@
         <td class="tableRowValue" style="width:3%">:</td>
         <td class="tableRowValue" style="width: 82%">{{ $employee['financial_info']['account_no'] ?  : 'N/A' }}</td>
     </tr>
+    <tr>
+        <td class="tableRowValue" style="width: 15%">bKash Account No</td>
+        <td class="tableRowValue" style="width:3%">:</td>
+        <td class="tableRowValue" style="width: 82%">{{ $employee['financial_info']['bkash_no'] ?  : 'N/A' }}</td>
+    </tr>
     </tbody>
 
 </table>
