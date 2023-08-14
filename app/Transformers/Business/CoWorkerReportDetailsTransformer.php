@@ -15,6 +15,7 @@ class CoWorkerReportDetailsTransformer extends TransformerAbstract
      */
     public function transform(BusinessMember $business_member)
     {
+        $bkash_info = $business_member->bkashInfos->last();
         /** @var Member $member */
         $member = $business_member->member;
         /** @var Profile $profile */
@@ -49,6 +50,7 @@ class CoWorkerReportDetailsTransformer extends TransformerAbstract
             'tin_no' => $profile->tin_no,
             'bank_name' => $bank_name,
             'bank_account_no' => $account_no,
+            'bkash_no' => $bkash_info ? $bkash_info->account_no : null,
             'emergency_contract_person_name' => $member->emergency_contract_person_name,
             'emergency_contract_person_number' => $member->emergency_contract_person_number,
             'emergency_contract_person_relationship' => $member->emergency_contract_person_relationship
