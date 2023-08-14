@@ -29,23 +29,25 @@ class PaystationController extends Controller
      */
     public function validatePayment(Request $request)
     {
+        $redirectUrl = config('sheba.front_url');
+
         $this->validate($request, [
             'invoice_number' => 'required',
-            'trx_id' => 'required',
+            'trx_id' => 'string',
         ]);
         $payment = Payment::where('id', $request->invoice_number)->first();
-        if (empty($payment)) return api_response($request, null, 404, ['message' => 'payment not found']);
+        if (empty($payment)) return redirect($redirectUrl);
 
         if (!$payment->isValid() || $payment->isComplete()) {
             return api_response($request, null, 402, ['message' => "Invalid or completed payment"]);
         }
 
-        $payment = $this->validateAndUpdatePayment($payment, $request->trx_id);
+        $payment = $this->validateAndUpdatePayment($payment, $request->has('trx_id') ? $request->trx_id : null);
 
-        $redirect_url = $payment->status === Statuses::COMPLETED ?
+        $redirectUrl = $payment->status === Statuses::COMPLETED ?
             $payment->payable->success_url . '?invoice_id=' . $payment->transaction_id :
             $payment->payable->fail_url . '?invoice_id=' . $payment->transaction_id;
-        return redirect()->to($redirect_url);
+        return redirect()->to($redirectUrl);
     }
 
     private function validateAndUpdatePayment(Payment $payment, $gateway_trx_id)
