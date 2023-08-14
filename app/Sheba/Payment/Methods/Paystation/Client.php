@@ -41,19 +41,8 @@ class Client
             $res = $this->httpClient->request(strtoupper($method), $this->makeUrl($uri), $options);
             return decodeGuzzleResponse($res, false);
         } catch (GuzzleException $e) {
-            $res = $e->getResponse();
-
-            if ($res->getStatusCode() >= 500) {
-                $res = (object) [
-                    "result" => "failed",
-                    "error" => [
-                        "message" => $e->getMessage(),
-                        "reason" => $res->getReasonPhrase()
-                    ]
-                ];
-            }
-
-            return $res;
+            logError($e);
+            throw new PaystationNotWorking($e->getMessage());
         }
     }
 
