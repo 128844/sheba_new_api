@@ -1,4 +1,6 @@
-<?php namespace Sheba\Payment\Presenter;
+<?php
+
+namespace Sheba\Payment\Presenter;
 
 use Sheba\Payment\Factory\PaymentStrategy;
 
@@ -74,6 +76,14 @@ $upay           = [
     'icon'           => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/payments/upay.png',
     'cash_in_charge' => 0
 ];
+$paystation     = [
+    'name'           => 'Rocket',
+    'name_bn'        => 'রকেট',
+    'asset'          => 'paystation',
+    'method_name'    => 'paystation',
+    'icon'           => 'https://cdn-shebaxyz.s3.ap-south-1.amazonaws.com/payments/rocket.png',
+    'cash_in_charge' => 0
+];
 
 return [
     PaymentStrategy::WALLET         => $wallet,
@@ -87,5 +97,6 @@ return [
     PaymentStrategy::OK_WALLET      => $ok_wallet,
     PaymentStrategy::NAGAD          => $nagad,
     PaymentStrategy::EBL            => $ebl,
-    PaymentStrategy::UPAY           => $upay
+    PaymentStrategy::UPAY           => $upay,
+    PaymentStrategy::PAYSTATION     => $paystation
 ];
