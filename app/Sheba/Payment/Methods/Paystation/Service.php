@@ -80,7 +80,8 @@ class Service
             'cust_email' => $profile->email ?: config('sheba.email'),
             'cust_address' => $profile->address ?: config('sheba.address'),
             'callback_url' => config('payment.paystation.urls.ipn'),
-            'checkout_items' => $payable->type
+            'checkout_items' => $payable->type,
+            'preferred_gateway' => 2,
         ];
     }
 
