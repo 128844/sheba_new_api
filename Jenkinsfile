@@ -12,17 +12,6 @@ pipeline {
                 }
             }
         }
-        stage('MAKE ENV FILE') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'VAULT_ROLE_ID', variable: 'VAULT_ROLE_ID'),
-                    string(credentialsId: 'VAULT_SECRET_ID', variable: 'VAULT_SECRET_ID')
-                ]) {
-                    sh './bin/make_env.sh'
-                    sh './bin/parse_env.sh'
-                }
-            }
-        }
         stage('PULL IN DEVELOPMENT') {
             when { branch 'development' }
             steps {
@@ -65,13 +54,6 @@ pipeline {
                         )]
                     )
                 }
-            }
-        }
-        stage('BUILD FOR PRODUCTION - FOR DOCKER') {
-            when { branch 'master' }
-            steps {
-                 sh './bin/copy_needed_auth.sh'
-                 sh './bin/build.sh'
             }
         }
         stage('DEPLOY TO PRODUCTION - FOR API NODE 04') {
@@ -194,17 +176,17 @@ pipeline {
                 }
             }
         }
-        stage('DEPLOY TO PRODUCTION - FOR API NODE 03') {
+        stage('DEPLOY TO PRODUCTION - FOR API NODE 05') {
             when { branch 'master' }
             steps {
                 script {
                     sshPublisher(publishers: [
-                        sshPublisherDesc(configName: 'api-node-03',
+                        sshPublisherDesc(configName: 'api-node-05',
                             transfers: [
                                 sshTransfer(
                                     cleanRemote: false,
                                     excludes: '',
-                                    execCommand: 'cd /var/www/api && ./bin/deploy.sh master',
+                                    execCommand: 'cd /var/www/api && sudo ./deploy.sh',
                                     execTimeout: 300000,
                                     flatten: false,
                                     makeEmptyDirs: false,
@@ -218,7 +200,7 @@ pipeline {
                             ],
                             usePromotionTimestamp: false,
                             useWorkspaceInPromotion: false,
-                            verbose: false
+                            verbose: true
                         )]
                     )
                 }
@@ -252,12 +234,6 @@ pipeline {
                         )]
                     )
                 }
-            }
-        }
-        stage('CLEAN UP BUILD') {
-            when { branch 'master' }
-            steps {
-                sh './bin/remove_build.sh'
             }
         }
         stage('RUN TEST RESULT') {
@@ -344,36 +320,6 @@ pipeline {
             steps {
                 echo 'Deleting current workspace ...'
                 deleteDir() /* clean up our workspace */
-            }
-        }
-        stage('DELETE DOCKER DANGLING IMAGES') {
-            when { branch 'master' }
-            steps {
-                script {
-                    sshPublisher(publishers: [
-                        sshPublisherDesc(configName: 'api-node-03',
-                            transfers: [
-                                sshTransfer(
-                                    cleanRemote: false,
-                                    excludes: '',
-                                    execCommand: 'cd /var/www/api && ./bin/remove_dangling_images.sh',
-                                    execTimeout: 300000,
-                                    flatten: false,
-                                    makeEmptyDirs: false,
-                                    noDefaultExcludes: false,
-                                    patternSeparator: '[, ]+',
-                                    remoteDirectory: '',
-                                    remoteDirectorySDF: false,
-                                    removePrefix: '',
-                                    sourceFiles: ''
-                                )
-                            ],
-                            usePromotionTimestamp: false,
-                            useWorkspaceInPromotion: false,
-                            verbose: true
-                        )]
-                    )
-                }
             }
         }
     }
