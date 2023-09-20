@@ -1,5 +1,6 @@
 <?php
 
+
 return [
 
     /*
@@ -179,6 +180,7 @@ return [
         Sheba\Database\DatabaseServiceProvider::class,
         Sheba\Elasticsearch\ServiceProvider::class,
         Sheba\Mail\BusinessMailServiceProvider::class,
+        Sheba\ShebaPay\ServiceProvider\ShebaPayServiceProvider::class
     ],
 
     /*

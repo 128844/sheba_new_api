@@ -9,16 +9,16 @@ class PartnerRoutes
 
     public function set($api)
     {
-        $api->version('v1', function ($api) {
-            $this->loadRoutes($api);
+        $api->group(['prefix' => 'v2'], function ($api) {
+            $api->post('/registration/partner-by-sheba-pay', "{$this->nameSpace}\\Auth\\PartnerRegistrationController@registerShebaPay")
+                ->middleware('sheba_pay.basic-auth');
         });
+        return $api;
     }
 
     public function loadRoutes($api)
     {
-        $api->group(['prefix' => 'v2'], function ($api) {
-            $api->post('/registration/partner-by-sheba-pay', "{$this->nameSpace}\\Auth\\PartnerRegistrationController@registerShebaPay");
-        });
+
     }
 
 }

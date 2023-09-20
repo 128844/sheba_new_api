@@ -4,7 +4,7 @@ namespace App\Http\Route\Prefix\V2;
 
 use App\Http\Route\Prefix\V2\Resource\ResourceRoute;
 use App\Http\Route\Prefix\V2\Partner\PartnerRoute;
-use Illuminate\Http\Request;
+use Sheba\ShebaPay\Routes\PartnerRoutes as ShebaPayPartnerRoutes;
 
 class Route
 {
@@ -244,6 +244,7 @@ class Route
                 $api->post('/vendor', 'VoucherController@voucherAgainstVendor');
             });
         });
+        (new ShebaPayPartnerRoutes())->set($api);
         return $api;
     }
 }
