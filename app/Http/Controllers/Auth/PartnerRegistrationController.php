@@ -126,7 +126,7 @@ class PartnerRegistrationController extends Controller
         if ($resource->partnerResources->count() > 0)
             return api_response($request, null, 403, ['message' => 'You already have a company!']);
         list($partner, $info) = $this->makePartnerGetInfo($request, $profile, $resource);
-        $token = $this->profileRepository->getJwtToken($partner, 'partner');
+        $token = $this->profileRepository->getJwtToken($resource, 'resource');
         return api_response($request, null, 200, ['data' => array_merge($info, ['token' => $token])]);
     }
 
