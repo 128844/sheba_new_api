@@ -20,6 +20,7 @@ use Sheba\OAuth2\AccountServerNotWorking;
 use Sheba\OAuth2\WrongPinError;
 use Sheba\ShebaPay\Clients\ShebaAccountsClient;
 use Sheba\ShebaPay\Requests\ShebaPayRegistrationRequest;
+use Sheba\ShebaPay\Responses\PartnerRegistrationResponse;
 use Sheba\Sms\BusinessType;
 use Sheba\Sms\FeatureType;
 use Carbon\Carbon;
@@ -125,12 +126,14 @@ class PartnerRegistrationController extends Controller
     {
         ini_set('max_execution_time', 220);
         $mobile = $request->get('mobile');
+        $request->merge(['phone' => $mobile, 'number' => $mobile]);
         list($profile, $resource) = $this->getProfileResource($mobile, $request);
         if ($resource->partnerResources->count() > 0)
             return api_response($request, null, 403, ['message' => 'You already have a company!']);
         list($partner, $info) = $this->makePartnerGetInfo($request, $profile, $resource);
+        $partner->shebaPayInfo()->create(['merchant_code' => $request->get('merchant_code')]);
         $token = (new ShebaAccountsClient())->setMobile($mobile)->login();
-        return api_response($request, null, 200, ['data' => array_merge($info, ['token' => $token])]);
+        return api_response($request, null, 200, ['data' => PartnerRegistrationResponse::get($profile, $info, $token)]);
     }
 
     /**
@@ -143,7 +146,6 @@ class PartnerRegistrationController extends Controller
     {
         $data = $this->makePartnerCreateData($request);
         $partner = $this->createPartner($resource, $data);
-        if (!$partner) throw new Exception("Unable to create Partner", 400);
         (new PartnerSubscription())->setRequestedPackage()->setPartner($partner)->createBasicSubscriptionRequest($resource)->updateSubscription();
         $info = $this->profileRepository->getProfileInfo($from, Profile::find($profile->id));
         return [$partner, $info];

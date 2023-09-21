@@ -12,6 +12,7 @@ use DB;
 use Exception;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Sheba\Business\Bid\Bidder;
 use Sheba\Checkout\CommissionCalculator;
@@ -24,6 +25,7 @@ use Sheba\Dal\PartnerFinancialInformation\Model as PartnerFinancialInformation;
 use Sheba\Dal\PartnerMefInformation\Model as PartnerMefInformation;
 use Sheba\Dal\PartnerOrderPayment\PartnerOrderPayment;
 use Sheba\Dal\PartnerPosCategory\PartnerPosCategory;
+use Sheba\Dal\PartnerShebaPayInfo\PartnerShebaPayInfo;
 use Sheba\Dal\PartnerWebstoreBanner\Model as PartnerWebstoreBanner;
 use Sheba\Dal\GatewayAccount\Model as GatewayAccount;
 use Sheba\Dal\PartnerWebstoreDomainInfo\PartnerWebstoreDomainInfo;
@@ -1189,5 +1191,14 @@ class Partner extends BaseModel implements Rewardable, TopUpAgent, HasWallet, Tr
     public function financialInformations()
     {
         return $this->hasOne(PartnerFinancialInformation::class);
+    }
+
+    public function shebaPayInfo(): HasOne
+    {
+        return $this->hasOne(PartnerShebaPayInfo::class,'partner_id');
+    }
+    public function hasShebaPayAccount(): bool
+    {
+        return !!$this->shebaPayInfo;
     }
 }
