@@ -17,6 +17,8 @@ use Exception;
 use Sheba\Gender\Gender;
 use Sheba\OAuth2\AccountServerAuthenticationError;
 use Sheba\OAuth2\AccountServerNotWorking;
+use Sheba\OAuth2\WrongPinError;
+use Sheba\ShebaPay\Clients\ShebaAccountsClient;
 use Sheba\ShebaPay\Requests\ShebaPayRegistrationRequest;
 use Sheba\Sms\BusinessType;
 use Sheba\Sms\FeatureType;
@@ -82,8 +84,8 @@ class PartnerRegistrationController extends Controller
      * @param Request $request
      * @return JsonResponse
      * @throws ExpenseTrackingServerError
-     * @throws \Sheba\OAuth2\AccountServerAuthenticationError
-     * @throws \Sheba\OAuth2\AccountServerNotWorking
+     * @throws AccountServerAuthenticationError
+     * @throws AccountServerNotWorking
      */
     public function register(Request $request): JsonResponse
     {
@@ -117,6 +119,7 @@ class PartnerRegistrationController extends Controller
      * @throws ExpenseTrackingServerError
      * @throws AccountServerAuthenticationError
      * @throws AccountServerNotWorking
+     * @throws WrongPinError
      */
     public function registerShebaPay(ShebaPayRegistrationRequest $request): JsonResponse
     {
@@ -126,7 +129,7 @@ class PartnerRegistrationController extends Controller
         if ($resource->partnerResources->count() > 0)
             return api_response($request, null, 403, ['message' => 'You already have a company!']);
         list($partner, $info) = $this->makePartnerGetInfo($request, $profile, $resource);
-        $token = $this->profileRepository->getJwtToken($resource, 'resource');
+        $token = (new ShebaAccountsClient())->setMobile($mobile)->login();
         return api_response($request, null, 200, ['data' => array_merge($info, ['token' => $token])]);
     }
 
