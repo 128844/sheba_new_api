@@ -70,7 +70,7 @@ class TopUpValidator
             $this->error->errorMessage = "Invalid number.";
         } elseif ($this->topUpOrder->isRobiWalletTopUp() && $this->agent->robi_topup_wallet < $this->topUpOrder->amount) {
             $this->error = new TopUpWalletErrorResponse();
-        } elseif (!$this->topUpOrder->isRobiWalletTopUp() && $this->agent->wallet < $this->topUpOrder->amount) {
+        } elseif (!$this->topUpOrder->isRobiWalletTopUp() &&!$this->topUpOrder->isShebaPayOrder()&& $this->agent->wallet < $this->topUpOrder->amount) {
             $this->error = new TopUpWalletErrorResponse();
         } elseif ($this->agent instanceof Partner&&!$this->topUpOrder->isShebaPayOrder()) {
                 $withdrawalRequests = $this->agent->walletSetting->pending_withdrawal_amount;

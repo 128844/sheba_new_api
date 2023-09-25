@@ -89,10 +89,6 @@ class TopUpRechargeManager extends TopUpManager
     {
         if ($this->validator->validate()->hasError()) {
             $this->updateFailedTopOrder($this->validator->getError());
-            if ($this->topUpOrder->isShebaPayOrder()){
-                $this->topUpOrder->reload();
-                (new ShebaPayCallbackClient($this->topUpOrder))->call();
-            }
             return;
         }
 
@@ -101,11 +97,7 @@ class TopUpRechargeManager extends TopUpManager
         $this->response = $this->vendor->recharge($this->topUpOrder);
 
         if ($this->response->hasError()) {
-
             $this->updateFailedTopOrder($this->response->getErrorResponse());
-            if($this->topUpOrder->isShebaPayOrder()){
-                (new ShebaPayCallbackClient($this->topUpOrder))->call();
-            }
             return;
         }
 
@@ -181,8 +173,8 @@ class TopUpRechargeManager extends TopUpManager
     {
         $topup_order = $this->statusChanger->failed(FailDetails::buildFromErrorResponse($response));
         // $this->sendPushNotification("দুঃখিত", "দুঃখিত, কারিগরি ত্রুটির কারনে " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জ সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
-        $topup_order= $this->setAgentAndVendor($topup_order);
-        if ($topup_order->isShebaPayOrder()){
+        $topup_order = $this->setAgentAndVendor($topup_order);
+        if ($topup_order->isShebaPayOrder()) {
             (new ShebaPayCallbackClient($topup_order))->call();
         }
         return $topup_order;
