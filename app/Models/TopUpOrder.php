@@ -220,7 +220,7 @@ class TopUpOrder extends BaseModel implements PayableType
 
     public function isAgentDebited(): bool
     {
-        return (boolean) $this->is_agent_debited;
+        return (boolean)$this->is_agent_debited;
     }
 
     public function isViaPaywell(): bool
@@ -278,11 +278,13 @@ class TopUpOrder extends BaseModel implements PayableType
         return hexdec($ref_id);
     }
 
-    public function isShebaPayOrder():bool{
-        return $this->originated_from==='sheba_pay';
+    public function isShebaPayOrder(): bool
+    {
+        return $this->originated_from === 'sheba_pay';
     }
+
     public function shebaPayTransactions(): HasOne
     {
-        return $this->hasOne(ShebaPayTopupTransaction::class,'topup_order_id');
+        return $this->hasOne(ShebaPayTopupTransaction::class, 'topup_order_id');
     }
 }

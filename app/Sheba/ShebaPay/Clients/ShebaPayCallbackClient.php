@@ -21,6 +21,7 @@ class ShebaPayCallbackClient
     {
         $this->order = $order;
         $this->client = new Client();
+        $this->order->reload();
     }
 
     public function call()
@@ -28,15 +29,17 @@ class ShebaPayCallbackClient
         $res = $this->client->get($this->order->callback_url, ['params' => $this->getParams(), 'http_errors' => false]);
         $this->updateCallbackResponse($res);
     }
-    private function updateCallbackResponse($res){
+
+    private function updateCallbackResponse($res)
+    {
 
         $response = decodeGuzzleResponse($res);
         if (is_array($response)) {
             $response['request_status_code'] = $res->getStatusCode();
         } else {
-            $response = ['request_status_code'=>$res->getStatusCode(),'res'=>$res->getBody()->getContents()];
+            $response = ['request_status_code' => $res->getStatusCode(), 'res' => $res->getBody()->getContents()];
         }
-        $this->order->update(['callback_response'=>json_decode($response)]);
+        $this->order->shebaPayTransactions->update(['callback_response' => json_decode($response)]);
     }
 
 
@@ -49,7 +52,7 @@ class ShebaPayCallbackClient
             'amount' => $this->order->amount,
             'operator' => $this->order->vendor->name,
             'status' => $this->order->getStatusForAgent(),
-            'transaction_id'=>$this->order->transaction_id,
+            'transaction_id' => $this->order->transaction_id,
             'payee_mobile_type' => $this->order->payee_mobile_type,
             'failed_reason' => (new TopUpFailedReason())->setTopup($this->order)->getFailedReason(),
             'created_at' => $this->order->created_at->format('jS M, Y h:i A'),

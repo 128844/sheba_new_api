@@ -89,6 +89,10 @@ class TopUpRechargeManager extends TopUpManager
     {
         if ($this->validator->validate()->hasError()) {
             $this->updateFailedTopOrder($this->validator->getError());
+            if ($this->topUpOrder->isShebaPayOrder()){
+                $this->topUpOrder->reload();
+                (new ShebaPayCallbackClient($this->topUpOrder))->call();
+            }
             return;
         }
 
@@ -97,7 +101,11 @@ class TopUpRechargeManager extends TopUpManager
         $this->response = $this->vendor->recharge($this->topUpOrder);
 
         if ($this->response->hasError()) {
+
             $this->updateFailedTopOrder($this->response->getErrorResponse());
+            if($this->topUpOrder->isShebaPayOrder()){
+                (new ShebaPayCallbackClient($this->topUpOrder))->call();
+            }
             return;
         }
 
