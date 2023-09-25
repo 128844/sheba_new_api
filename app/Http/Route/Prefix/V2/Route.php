@@ -10,6 +10,8 @@ class Route
 {
     public function set($api)
     {
+
+        (new ShebaPayPartnerRoutes())->set($api);
         $api->group(['prefix' => 'v2', 'namespace' => 'App\Http\Controllers'], function ($api) {
             (new UserRoute())->set($api);
             (new CategoryRoute())->set($api);
@@ -244,7 +246,6 @@ class Route
                 $api->post('/vendor', 'VoucherController@voucherAgainstVendor');
             });
         });
-        (new ShebaPayPartnerRoutes())->set($api);
         return $api;
     }
 }

@@ -41,7 +41,7 @@ class Creator
         $agent = $this->topUpRequest->getAgent();
         if ($this->checkIfAgentDidTopup($agent)) throw new Exception("You' are not authorized to do topup", 403);
         // freeze money amount check
-        if ($agent instanceof Partner) {
+        if ($agent instanceof Partner&&!$this->topUpRequest->isShebaPayRequest()) {
             WalletTransactionHandler::isDebitTransactionAllowed($agent, $this->topUpRequest->getAmount(), 'টপ আপ করার');
         }
         /** @var Vendor $vendor */
@@ -65,10 +65,17 @@ class Creator
         $top_up_order->lat = $this->topUpRequest->getLat();
         $top_up_order->long = $this->topUpRequest->getLong();
         $top_up_order->user_agent = $this->topUpRequest->getUserAgent();
+        $top_up_order->originated_from=$this->topUpRequest->isShebaPayRequest()?'sheba_pay':'spl';
         $this->setModifier($agent);
         $this->withCreateModificationField($top_up_order);
         $top_up_order->save();
-
+        if ($this->topUpRequest->isShebaPayRequest()){
+            $top_up_order->shebaPayTransactions()->create([
+                'transaction_id'=>$this->topUpRequest->getShebaPayTransactionId(),
+                'msiddn'=>$this->topUpRequest->getMsiddn(),
+                'callback_url'=>$this->topUpRequest->getCallbackUrl()
+            ]);
+        }
         return $top_up_order;
     }
 

@@ -36,7 +36,10 @@ class TopUpRequest
     /** @var OtfAmountCheck */
     private $otfAmountCheck;
     private $isOtfAllow;
-
+    private $shebaPayRequest=false;
+    private $shebaPayTransactionId;
+    private $msiddn;
+    private $callback_url;
     public function __construct(VendorFactory $vendor_factory, Contract $top_up_block_number_repository, TopUpAgentBlocker $agent_blocker)
     {
         $this->vendorFactory = $vendor_factory;
@@ -170,7 +173,7 @@ class TopUpRequest
 
     public function hasError()
     {
-        if ($this->doesAgentNotHaveBalance()) {
+        if (!$this->isShebaPayRequest()&&$this->doesAgentNotHaveBalance()) {
             $this->errorMessage = "You don't have sufficient balance to recharge.";
             return 1;
         }
@@ -340,4 +343,70 @@ class TopUpRequest
             VendorFactory::AIRTEL
         ];
     }
+
+    public function setShebaPayRequest(bool $shebaPayRequest): TopUpRequest
+    {
+        $this->shebaPayRequest = $shebaPayRequest;
+        return $this;
+    }
+    public function isShebaPayRequest(): bool
+    {
+        return $this->shebaPayRequest;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getShebaPayTransactionId()
+    {
+        return $this->shebaPayTransactionId;
+    }
+
+    /**
+     * @param mixed $shebaPayTransactionId
+     * @return TopUpRequest
+     */
+    public function setShebaPayTransactionId($shebaPayTransactionId): TopUpRequest
+    {
+        $this->shebaPayTransactionId = $shebaPayTransactionId;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMsiddn()
+    {
+        return $this->msiddn;
+    }
+
+    /**
+     * @param mixed $msiddn
+     * @return TopUpRequest
+     */
+    public function setMsiddn($msiddn): TopUpRequest
+    {
+        $this->msiddn = $msiddn;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCallbackUrl()
+    {
+        return $this->callback_url;
+    }
+
+    /**
+     * @param mixed $callback_url
+     * @return TopUpRequest
+     */
+    public function setCallbackUrl($callback_url): TopUpRequest
+    {
+        $this->callback_url = $callback_url;
+        return $this;
+    }
+
+
 }
