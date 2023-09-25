@@ -40,7 +40,10 @@ class ShebaPayCallbackClient
         } else {
             $response = ['request_status_code' => $res->getStatusCode(), 'res' => $res->getBody()->getContents()];
         }
-        $this->order->shebaPayTransaction->update(['callback_result' => json_decode($response)]);
+        $this->order->shebaPayTransaction->callback_result = json_encode($response);
+        $this->order->shebaPayTransaction->save();
+        $this->order->is_agent_debited = 1;
+        $this->order->save();
     }
 
 

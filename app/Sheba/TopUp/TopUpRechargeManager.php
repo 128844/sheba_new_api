@@ -137,9 +137,7 @@ class TopUpRechargeManager extends TopUpManager
                 $this->orderRepo->update($this->topUpOrder, ['is_agent_debited' => 1]);
             }
         });
-        die(var_dump($this->topUpOrder));
         if ($this->topUpOrder->isShebaPayOrder()) {
-            $this->orderRepo->update($this->topUpOrder, ['is_agent_debited' => 1]);
             (new ShebaPayCallbackClient($this->topUpOrder))->call();
         }
 
