@@ -70,7 +70,7 @@ class Creator
         $this->withCreateModificationField($top_up_order);
         $top_up_order->save();
         if ($this->topUpRequest->isShebaPayRequest()){
-            $top_up_order->shebaPayTransactions()->create([
+            $top_up_order->shebaPayTransaction()->create([
                 'transaction_id'=>$this->topUpRequest->getShebaPayTransactionId(),
                 'msiddn'=>$this->topUpRequest->getMsiddn(),
                 'callback_url'=>$this->topUpRequest->getCallbackUrl()

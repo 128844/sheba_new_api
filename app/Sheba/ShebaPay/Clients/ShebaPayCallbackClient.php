@@ -26,7 +26,7 @@ class ShebaPayCallbackClient
 
     public function call()
     {
-        $res = $this->client->get($this->order->callback_url, ['params' => $this->getParams(), 'http_errors' => false]);
+        $res = $this->client->get( $this->order->shebaPayTransaction->callback_url, ['params' => $this->getParams(), 'http_errors' => false]);
         $this->updateCallbackResponse($res);
     }
 
@@ -39,7 +39,7 @@ class ShebaPayCallbackClient
         } else {
             $response = ['request_status_code' => $res->getStatusCode(), 'res' => $res->getBody()->getContents()];
         }
-        $this->order->shebaPayTransactions->update(['callback_response' => json_decode($response)]);
+        $this->order->shebaPayTransaction->update(['callback_result' => json_decode($response)]);
     }
 
 

@@ -283,7 +283,7 @@ class TopUpOrder extends BaseModel implements PayableType
         return $this->originated_from === 'sheba_pay';
     }
 
-    public function shebaPayTransactions(): HasOne
+    public function shebaPayTransaction(): HasOne
     {
         return $this->hasOne(ShebaPayTopupTransaction::class, 'topup_order_id');
     }
