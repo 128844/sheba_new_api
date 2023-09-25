@@ -20,9 +20,9 @@ class ShebaPayCallbackClient
 
     public function __construct(TopUpOrder $order)
     {
+        $order->reload();
         $this->order = $order;
         $this->client = new Client();
-        $this->order->reload();
     }
 
     public function call()
