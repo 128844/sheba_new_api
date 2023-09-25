@@ -3,6 +3,7 @@
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Sheba\ShebaPay\Helpers\OrderData;
 use Sheba\ShebaPay\Requests\ShebaPayTopupRequest;
 use Sheba\TopUp\Creator;
 use Sheba\TopUp\Jobs\TopUpJob;
@@ -17,7 +18,7 @@ class TopupController extends Controller
      */
     public function topup(ShebaPayTopupRequest $request, TopUpRequest $top_up_request, Creator $creator, UserAgentInformation $userAgentInformation, TopUpAgentBlocker $agent_blocker): JsonResponse
     {
-        $agent=$request->getAgent();
+        $agent = $request->getAgent();
         $userAgentInformation->setRequest($request);
         $top_up_request->setAmount($request->amount)
             ->setMobile($request->mobile)
@@ -44,8 +45,7 @@ class TopupController extends Controller
         $agent_blocker->setAgent($agent)->checkAndBlock();
 
         dispatch((new TopUpJob($topup_order)));
-
-        return api_response($request, null, 200, ['message' => "Recharge Request Successful", 'id' => $topup_order->id]);
+        return api_response($request, null, 200, ['message' => "Recharge Request Successful", 'data' => (new OrderData($topup_order))->get()]);
     }
 
 }

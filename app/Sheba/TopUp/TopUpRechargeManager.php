@@ -138,8 +138,8 @@ class TopUpRechargeManager extends TopUpManager
             }
         });
         if ($this->topUpOrder->isShebaPayOrder()) {
-            (new ShebaPayCallbackClient($this->topUpOrder))->call();
             $this->orderRepo->update($this->topUpOrder, ['is_agent_debited' => 1]);
+            (new ShebaPayCallbackClient($this->topUpOrder))->call();
         }
 
         if ($this->topUpOrder->isSuccess()) {
