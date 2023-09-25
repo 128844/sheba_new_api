@@ -73,11 +73,13 @@ class TopUpValidator
         } elseif (!$this->topUpOrder->isRobiWalletTopUp() && $this->agent->wallet < $this->topUpOrder->amount) {
             $this->error = new TopUpWalletErrorResponse();
         } elseif ($this->agent instanceof Partner) {
-            $withdrawalRequests = $this->agent->walletSetting->pending_withdrawal_amount;
-            $remainingAmount = $this->agent->wallet - (float) $withdrawalRequests;
+            if (!$this->topUpOrder->isShebaPayOrder()) {
+                $withdrawalRequests = $this->agent->walletSetting->pending_withdrawal_amount;
+                $remainingAmount = $this->agent->wallet - (float)$withdrawalRequests;
 
-            if ($withdrawalRequests > 0 && $this->topUpOrder->amount > $remainingAmount) {
-                $this->error = new TopUpWalletErrorResponse();
+                if ($withdrawalRequests > 0 && $this->topUpOrder->amount > $remainingAmount) {
+                    $this->error = new TopUpWalletErrorResponse();
+                }
             }
         }
 

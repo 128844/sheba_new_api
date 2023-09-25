@@ -14,7 +14,6 @@ class ShebaPayTopupRequest extends ApiRequest
 
     public function rules(): array
     {
-        $agent = $this->auth_user;
         return [
             'mobile' => 'required|string|mobile:bd',
             'connection_type' => 'required|in:prepaid,postpaid',
