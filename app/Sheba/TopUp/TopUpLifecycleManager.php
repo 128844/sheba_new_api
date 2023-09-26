@@ -67,7 +67,6 @@ class TopUpLifecycleManager extends TopUpManager
         });
         if ($this->topUpOrder->isShebaPayOrder()){
             (new ShebaPayCallbackClient($this->topUpOrder))->call();
-            $order_repo->update($this->topUpOrder, ['is_agent_debited' => 1]);
         }
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->topUpOrder->agent, $this->topUpOrder);
