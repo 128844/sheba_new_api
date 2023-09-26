@@ -130,10 +130,18 @@ class PartnerRegistrationController extends Controller
         list($profile, $resource) = $this->getProfileResource($mobile, $request);
         if ($resource->partnerResources->count() > 0)
             return api_response($request, null, 403, ['message' => 'You already have a company!']);
+        $this::verifyShebaPayProfile($profile);
         list($partner, $info) = $this->makePartnerGetInfo($request, $profile, $resource);
         $partner->shebaPayInfo()->create(['merchant_code' => $request->get('merchant_code')]);
         $token = (new ShebaAccountsClient())->setMobile($mobile)->login();
         return api_response($request, null, 200, ['data' => PartnerRegistrationResponse::get($profile, $info, $token)]);
+    }
+
+    private static function verifyShebaPayProfile(Profile $profile)
+    {
+        $profile->nid_verified = 1;
+        $profile->nid_verification_date = Carbon::now();
+        $profile->save();
     }
 
     /**
