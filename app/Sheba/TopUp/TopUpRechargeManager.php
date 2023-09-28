@@ -10,11 +10,13 @@ use Sheba\Dal\TopupOrder\TopUpOrderRepository;
 use Sheba\ModificationFields;
 use Sheba\PushNotificationHandler;
 use Sheba\Reward\ActionRewardDispatcher;
+use Sheba\ShebaPay\Clients\ShebaPayCallbackClient;
 use Sheba\TopUp\Vendor\Response\TopUpErrorResponse;
 use Sheba\TopUp\Vendor\Response\TopUpResponse;
 use Sheba\TopUp\Vendor\Response\TopUpSuccessResponse;
 use Sheba\TopUp\Vendor\Response\TopUpSystemErrorResponse;
 use Sheba\TopUp\Vendor\Vendor;
+use Throwable;
 
 class TopUpRechargeManager extends TopUpManager
 {
@@ -81,7 +83,7 @@ class TopUpRechargeManager extends TopUpManager
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function recharge()
     {
@@ -123,16 +125,21 @@ class TopUpRechargeManager extends TopUpManager
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
     private function handleSuccessfulTopUpByVendor()
     {
         $this->doTransaction(function () {
             $this->topUpOrder = $this->updateSuccessfulTopOrder($this->response->getSuccess());
-            $this->agent->getCommission()->setTopUpOrder($this->topUpOrder)->disburse();
-            $this->vendor->deductAmount($this->topUpOrder->amount);
-            $this->orderRepo->update($this->topUpOrder, [ 'is_agent_debited' => 1 ]);
+            if (!$this->topUpOrder->isShebaPayOrder()) {
+                $this->agent->getCommission()->setTopUpOrder($this->topUpOrder)->disburse();
+                $this->vendor->deductAmount($this->topUpOrder->amount);
+                $this->orderRepo->update($this->topUpOrder, ['is_agent_debited' => 1]);
+            }
         });
+        if ($this->topUpOrder->isShebaPayOrder()) {
+            (new ShebaPayCallbackClient($this->topUpOrder))->call();
+        }
 
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->agent, $this->topUpOrder);
@@ -165,7 +172,11 @@ class TopUpRechargeManager extends TopUpManager
     {
         $topup_order = $this->statusChanger->failed(FailDetails::buildFromErrorResponse($response));
         // $this->sendPushNotification("দুঃখিত", "দুঃখিত, কারিগরি ত্রুটির কারনে " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জ সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
-        return $this->setAgentAndVendor($topup_order);
+        $topup_order = $this->setAgentAndVendor($topup_order);
+        if ($topup_order->isShebaPayOrder()) {
+            (new ShebaPayCallbackClient($topup_order))->call();
+        }
+        return $topup_order;
     }
 
     /**

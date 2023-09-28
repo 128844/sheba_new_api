@@ -22,6 +22,8 @@ use Sheba\Exceptions\Handlers\ThrowableHandler;
 use Sheba\Exceptions\Handlers\ValidationExceptionHandler;
 use Sheba\Exceptions\Handlers\WrongPinErrorHandler;
 use Sheba\OAuth2\WrongPinError;
+use Sheba\ShebaPay\Exceptions\ShebaPayException;
+use Sheba\ShebaPay\Exceptions\ShebaPayExceptionHandler;
 use Sheba\TopUp\Bulk\Exception\InvalidTopupData;
 use Sheba\TopUp\Bulk\Exception\InvalidTopupDataHandler;
 use Sheba\TopUp\Bulk\Exception\InvalidTotalAmount;
@@ -69,6 +71,7 @@ class HandlerFactory
         if ($e instanceof RouteNotFoundException) return app(RouteNotFoundExceptionHandler::class);
         if ($e instanceof HttpException) return app(HttpExceptionHandler::class);
         if ($e instanceof ExceptionForClient) return app(ExceptionForClientHandler::class);
+        if ($e instanceof ShebaPayException) return app(ShebaPayExceptionHandler::class);
         if ($e instanceof Throwable) return app(ThrowableHandler::class);
         return null;
     }

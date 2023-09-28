@@ -4,12 +4,14 @@ namespace App\Http\Route\Prefix\V2;
 
 use App\Http\Route\Prefix\V2\Resource\ResourceRoute;
 use App\Http\Route\Prefix\V2\Partner\PartnerRoute;
-use Illuminate\Http\Request;
+use Sheba\ShebaPay\Routes\PartnerRoutes as ShebaPayPartnerRoutes;
 
 class Route
 {
     public function set($api)
     {
+
+        (new ShebaPayPartnerRoutes())->set($api);
         $api->group(['prefix' => 'v2', 'namespace' => 'App\Http\Controllers'], function ($api) {
             (new UserRoute())->set($api);
             (new CategoryRoute())->set($api);

@@ -1,6 +1,8 @@
 <?php namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Sheba\Dal\BaseModel;
+use Sheba\Dal\ShebaPayTopupTransactions\ShebaPayTopupTransaction;
 use Sheba\Dal\TopupOrder\Events\Saved;
 use Sheba\Dal\TopupOrder\FailedReason;
 use Sheba\Dal\TopupOrder\Statuses;
@@ -218,7 +220,7 @@ class TopUpOrder extends BaseModel implements PayableType
 
     public function isAgentDebited(): bool
     {
-        return (boolean) $this->is_agent_debited;
+        return (boolean)$this->is_agent_debited;
     }
 
     public function isViaPaywell(): bool
@@ -274,5 +276,15 @@ class TopUpOrder extends BaseModel implements PayableType
     public static function getIdFromUniformGatewayRefId($ref_id): int
     {
         return hexdec($ref_id);
+    }
+
+    public function isShebaPayOrder(): bool
+    {
+        return $this->originated_from === 'sheba_pay';
+    }
+
+    public function shebaPayTransaction(): HasOne
+    {
+        return $this->hasOne(ShebaPayTopupTransaction::class, 'topup_order_id');
     }
 }
