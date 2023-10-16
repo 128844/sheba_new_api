@@ -26,8 +26,6 @@ class Partner extends TopUpCommission
     public function disburse()
     {
         $this->storeAgentsCommission();
-//        $this->storeExpenseIncome();
-//        $this->storeTopUpJournal();
     }
 
     /**
