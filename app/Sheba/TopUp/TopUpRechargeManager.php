@@ -129,11 +129,12 @@ class TopUpRechargeManager extends TopUpManager
      */
     private function handleSuccessfulTopUpByVendor()
     {
-        $this->doTransaction(function () {
-            $this->topUpOrder = TopUpOrder::query()->lockForUpdate()->find($this->topUpOrder->id);
+        $commission = $this->agent->getCommission()->setTopUpOrder($this->topUpOrder);
+        $this->doTransaction(function () use ($commission) {
+//            $this->topUpOrder = TopUpOrder::query()->lockForUpdate()->find($this->topUpOrder->id);
             $this->topUpOrder = $this->updateSuccessfulTopOrder($this->response->getSuccess());
             if (!$this->topUpOrder->isShebaPayOrder()) {
-                $this->agent->getCommission()->setTopUpOrder($this->topUpOrder)->disburse();
+                $commission->disburse();
                 $this->vendor->deductAmount($this->topUpOrder->amount);
                 $this->orderRepo->update($this->topUpOrder, ['is_agent_debited' => 1]);
             }
@@ -141,7 +142,9 @@ class TopUpRechargeManager extends TopUpManager
         if ($this->topUpOrder->isShebaPayOrder()) {
             (new ShebaPayCallbackClient($this->topUpOrder))->call();
         }
-
+        if ($commission instanceof \Sheba\TopUp\Commission\Partner) {
+            $commission->storeTopUpJournal();
+        }
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->agent, $this->topUpOrder);
             // $this->sendPushNotification("অভিনন্দন", "অভিনন্দন, " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জটি সফলভাবে সম্পন্ন হয়েছে।");

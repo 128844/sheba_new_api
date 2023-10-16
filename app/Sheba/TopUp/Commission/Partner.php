@@ -26,8 +26,8 @@ class Partner extends TopUpCommission
     public function disburse()
     {
         $this->storeAgentsCommission();
-        $this->storeExpenseIncome();
-        $this->storeTopUpJournal();
+//        $this->storeExpenseIncome();
+//        $this->storeTopUpJournal();
     }
 
     /**
@@ -35,7 +35,7 @@ class Partner extends TopUpCommission
      * @throws InvalidSourceException
      * @throws KeyNotFoundException
      */
-    private function storeTopUpJournal()
+    public function storeTopUpJournal()
     {
         /** @var \App\Models\Partner $partner */
         $partner = $this->agent;
@@ -104,6 +104,7 @@ class Partner extends TopUpCommission
 
     private function deleteExpenseIncome()
     {
+
         /** @var \App\Models\Partner $partner */
         $partner = $this->agent;
         /** @var AutomaticEntryRepository $entryRepo */

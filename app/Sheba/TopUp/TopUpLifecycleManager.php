@@ -57,7 +57,7 @@ class TopUpLifecycleManager extends TopUpManager
             $details = $success_response->getTransactionDetails();
             $id = $success_response->getUpdatedTransactionId();
             $this->topUpOrder = $this->statusChanger->successful($details, $id);
-
+            $this->topUpOrder->reload();
             if (!$this->topUpOrder->isAgentDebited()&&!$this->topUpOrder->isShebaPayOrder()) {
                 $this->topUpOrder->agent->getCommission()->setTopUpOrder($this->topUpOrder)->disburse();
                 $vendor->deductAmount($this->topUpOrder->amount);
