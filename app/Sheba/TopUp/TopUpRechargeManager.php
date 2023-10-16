@@ -130,6 +130,7 @@ class TopUpRechargeManager extends TopUpManager
     private function handleSuccessfulTopUpByVendor()
     {
         $this->doTransaction(function () {
+            $this->topUpOrder = TopUpOrder::query()->lockForUpdate()->find($this->topUpOrder->id);
             $this->topUpOrder = $this->updateSuccessfulTopOrder($this->response->getSuccess());
             if (!$this->topUpOrder->isShebaPayOrder()) {
                 $this->agent->getCommission()->setTopUpOrder($this->topUpOrder)->disburse();
