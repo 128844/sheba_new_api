@@ -68,7 +68,7 @@ class TopUpLifecycleManager extends TopUpManager
         if ($this->topUpOrder->isShebaPayOrder()) {
             (new ShebaPayCallbackClient($this->topUpOrder))->call();
         }
-        if ($commission instanceof Partner) {
+        if ($commission instanceof Partner && !$this->topUpOrder->isShebaPayOrder()) {
             $commission->storeTopUpJournal();
         }
         if ($this->topUpOrder->isSuccess()) {

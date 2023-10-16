@@ -142,7 +142,7 @@ class TopUpRechargeManager extends TopUpManager
         if ($this->topUpOrder->isShebaPayOrder()) {
             (new ShebaPayCallbackClient($this->topUpOrder))->call();
         }
-        if ($commission instanceof \Sheba\TopUp\Commission\Partner) {
+        if ($commission instanceof \Sheba\TopUp\Commission\Partner && !$this->topUpOrder->isShebaPayOrder()) {
             $commission->storeTopUpJournal();
         }
         if ($this->topUpOrder->isSuccess()) {
