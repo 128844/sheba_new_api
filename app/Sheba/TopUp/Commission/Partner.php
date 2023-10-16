@@ -1,6 +1,5 @@
 <?php namespace Sheba\TopUp\Commission;
 
-use App\Sheba\UserMigration\UserMigrationRepository;
 use Exception;
 use ReflectionException;
 use Sheba\AccountingEntry\Exceptions\AccountingEntryServerError;

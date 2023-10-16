@@ -130,7 +130,7 @@ class TopUpRechargeManager extends TopUpManager
     private function handleSuccessfulTopUpByVendor()
     {
         $commission = $this->agent->getCommission()->setTopUpOrder($this->topUpOrder);
-        $this->doTransaction(function () use ($commission) {
+        $this->doTransaction(function () use (&$commission) {
 //            $this->topUpOrder = TopUpOrder::query()->lockForUpdate()->find($this->topUpOrder->id);
             $this->topUpOrder = $this->updateSuccessfulTopOrder($this->response->getSuccess());
             if (!$this->topUpOrder->isShebaPayOrder()) {
@@ -142,7 +142,7 @@ class TopUpRechargeManager extends TopUpManager
         if ($this->topUpOrder->isShebaPayOrder()) {
             (new ShebaPayCallbackClient($this->topUpOrder))->call();
         }
-        if ($commission instanceof \Sheba\TopUp\Commission\Partner && !$this->topUpOrder->isShebaPayOrder()) {
+        if ($commission instanceof Commission\Partner && !$this->topUpOrder->isShebaPayOrder()) {
             $commission->storeTopUpJournal();
         }
         if ($this->topUpOrder->isSuccess()) {
