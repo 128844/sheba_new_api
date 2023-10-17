@@ -129,14 +129,13 @@ class TopUpRechargeManager extends TopUpManager
      */
     private function handleSuccessfulTopUpByVendor()
     {
-        $commission = $this->agent->getCommission()->setTopUpOrder($this->topUpOrder);
+        $commission = $this->agent->getCommission();
         $this->doTransaction(function () use (&$commission) {
-//            $this->topUpOrder = TopUpOrder::query()->lockForUpdate()->find($this->topUpOrder->id);
             $this->topUpOrder = $this->updateSuccessfulTopOrder($this->response->getSuccess());
             if (!$this->topUpOrder->isShebaPayOrder()) {
-                $commission->disburse();
-                $this->vendor->deductAmount($this->topUpOrder->amount);
+                $commission->setTopUpOrder($this->topUpOrder)->disburse();
                 $this->orderRepo->update($this->topUpOrder, ['is_agent_debited' => 1]);
+                $this->vendor->deductAmount($this->topUpOrder->amount);
             }
         });
         if ($this->topUpOrder->isShebaPayOrder()) {
@@ -147,7 +146,6 @@ class TopUpRechargeManager extends TopUpManager
         }
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->agent, $this->topUpOrder);
-            // $this->sendPushNotification("অভিনন্দন", "অভিনন্দন, " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জটি সফলভাবে সম্পন্ন হয়েছে।");
         }
         $this->isSuccessful = true;
     }

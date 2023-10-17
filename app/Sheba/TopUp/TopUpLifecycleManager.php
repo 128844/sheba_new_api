@@ -53,15 +53,14 @@ class TopUpLifecycleManager extends TopUpManager
         $vendor = $this->getVendor();
         /** @var TopUpCommission $commission */
         $commission = $this->topUpOrder->agent->getCommission();
-        $this->doTransaction(function () use ($success_response, $order_repo, $vendor, $commission) {
+        $this->doTransaction(function () use ($success_response, $order_repo, $vendor, &$commission) {
             $details = $success_response->getTransactionDetails();
             $id = $success_response->getUpdatedTransactionId();
             $this->topUpOrder = $this->statusChanger->successful($details, $id);
-            $this->topUpOrder->reload();
             if (!$this->topUpOrder->isAgentDebited() && !$this->topUpOrder->isShebaPayOrder()) {
                 $commission->setTopUpOrder($this->topUpOrder)->disburse();
-                $vendor->deductAmount($this->topUpOrder->amount);
                 $order_repo->update($this->topUpOrder, ['is_agent_debited' => 1]);
+                $vendor->deductAmount($this->topUpOrder->amount);
                 $this->logSuccessfulButAgentNotDebited($this->topUpOrder);
             }
         });
@@ -73,7 +72,6 @@ class TopUpLifecycleManager extends TopUpManager
         }
         if ($this->topUpOrder->isSuccess()) {
             app()->make(ActionRewardDispatcher::class)->run('top_up', $this->topUpOrder->agent, $this->topUpOrder);
-            // $this->sendPushNotification("অভিনন্দন", "অভিনন্দন, " .$this->topUpOrder->payee_mobile. " নাম্বারে আপনার টপ-আপ রিচার্জটি সফলভাবে সম্পন্ন হয়েছে।");
         }
     }
 
