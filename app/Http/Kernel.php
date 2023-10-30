@@ -19,6 +19,7 @@ use App\Http\Middleware\CustomerJobAuthMiddleware;
 use App\Http\Middleware\DLSApiVersioning;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\ExternalPaymentLinkAuthMiddleware;
+use App\Http\Middleware\FormDataMiddleware;
 use App\Http\Middleware\GeoAuthMiddleware;
 use App\Http\Middleware\IpWhitelistMiddleware;
 use App\Http\Middleware\IpWhitelistMiddlewareForMTB;
@@ -139,6 +140,7 @@ class Kernel extends HttpKernel
         'partner.status'=> PartnerStatusAuthMiddleware::class,
         'concurrent_request' => ConcurrentRequestMiddleware::class,
         'job.concurrent_serve_collect' => ConcurrentOrderServeCollectMiddleware::class,
-        'employee.auth' => EmployeeAuthMiddleware::class
+        'employee.auth' => EmployeeAuthMiddleware::class,
+        'formData'=>FormDataMiddleware::class
     ];
 }
