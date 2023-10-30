@@ -165,7 +165,7 @@ abstract class ActionChecker
             $lastAttendance = $this->businessMember->lastAttendance();
         }
 
-        if ($this->isBusinessMemberShiftEnabled && $currentAssignment) {
+        if ($this->isBusinessMemberShiftEnabled && $currentAssignment &&  $lastAttendance) {
             if ($currentAssignment->id == $lastAttendance->shift_assignment_id) {
                 $this->attendanceLogsOfToday = $lastAttendance->actions;
             }
@@ -189,7 +189,7 @@ abstract class ActionChecker
             $lastAttendance = $this->businessMember->lastAttendance();
         }
 
-        if ($this->isBusinessMemberShiftEnabled && $currentAssignment) {
+        if ($this->isBusinessMemberShiftEnabled && $currentAssignment && $lastAttendance) {
             if ($currentAssignment->id == $lastAttendance->shift_assignment_id) {
                 return $lastAttendance->actions->contains('action', $this->getActionName());
             }

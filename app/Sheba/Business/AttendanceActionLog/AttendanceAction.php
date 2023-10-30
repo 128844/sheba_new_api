@@ -70,7 +70,7 @@ class AttendanceAction
         $isBusinessMemberShiftEnabled = $this->business->isShiftEnabled() && $this->shiftAssignmentRepository->hasTodayAssignment($this->businessMember->id);
         $currentAssignment = $isBusinessMemberShiftEnabled ? $this->shiftAssignmentFinder->setBusinessMember($this->businessMember)->findCurrentAssignment() : null;
         $lastAttendance = $this->businessMember->lastAttendance();
-        $todayAttendance = $isBusinessMemberShiftEnabled && $currentAssignment && $currentAssignment->id == $lastAttendance->shift_assignment_id ? $lastAttendance : $this->businessMember->attendanceOfToday();
+        $todayAttendance = $isBusinessMemberShiftEnabled && $currentAssignment && $lastAttendance && $currentAssignment->id == $lastAttendance->shift_assignment_id ? $lastAttendance : $this->businessMember->attendanceOfToday();
         $this->setAttendance($todayAttendance);
         return $this;
     }
