@@ -545,7 +545,7 @@ return [
             'department' => 'SM'
         ],
         'Alternative' => [
-            'name' => 'Alternative',
+            'name' => 'Corporate',
             'short_name' => 'AC',
             'prefix' => 'A',
             'department' => 'AC'
