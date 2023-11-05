@@ -14,7 +14,7 @@ class FormData
         $this->parseContent($this->content);
     }
 
-    private function parseContent(string $content): void
+    private function parseContent(string $content)
     {
         $parts = $this->getParts($content);
 
@@ -27,7 +27,7 @@ class FormData
     {
         $boundary = $this->getBoundary($content);
 
-        if (is_null($boundary)) return [];
+        if (empty($boundary)) return [];
 
         $parts = explode($boundary, $content);
 
@@ -36,17 +36,17 @@ class FormData
         });
     }
 
-    private function getBoundary(string $content): string|null
+    private function getBoundary(string $content): string
     {
         $firstNewLinePosition = strpos($content, "\r\n");
 
-        return $firstNewLinePosition ? substr($content, 0, $firstNewLinePosition) : null;
+        return $firstNewLinePosition ? substr($content, 0, $firstNewLinePosition) : "";
     }
 
-    private function processContent(string $content): void
+    private function processContent(string $content)
     {
         $content = ltrim($content, "\r\n");
-        [$rawHeaders, $rawContent] = explode("\r\n\r\n", $content, 2);
+        list($rawHeaders, $rawContent) = explode("\r\n\r\n", $content, 2);
 
         $headers = $this->parseHeaders($rawHeaders);
 
@@ -62,7 +62,7 @@ class FormData
         $headers = explode("\r\n", $headers);
 
         foreach ($headers as $header) {
-            [$name, $value] = explode(':', $header);
+            list($name, $value) = explode(':', $header);
 
             $name = strtolower($name);
 
@@ -72,7 +72,7 @@ class FormData
         return $data;
     }
 
-    private function parseContentDisposition(array $headers, string $content): void
+    private function parseContentDisposition(array $headers, string $content)
     {
         $content = substr($content, 0, strlen($content) - 2);
 
@@ -94,11 +94,11 @@ class FormData
         }
     }
 
-    private function transformContent(string $name, mixed $value): array
+    private function transformContent(string $name,  $value): array
     {
         parse_str($name, $parsedName);
 
-        $transform = function (array $array, mixed $value) use (&$transform) {
+        $transform = function (array $array,  $value) use (&$transform) {
             foreach ($array as &$val) {
                 $val = is_array($val) ? $transform($val, $value) : $value;
             }
@@ -116,7 +116,7 @@ class FormData
 
         file_put_contents($tempName, $content);
 
-        register_shutdown_function(function () use ($tempName): void {
+        register_shutdown_function(function () use ($tempName) {
             if (file_exists($tempName)) {
                 unlink($tempName);
             }
