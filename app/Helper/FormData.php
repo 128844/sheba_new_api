@@ -36,7 +36,7 @@ class FormData
         });
     }
 
-    private function getBoundary(string $content): ?string
+    private function getBoundary(string $content): string|null
     {
         $firstNewLinePosition = strpos($content, "\r\n");
 
