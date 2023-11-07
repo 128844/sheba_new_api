@@ -161,7 +161,7 @@ class Route
                         $api->post('payment/create', "PosOrder\OrderController@createPayment");
                     });
                     $api->put('/{order}/update-customer', 'PosOrder\OrderController@updateCustomer');
-                    $api->put('/{order}', 'PosOrder\OrderController@update');
+                    $api->put('/{order}', 'PosOrder\OrderController@update')->middleware('formData');
                     $api->delete('/{order}', 'PosOrder\OrderController@destroy');
                 });
                 $api->get('general-settings', 'PartnerController@generalSettings' );

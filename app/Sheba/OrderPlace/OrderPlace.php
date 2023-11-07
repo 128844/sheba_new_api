@@ -204,6 +204,7 @@ class OrderPlace
 
     public function setSalesChannel($salesChannel)
     {
+        $salesChannel = $salesChannel == "Corporate" ? "Alternative" : $salesChannel;
         $this->salesChannel = $salesChannel;
         return $this;
     }
