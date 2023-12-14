@@ -72,7 +72,7 @@ class PaymentLinkBillController extends Controller
             if ($payment_link->isEmi()) {
                 if (!$bank) return response()->json(['code' => 404, 'message' => 'Bank not found']);
                 $methodName = $bank->paymentGateway->method_name;
-                if (!array_search($methodName, $availableMethods)) $methodName = PaymentStrategy::SSL;
+                if (!in_array($methodName, $availableMethods)) $methodName = PaymentStrategy::SSL;
                 $payment_method = $methodName ?? PaymentStrategy::SSL;
             }
             try {
