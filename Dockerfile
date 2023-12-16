@@ -1,4 +1,4 @@
-FROM php:7.4-Apache
+FROM php:7.4-apache
 
 # PHP_CPPFLAGS are used by the docker-php-ext-* scripts
 ENV PHP_CPPFLAGS="$PHP_CPPFLAGS -std=c++11"
