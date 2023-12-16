@@ -25,8 +25,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions
 #RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
-#RUN docker-php-ext-configure intl
-#RUN docker-php-ext-install -j$(nproc) pdo_mysql mbstring zip calendar soap gd intl
+RUN docker-php-ext-configure intl
+RUN docker-php-ext-install -j$(nproc) pdo_mysql mbstring zip calendar soap gd intl
 
 # Install mongodb extension
 RUN pecl install mongodb-1.4.4 \
