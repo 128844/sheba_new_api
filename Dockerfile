@@ -1,5 +1,4 @@
-#FROM php:7.0-fpm
-FROM php:7.4-apache
+FROM php:7.0-fpm
 
 # PHP_CPPFLAGS are used by the docker-php-ext-* scripts
 ENV PHP_CPPFLAGS="$PHP_CPPFLAGS -std=c++11"
@@ -24,23 +23,10 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions
-#RUN apt-get update &&  apt-get install -y \
-#     libfreetype6-dev libjpeg62-turbo-dev libpng-dev && \
-#    docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ && \
-# RUN  docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-png=/usr/include/ && \
-#    docker-php-ext-install -j$(nproc) gd
-
-# Configure the GD extension with JPEG and FreeType support
-RUN docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ 
-#--with-png=/usr/include/
-
-# Install the GD extension
-RUN docker-php-ext-install -j$(nproc) gd
-
-#RUN docker-php-ext-install pdo_mysql mysqli
-#RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
-#RUN docker-php-ext-configure intl
-#RUN docker-php-ext-install -j$(nproc) pdo_mysql mbstring zip calendar soap gd intl
+RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ 
+#--with-png-dir=/usr/include/
+RUN docker-php-ext-configure intl
+RUN docker-php-ext-install -j$(nproc) pdo_mysql mbstring zip calendar soap gd intl
 
 # Install mongodb extension
 RUN pecl install mongodb-1.4.4 \
