@@ -31,7 +31,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 #    docker-php-ext-install -j$(nproc) gd
 
 # Configure the GD extension with JPEG and FreeType support
-RUN docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ --with-png=/usr/include/
+RUN docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ 
+#--with-png=/usr/include/
 
 # Install the GD extension
 RUN docker-php-ext-install -j$(nproc) gd
