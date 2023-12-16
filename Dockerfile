@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     libvpx-dev \
     libxml2-dev \
     libicu-dev \
-    libpng-dev \
+    zip \
     git
 
 # Clear cache
