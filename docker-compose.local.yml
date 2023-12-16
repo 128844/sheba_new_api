@@ -1,0 +1,35 @@
+version: '3.5'
+services:
+  api-service:
+    environment:
+      SERVICE_NAME: app
+      VIRTUAL_HOST: ${API_DOMAIN}
+    working_dir: /var/www
+    entrypoint: /etc/entrypoint.sh
+    volumes:
+      - ../../:/var/www
+      - ../../composer-auth.json:/root/.composer/auth.json
+      - ../nginx/conf.d/nginx-local.conf:/etc/nginx/sites-enabled/default
+      - ../php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - ../php/memory_limit.ini:/usr/local/etc/php/conf.d/memory_limit.ini
+      - ../php/php.ini:/usr/local/etc/php/conf.d/php.override.ini
+      - ../php/conf.d/www.local.conf:/usr/local/etc/php-fpm.d/www.conf
+    ports:
+      - ${PORT}:80
+    extra_hosts:
+      - "${VIRTUAL_HOST_DOCKER_HOST}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_LOCALHOST}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_ADMIN}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_API}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_ACCOUNTS}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_WALLET}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_API_LOGISTICS}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_REPORTS}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_EXPENSE}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_POS_ORDER}:${DOCKER_HOST_ADDR}"
+      - "${VIRTUAL_HOST_INVENTORY}:${DOCKER_HOST_ADDR}"
+
+networks:
+  api-service-network:
+    external:
+      name: ${EXTERNAL_NETWORK}

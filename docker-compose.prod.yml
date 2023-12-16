@@ -1,0 +1,12 @@
+version: '3.5'
+services:
+  api-service:
+    image: registry.sheba.xyz/${CONTAINER_NAME}
+    environment:
+      SERVICE_NAME: app
+    ports:
+      - ${PORT}:80
+
+networks:
+  api-service-network:
+    driver: bridge

@@ -1,0 +1,18 @@
+version: '3.5'
+services:
+  api-service:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    image: sheba.xyz/php-fpm-7.0.33-with-nginx
+    container_name: ${CONTAINER_NAME}
+    restart: unless-stopped
+    tty: true
+    env_file: ../../.env
+    healthcheck:
+      test: curl -sS http://127.0.0.1 || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - api-service-network

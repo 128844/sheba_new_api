@@ -1,0 +1,50 @@
+FROM api-base-php-fpm-70:latest
+
+# Copy existing application directory permissions
+COPY --chown=www-data:www-data . /var/www
+
+COPY ./composer-auth.json /root/.composer/auth.json
+COPY ./.sentryclirc .sentryclirc
+
+# PHP configuration
+COPY ./docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+# Opcache configuration
+COPY ./docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+# PHP-FPM configuration
+COPY ./docker/php/conf.d/www.production.conf /usr/local/etc/php-fpm.d/www.conf
+# Nginx configuration
+COPY ./docker/nginx/conf.d/nginx-prod.conf /etc/nginx/sites-enabled/default
+
+COPY ./docker/entrypoint.sh /etc/entrypoint.sh
+RUN chmod +x /etc/entrypoint.sh
+
+# Make fpm log script executable
+COPY ./docker/fpm_log_file_created.sh /etc/fpm_log_file_created.sh
+RUN chmod +x /etc/fpm_log_file_created.sh
+RUN /etc/fpm_log_file_created.sh
+
+RUN chmod -R g+w /var/www/storage
+RUN chmod -R g+w /var/www/bootstrap
+
+# Set working directory
+WORKDIR /var/www
+
+# Laravel specific file permission
+# RUN find ./ -type f -exec chmod 664 {} \;
+# RUN find ./ -type d -exec chmod 775 {} \;
+# RUN chgrp -R www-data storage bootstrap/cache
+# RUN chmod -R ug+rwx storage bootstrap/cache
+
+# Make sentry cli script executable
+RUN chmod +x ./bin/sentry_release.sh
+
+RUN composer install --ignore-platform-reqs && rm -rf /home/www-data/.composer/cache
+
+# RUN chmod -R g+w /var/www/vendor
+
+RUN php artisan cache:clear
+RUN php artisan config:clear
+
+EXPOSE 80 443
+
+ENTRYPOINT ["/etc/entrypoint.sh"]
