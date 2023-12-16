@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/
 #--with-png-dir=/usr/include/
 RUN docker-php-ext-configure intl
-RUN docker-php-ext-install -j$(nproc) gd pdo_mysql intl zip calendar
+RUN docker-php-ext-install -j$(nproc) gd pdo_mysql intl soap calendar
 #pdo_mysql mbstring zip calendar soap gd intl
 
 # Install mongodb extension
